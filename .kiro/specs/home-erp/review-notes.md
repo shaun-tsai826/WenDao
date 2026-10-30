@@ -1,7 +1,8 @@
 # 規格審查回饋（review-notes.md）
 
-> 版本：v1.0（2026-10-30）
-> 變更摘要：初次建立。Claude Code 審查 requirements.md v1.1、design.md v2.0、tasks.md v1.0 後的回饋，所有修改方向均已經使用者確認。
+> 版本：v1.1（2026-10-31）
+> 變更摘要：v1.1 新增 R-6「repo 資料夾結構」（使用者已確認採用結構 A）。
+> v1.0（2026-10-30）初次建立。Claude Code 審查 requirements.md v1.1、design.md v2.0、tasks.md v1.0 後的回饋，所有修改方向均已經使用者確認。
 > 審查者：Claude Code（實作端）　確認者：使用者
 
 ---
@@ -62,6 +63,29 @@
   - design.md：關鍵設計決策表、外部依賴表的 Chart.js 列，移除「CDN」字樣。
   - STATUS-005「圖表載入失敗」改為空狀態訊息，例如 `STATUS-005：尚無足夠資料顯示趨勢圖`，觸發條件為「該商品沒有可計算單位均價的購買記錄」。
   - tasks.md 10.1、10.3 同步修改，移除「CDN 失敗」相關描述，改為測試空狀態。
+
+### R-6　repo 資料夾結構（v1.1 新增）
+
+- **問題**：design.md 把 PocketBase 放在 repo 外面的 `/Users/cooqle/home-erp/`，前端叫 `home-erp-frontend/`。這樣資料表結構沒有版本管理，使用者在 MBP 與 M4 mini 之間切換時，必須到 Admin UI 重新建表。
+- **使用者決定**：採用「結構 A：全部放進 repo」。骨架已由 Claude Code 建立（見根目錄 `README.md`）：
+  ```
+  WenDao/
+  ├── .kiro/
+  ├── frontend/            Quasar 前端（task 2.1 建立）
+  ├── backend/             PocketBase 工作目錄
+  │   ├── pb_migrations/   資料表結構（進 git）
+  │   ├── pb_hooks/        hooks（進 git）
+  │   ├── pocketbase       執行檔（.gitignore 排除）
+  │   ├── pb_data/         資料庫（.gitignore 排除）
+  │   └── pb_public/       前端 build 產出（.gitignore 排除）
+  ├── deploy/              launchd plist、部署腳本
+  └── docs/                進度紀錄、環境建置教學
+  ```
+- **修改**：
+  - design.md：「前端架構 → 專案結構」的 `home-erp-frontend/` 改為 `frontend/`；部署流程、launchd plist 範例（`ProgramArguments`、`WorkingDirectory`、log 路徑）、`cp -r dist/* ../home-erp/pb_public/` 等路徑改為 repo 內的 `backend/`（例如 `/Users/cooqle/Projects/WenDao/backend`）。
+  - design.md：「關鍵設計決策」新增一列「**資料表建立方式：PocketBase migrations（`pb_migrations/` JS 檔）**」，取代「透過 Admin UI 點擊建立」，理由是可以版本管理、換電腦時自動套用。Admin UI 仍用來建立 superuser 與檢視資料。
+  - tasks.md：1.1 的下載位置改為 `backend/`；1.2～1.8 改為「撰寫 migration 檔建立 Collection／種子資料，並在 Admin UI 確認」；Notes 中「Collection 建立透過 Admin UI 完成」一段同步修改。
+  - 種子使用者的**密碼不可寫進 migration 檔**（repo 是 public）。請在設計中註明改從環境變數讀取，例如 `SEED_USER1_PASSWORD`，或改由使用者在 Admin UI 手動建立 2 位使用者。
 
 ---
 
@@ -203,7 +227,7 @@
 
 ## 6. Kiro 交付前自我檢查
 
-- [ ] R-1～R-5、C-6～C-13 都已反映到對應的文件
+- [ ] R-1～R-6、C-6～C-13 都已反映到對應的文件
 - [ ] Q-1～Q-4 已經詢問使用者，並把答案寫進規格（或記錄到未來規劃）
 - [ ] 新增的訊息（ERR-015～018、MSG-008～009、STATUS-006～007 等）都已加入 design.md 的訊息集中表，編號沒有重複
 - [ ] 既有的 AC 編號沒有被重新編號

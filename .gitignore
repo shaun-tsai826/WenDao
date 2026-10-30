@@ -12,9 +12,13 @@ dist/
 .env.*
 !.env.example
 
-# PocketBase：執行檔、資料庫（含使用者資料）、log
-pocketbase
-pb_data/
+# PocketBase：執行檔、資料庫（含使用者資料）、前端 build、log
+# pb_migrations/ 與 pb_hooks/ 要進 git，不可忽略
+/backend/pocketbase
+/backend/CHANGELOG.md
+/backend/LICENSE.md
+/backend/pb_data/
+/backend/pb_public/
 logs/
 
 # 編輯器
