@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+
+# Node / 前端建置產出
+node_modules/
+dist/
+.quasar/
+*.log
+
+# 環境變數（可能含密碼或 token）
+.env
+.env.*
+!.env.example
+
+# PocketBase：執行檔、資料庫（含使用者資料）、log
+pocketbase
+pb_data/
+logs/
+
+# 編輯器
+.vscode/*
+!.vscode/extensions.json
+.idea/
