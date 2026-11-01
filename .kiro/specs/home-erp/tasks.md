@@ -111,7 +111,7 @@
     - 建立 `auth.ts`、`category.ts`、`product.ts`、`purchase.ts` 的 state/getters/actions 骨架
     - _對應：REQ-1, REQ-2, REQ-3, REQ-5_
 
-  - [ ] 2.6 建立 MainLayout 導覽列與使用者資訊
+  - [x] 2.6 建立 MainLayout 導覽列與使用者資訊
     - 導覽列連結：首頁、購買記錄、商品列表、分類管理
     - 右上角顯示登入使用者名稱與登出按鈕（登出行為待 5.4 接上）
     - _對應：REQ-1, AC-1.5_

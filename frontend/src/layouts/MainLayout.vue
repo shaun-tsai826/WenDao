@@ -1,81 +1,199 @@
+<!--
+  MainLayout：功能頁共用的外框（task 2.6，AC-1.5）
+  design.md「UI 設計規範 › 元件」：
+  - 頂欄：品牌標記 +「家庭ERP」；右邊頭像 + 使用者名稱 +「登出」
+  - 底部導覽列：首頁、購買記錄、商品、分類（目前頁用 --accent）
+-->
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
-      <q-toolbar>
-        <q-btn flat dense round icon="menu" aria-label="Menu" @click="toggleLeftDrawer" />
+  <q-layout view="hHh lpR fFf" class="main-layout">
+    <q-header class="app-header">
+      <div class="app-header__inner">
+        <router-link to="/" class="brand" aria-label="家庭ERP 首頁">
+          <span class="brand__mark" aria-hidden="true">家</span>
+          <span class="brand__name">家庭ERP</span>
+        </router-link>
 
-        <q-toolbar-title> Quasar App </q-toolbar-title>
-
-        <div>Quasar v{{ $q.version }}</div>
-      </q-toolbar>
+        <div class="user">
+          <span class="user__avatar" aria-hidden="true">{{ avatarChar }}</span>
+          <span class="user__name">{{ auth.displayName }}</span>
+          <!-- 登出行為於 task 5.4 接上 -->
+          <button type="button" class="user__logout">登出</button>
+        </div>
+      </div>
     </q-header>
-
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
-      <q-list>
-        <q-item-label header> Essential Links </q-item-label>
-
-        <EssentialLink v-for="link in linksList" :key="link.label" v-bind="link" />
-      </q-list>
-    </q-drawer>
 
     <q-page-container>
       <router-view />
     </q-page-container>
+
+    <q-footer class="app-nav">
+      <nav aria-label="主選單" class="app-nav__inner">
+        <router-link
+          v-for="item in NAV_ITEMS"
+          :key="item.to"
+          :to="item.to"
+          class="app-nav__item"
+          :class="{ 'is-active': isActive(item.to) }"
+          :aria-current="isActive(item.to) ? 'page' : undefined"
+        >
+          <AppIcon :name="item.icon" />
+          <span>{{ item.label }}</span>
+        </router-link>
+      </nav>
+    </q-footer>
   </q-layout>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import EssentialLink, { type EssentialLinkProps } from '@/components/EssentialLink.vue';
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
+import AppIcon, { type IconName } from '@/components/AppIcon.vue';
+import { useAuthStore } from '@/stores/auth';
 
-const linksList: EssentialLinkProps[] = [
-  {
-    label: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev',
-  },
-  {
-    label: 'GitHub',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework',
-  },
-  {
-    label: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev',
-  },
-  {
-    label: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev',
-  },
-  {
-    label: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev',
-  },
-  {
-    label: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev',
-  },
-  {
-    label: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev',
-  },
+const NAV_ITEMS: { to: string; label: string; icon: IconName }[] = [
+  { to: '/', label: '首頁', icon: 'home' },
+  { to: '/purchases', label: '購買記錄', icon: 'receipt' },
+  { to: '/products', label: '商品', icon: 'box' },
+  { to: '/categories', label: '分類', icon: 'tag' },
 ];
 
-const leftDrawerOpen = ref(false);
+const auth = useAuthStore();
+const route = useRoute();
 
-function toggleLeftDrawer() {
-  leftDrawerOpen.value = !leftDrawerOpen.value;
+// 頭像放名稱的最後一個字（老皮 →「皮」）
+const avatarChar = computed(() => Array.from(auth.displayName).at(-1) ?? '');
+
+// 首頁只在 / 時亮起；其他項目在子頁（例如 /products/abc）也維持亮起
+function isActive(to: string): boolean {
+  return to === '/' ? route.path === '/' : route.path === to || route.path.startsWith(to + '/');
 }
 </script>
+
+<style scoped lang="scss">
+.main-layout {
+  background: var(--ground);
+}
+
+.app-header {
+  background: var(--ground);
+  color: var(--text);
+}
+
+.app-header__inner {
+  height: var(--header-height);
+  padding: 0 var(--page-margin);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  text-decoration: none;
+  min-height: 44px;
+}
+
+.brand__mark {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-control);
+  background: var(--accent);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+}
+
+.brand__name {
+  font-size: 16px;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.user__avatar {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--person-1-bg);
+  color: var(--person-1-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+
+.user__name {
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user__logout {
+  flex: none;
+  height: 44px;
+  padding: 0 10px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: var(--radius-control);
+
+  &:hover {
+    color: var(--text);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.app-nav {
+  background: var(--surface);
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+
+.app-nav__inner {
+  height: var(--nav-height);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.app-nav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+
+  &.is-active {
+    color: var(--accent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -4px;
+    border-radius: var(--radius-inner);
+  }
+}
+</style>

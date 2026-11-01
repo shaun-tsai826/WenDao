@@ -3,8 +3,8 @@
   "short_name": "HomeERP",
   "description": "家庭用品管理系統",
   "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#027be3",
+  "background_color": "#f3f5f7",
+  "theme_color": "#1d5fd6",
   "display": "standalone",
   "icons": [
     {

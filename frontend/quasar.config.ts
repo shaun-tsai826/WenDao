@@ -96,7 +96,7 @@ export default defineConfig((ctx) => {
       config: {},
 
       // iconSet: 'material-icons', // Quasar icon set
-      // lang: 'en-US', // Quasar language pack
+      lang: 'zh-TW', // Quasar 語言包：元件內建文字與 <html lang> 用繁體中文（task 2.6）
 
       // For special cases outside of where the auto-import strategy can have an impact
       // (like functional components as one of the examples),

@@ -1,1 +1,82 @@
-// app global css
+// 全站樣式（task 2.6）
+// 依 design.md「UI 設計規範」。元件裡請使用這些變數，不要直接寫色碼。
+
+:root {
+  // 色彩
+  --ground: #f3f5f7; // 頁面底色
+  --surface: #ffffff; // 卡片、底部導覽列
+  --border: #e6e6e6; // 導覽列上緣分隔線
+  --rule: #f0f1f3; // 卡片內的列分隔線
+  --control: #d6d9dd; // 輸入框、次要按鈕邊框
+  --text: #1b1d1f;
+  --muted: #5c6064; // 次要文字（對白底 6.3:1）
+  --accent: #1d5fd6;
+  --accent-soft: #dcf1ff;
+  --accent-ink: #0a3a80;
+
+  // 消耗狀態標籤（淡色底 + 同色系深色字）
+  --status-depleted-bg: #ffedea;
+  --status-depleted-ink: #831c1e;
+  --status-soon-bg: #fff4dc;
+  --status-soon-ink: #7a3f06;
+  --status-neutral-bg: #eef1f4;
+  --status-neutral-ink: #3a3d40;
+
+  // 使用者代表色（頭像）
+  --person-1-bg: #dcf1ff;
+  --person-1-ink: #0a3a80;
+  --person-2-bg: #fde7ee;
+  --person-2-ink: #7a1f44;
+
+  // 尺寸
+  --page-margin: 16px;
+  --card-pad: 16px;
+  --card-gap: 12px;
+  --radius-card: 20px;
+  --radius-inner: 14px;
+  --radius-control: 10px;
+  --header-height: 56px;
+  --nav-height: 68px;
+
+  // 字體：Huninn 只有 400，層級靠字級與顏色
+  --font: 'Huninn', 'PingFang TC', 'Noto Sans TC', sans-serif;
+}
+
+html,
+body {
+  font-family: var(--font);
+  font-weight: 400;
+  font-synthesis: none; // 不讓瀏覽器假粗體，避免中文糊掉
+  color: var(--text);
+  background: var(--ground);
+}
+
+// Quasar 元件預設會用 500 / 700，統一改回 400
+.q-btn,
+.q-item__label,
+.text-h1,
+.text-h2,
+.text-h3,
+.text-h4,
+.text-h5,
+.text-h6,
+.text-subtitle1,
+.text-subtitle2,
+.q-toolbar__title,
+.text-weight-medium,
+.text-weight-bold,
+b,
+strong,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 400;
+}
+
+// 數字對齊（design.md：tabular-nums，表格與清單中的數字靠右）
+.num {
+  font-variant-numeric: tabular-nums;
+}

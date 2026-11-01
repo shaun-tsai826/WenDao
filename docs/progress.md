@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v2.9（2026-11-02）
-> 變更摘要：v2.9 設計稿確認（B 資訊卡片 + A 粉圓體），UI 設計規範寫入 design.md v2.8。
+> 版本：v3.0（2026-11-02）
+> 變更摘要：v3.0 完成 task 2.6（MainLayout、Quasar 色彩、粉圓體、zh-TW）。
+> v2.9 設計稿確認（B 資訊卡片 + A 粉圓體），UI 設計規範寫入 design.md v2.8。
 > v2.8 K-13 已回寫 design.md v2.7；刪除範例 store。
 > v2.7 完成 task 2.5（Pinia stores 骨架、auth 同步），新增 K-13。
 > v2.6 K-12 已回寫 design.md v2.6。
@@ -24,13 +25,13 @@
 
 ## 目前階段
 
-**實作中。** task 1（環境建置）全部完成；task 2.1～2.5 完成；設計稿已確認、UI 設計規範已寫入 design.md v2.8。下一步是 task 2.6（MainLayout，依 UI 設計規範）。
+**實作中。** task 1（環境建置）全部完成；task 2.1～2.6 完成，下一步是 task 2.7（訊息常數檔）。
 
 > **2026-11-01 起短期內不使用 Kiro**：規格需要修改時，由 Claude Code 先問使用者、同意後直接改（含版本號與變更摘要）。
 > **task 2.6 之前**：先用已安裝的設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿（儀表板、新增購買記錄），使用者選定後整理成 UI 設計規範寫進規格。
 
 ```
-規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（設計稿確認，下一步 2.6）
+規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（2.6 完成，下一步 2.7）
   (完成)       (完成)          (完成)            (完成)        ◄ 目前在這裡
 ```
 
@@ -70,10 +71,11 @@
 | 2026-11-01 | **task 2.4**：12 條路由（/login 獨立，其餘 11 條為 MainLayout 子路由）、`src/router/authGuard.ts` 純函數守衛、history 模式、12 個佔位頁；刪除 Quasar 範例頁 IndexPage / SecondPage（使用者同意）。真實 vue-router 測試 26 項通過；PocketBase pb_public 的 history fallback 驗證通過 | — |
 | 2026-11-01 | **task 2.5**：`src/types/models.ts`（6 張表的型別）、auth / category / product / purchase 四個 store 骨架（未實作的 action 丟出「尚未實作（task X）」）；auth store 由 boot 透過 `pb.authStore.onChange` 自動同步。執行期測試 7 項通過 | — |
 | 2026-11-02 | **設計稿**：呼叫 ui-ux-pro-max、taste-skill 產出 A 溫暖居家 / B 資訊卡片 / C 家用帳本 3 種手機畫面稿（首頁、新增購買記錄）；使用者選 **B + A 的 Huninn 粉圓體**。整理成「UI 設計規範」（色彩、狀態標籤、分類圖塊、字體、間距、元件、禁止事項），14 組文字配色對比皆 ≥ 4.5:1 | design.md v2.8；設計稿 https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf |
+| 2026-11-02 | **task 2.6**：MainLayout（頂欄：品牌、頭像、名稱、登出按鈕；底部 4 項導覽列）、`AppIcon` 線條圖示、Quasar 色彩與 CSS 變數、Huninn 粉圓體（只用 400）、Quasar 語言包 zh-TW、manifest 顏色；登入佔位頁改為不依賴 q-layout。以無頭 Chrome 對正式 build 截圖驗證：導覽列目前頁、粉圓體載入、全站 400、Huninn 數字等寬（每個 9.81px） | — |
 
 ## 待辦（依順序）
 
-1. **[Claude Code]** task 2.6：MainLayout 頂欄 + 底部導覽列 + 使用者資訊，依 design.md「UI 設計規範」；同時設定 Quasar 色彩、Huninn 字體、manifest 顏色，並實測 Huninn 數字是否等寬。
+1. **[Claude Code]** task 2.7：建立 `src/constants/messages.ts`（MSG / ERR / CONFIRM / STATUS 全部訊息）。
 3. 之後依 `tasks.md` 順序，一次做一個 task → 勾選 `[x]` → commit（message 帶 task 編號）。
 
 ## 重要決定紀錄
