@@ -1,7 +1,8 @@
 # Design Document
 
-> 版本：v2.0
-> 變更摘要：技術架構改為 PocketBase + Vue/Quasar + Tailscale，取代原 Spring Boot + Thymeleaf + PostgreSQL + Cloudflare Tunnel 方案。業務邏輯全部移至前端，後端僅作資料存取層。測試框架改用 Vitest + fast-check。
+> 版本：v2.2（2026-11-01）
+> 變更摘要：v2.2 依 review-notes v1.2 修正：JS SDK 版本改為與 PocketBase 0.23+ 相容的 0.22 以上，確切版本於 task 1.1 確認後鎖定（F-1）；剩餘數量對話框預設值改為目前的剩餘數量（F-4）。
+> v2.1 變更摘要：依 review-notes R-1~R-6、C-6~C-13、Q-1~Q-4 修正。主要變更：users API Rule 改為 Locked（R-1）、外網存取改用 tailscale serve + HTTPS（R-2）、登入後導向首頁（R-3）、PocketBase 版本鎖定 0.23.4 + SDK 0.21.5（R-4）、Chart.js 改 npm 安裝（R-5）、路徑改為 repo 內 + migrations 建表（R-6）、新增剩餘數量與消耗單位欄位及計算（C-6/C-8）、消耗狀態邊界修正（C-7）、購買記錄列表補新増者（C-9）、自訂欄位關聯改 Restrict + 編輯限制（C-10）、日期處理規則（C-11）、價格比較 null 處理（C-12）、新增訊息 ERR-015~019/MSG-008~010/STATUS-006~008。
 
 ## Overview
 
@@ -9,7 +10,7 @@
 
 ### 設計目標
 
-1. **輕量極簡**：PocketBase 單一執行檔內建 SQLite + REST API + 身份驗證 + 管理後台，幾乎不需要寫後端程式碼，大幅降低學習與維護成本
+1. **輕量極簡**：PocketBase 單一執行檔內建 SQLite + REST API + 身份驗證 + superuser UI，幾乎不需要寫後端程式碼，大幅降低學習與維護成本
 2. **前後端分離**：前端 Vue 3 SPA 獨立建置，PocketBase 同時提供 API 與靜態檔案服務，部署只需一個目錄
 3. **安全存取**：Tailscale mesh VPN 不對外開放任何 port，手機與 Mac mini 在同一私人網路內直接連線，安全性最高
 4. **可測試**：核心業務邏輯（價格計算、數量計算、消耗預估）以純函數 composable 實作，支援單元測試與屬性測試
@@ -18,14 +19,15 @@
 
 | 決策項目 | 選擇 | 理由 |
 |---------|------|------|
-| 後端 | PocketBase（單一執行檔） | 內建 SQLite、REST API、Auth、Admin UI，零後端程式碼即可啟動 |
+| 後端 | PocketBase（單一執行檔） | 內建 SQLite、REST API、Auth、superuser UI，零後端程式碼即可啟動 |
 | 前端框架 | Vue 3 + Quasar Framework | Quasar 內建 RWD 元件 + PWA 模式，一個框架解決 UI + PWA + 建置 |
 | 建置工具 | Vite | Vue 3 官方推薦，建置速度快，Quasar 原生整合 |
-| 外網存取 | Tailscale | mesh VPN 免 Port Forwarding、免域名、自動加密，設定約 10 分鐘 |
-| 認證機制 | PocketBase 內建 Auth Collection | 使用者帳號由管理後台建立，前端用 PocketBase JS SDK 登入 |
+| 外網存取 | Tailscale + `tailscale serve`（自動 HTTPS） | mesh VPN 免 Port Forwarding、`tailscale serve` 自動簽發 HTTPS 憑證，設定約 10 分鐘 |
+| 認證機制 | PocketBase 內建 Auth Collection | 使用者帳號由 superuser UI 建立，前端用 PocketBase JS SDK 登入 |
+| 資料表建立方式 | PocketBase migrations（`pb_migrations/` JS 檔） | 可版本管理、換機時自動套用；superuser 帳號仍在 superuser UI 手動建立 |
 | 自訂欄位 | EAV（Entity-Attribute-Value）模式 | 各分類彈性定義專屬欄位，與 PocketBase Relation 機制整合簡單 |
 | 業務邏輯位置 | 前端 composables（純函數） | PocketBase 不執行業務邏輯，所有計算在前端完成後寫入 |
-| 價格趨勢圖 | Chart.js（CDN 引入） | 輕量、文件完善，Quasar 不內建圖表元件 |
+| 價格趨勢圖 | Chart.js（npm 安裝，Vite 打包） | 輕量、文件完善，Quasar 不內建圖表元件 |
 | 測試框架 | Vitest + fast-check | Vitest 為 Vue 3 生態標準，fast-check 提供屬性測試 |
 | 部署方式 | PocketBase 靜態檔案服務（pb_public） | 前端 build 產出複製到 pb_public，PocketBase 同時服務 API 與 SPA |
 
@@ -40,15 +42,15 @@
 | 啟動方式 | 單一執行檔，`./pocketbase serve` 即可 | 需 Java 環境 + Maven 建置 + 設定檔 | 需 Node.js + npm install + 啟動腳本 |
 | 資料庫 | 內建 SQLite，零設定 | 需安裝 PostgreSQL + 建立 DB + 連線設定 | 需安裝資料庫 |
 | API | 自動生成 CRUD REST API | 需手寫 Controller / Service / Repository | 需手寫路由與資料存取 |
-| 管理後台 | 內建 Admin UI，點擊建立 Collection | 需另外建置或使用第三方 | 需另外建置 |
+| 管理後台 | 內建 superuser UI，可點擊檢視 Collection | 需另外建置或使用第三方 | 需另外建置 |
 | 身份驗證 | 內建 Auth Collection（email/username + password） | 需 Spring Security 或手寫 Session + Interceptor | 需 passport.js 或手寫 |
 | 後端程式碼量 | 幾乎為零（僅需 JS hooks 處理少數驗證） | 大量（Controller、Service、Repository、Entity、DTO） | 中等（路由 + 資料存取） |
 | 資源佔用 | 極低（單一 Go binary，~20MB 記憶體） | 較高（JVM + Spring Context） | 中等（Node.js runtime） |
-| 學習曲線 | 最平緩（管理後台點擊即可建模） | 較陡（Spring 概念多、Java 語法冗長） | 中等 |
+| 學習曲線 | 最平緩（migration 檔定義 schema，superuser UI 可檢視） | 較陡（Spring 概念多、Java 語法冗長） | 中等 |
 
 **推薦 PocketBase 的理由：**
 
-1. **零後端程式碼**：Collection（資料表）透過 Admin UI 點擊建立，欄位型別、關聯、驗證全部在 UI 設定，不需要寫 Go 或 SQL
+1. **零後端程式碼**：Collection（資料表）透過 migration 檔（`pb_migrations/`）定義，可版本管理、換機時自動套用；superuser UI 可用來建立 superuser 帳號與檢視資料
 2. **資源極低**：M4 Mac mini 上僅佔約 20MB 記憶體，適合常駐背景執行
 3. **自動 REST API**：每個 Collection 自動獲得完整的 CRUD REST API，含分頁、篩選、排序、關聯展開
 4. **內建身份驗證**：Auth Collection 提供完整的註冊/登入/token 管理，前端用 JS SDK 一行呼叫
@@ -88,17 +90,17 @@
 |------|-------------------|-------------------|
 | 安全性 | 最高（私人 mesh VPN，設備間點對點加密，不暴露至公網） | 高（但需透過 Cloudflare 中轉，有外部依賴） |
 | 設定時間 | ~10 分鐘（兩端各裝 App + 登入） | ~30 分鐘（需域名、DNS 設定、Tunnel 建立） |
-| 需要域名 | 不需要（使用 Tailscale MagicDNS，如 `http://mac-mini:8090`） | 需要（需擁有 Cloudflare 管理的域名） |
-| HTTPS | Tailscale 連線本身加密（WireGuard），HTTP 即可安全存取 | 需依賴 Cloudflare 簽發 TLS 憑證 |
+| 需要域名 | 不需要（使用 Tailscale MagicDNS，如 `https://mac-mini.tail1234.ts.net`） | 需要（需擁有 Cloudflare 管理的域名） |
+| HTTPS | Tailscale 透過 `tailscale serve` 自動簽發 HTTPS 憑證，無需手動管理 | 需依賴 Cloudflare 簽發 TLS 憑證 |
 | 外部依賴 | 僅依賴 Tailscale 服務 | 依賴 Cloudflare 服務 + 域名 |
 | 適合場景 | 家庭內網 + 少量固定設備 | 需要公開存取的服務 |
 
 **推薦 Tailscale 的理由：**
 
 1. **安全性最高**：手機和 Mac mini 都在 Tailscale 私人網路內，連線走 WireGuard 加密通道，外部完全無法存取
-2. **零設定 HTTPS**：Tailscale 連線本身已加密，PocketBase 只需 HTTP 即可，省去憑證管理
-3. **不需域名**：Tailscale MagicDNS 為每台設備分配名稱（如 `mac-mini`），手機直接以 `http://mac-mini:8090` 連線
-4. **設定極簡**：Mac mini 和手機各安裝 Tailscale App、登入同一帳號即可，約 10 分鐘
+2. **自動 HTTPS**：`tailscale serve` 自動為 Tailscale 網域名稱簽發並管理 HTTPS 憑證，無需手動申請或更新
+3. **不需域名**：Tailscale MagicDNS 為每台設備分配名稱（如 `mac-mini.tail1234.ts.net`），手機直接以 `https://mac-mini.tail1234.ts.net` 連線
+4. **設定極簡**：Mac mini 和手機各安裝 Tailscale App、登入同一帳號，再執行 `tailscale serve` 即可，約 10 分鐘
 
 **不選 Cloudflare Tunnel 的理由：** 需要擁有域名、設定 DNS 記錄、管理 Tunnel 設定檔，步驟較多且依賴外部服務。對於僅 2 人使用的家庭系統，Tailscale 更簡單安全。
 
@@ -117,19 +119,28 @@ graph TB
     end
 
     subgraph "內網存取"
-        Browser[電腦瀏覽器] -->|HTTP| PB
+        Browser[電腦瀏覽器<br/>Tailscale] -->|HTTPS| TSServe
     end
 
-    Phone -->|HTTP<br/>http://mac-mini:8090| PB
+    subgraph "Mac mini 本機"
+        MacMini[Mac mini<br/>Tailscale + PocketBase] --> TSServe[tailscale serve<br/>HTTPS 443 反向代理]
+        TSServe --> PB[PocketBase<br/>127.0.0.1:8090]
+        PB --> SQLite[(SQLite<br/>pb_data/)]
+        PB --> PBPublic[pb_public/<br/>Vue SPA 靜態檔案]
+    end
+
+    Phone -->|HTTPS<br/>https://mac-mini.tail1234.ts.net| TSServe
 ```
 
 說明：
-- **PocketBase** 監聽 `0.0.0.0:8090`，同時提供 REST API 與靜態前端檔案
+- **PocketBase** 監聽 `127.0.0.1:8090`，僅接受本機連線，由 `tailscale serve` 反向代理至 HTTPS 443
+- **tailscale serve** 將 Tailscale HTTPS 網址的請求轉發至 `http://localhost:8090`，自動簽發並管理 TLS 憑證
 - **pb_public/** 目錄存放 Vue SPA build 產出，PocketBase 自動服務
 - **SQLite** 資料庫檔案存在 `pb_data/` 目錄，隨 PocketBase 一起部署
 - **Tailscale** 在 Mac mini 和手機上各安裝一個，組成私人 VPN，連線走 WireGuard 加密
-- **內網存取**：電腦瀏覽器透過區網以 `http://<mac-mini-ip>:8090` 直接存取
-- **外網存取**：手機透過 Tailscale 以 `http://mac-mini:8090` 存取（MagicDNS 名稱）
+- **內網存取**：家中電腦安裝 Tailscale 後，以 `https://mac-mini.tail1234.ts.net` 存取（與外網統一網址，避免 PWA 與登入狀態分裂）
+- **外網存取**：手機透過 Tailscale 以 `https://mac-mini.tail1234.ts.net` 存取
+- **區網 HTTP 直連**：若不使用 Tailscale，也可透過區網以 `http://<mac-mini-ip>:8090` 直接存取，但此模式下 PWA service worker 不可用（瀏覽器僅在 HTTPS 或 localhost 下允許 service worker）
 
 ### 部署架構
 
@@ -138,7 +149,7 @@ graph TB
 PocketBase 以 macOS 原生的 `launchd` 服務常駐執行，開機自動啟動：
 
 ```xml
-<!-- ~/Library/LaunchAgents/com.homeerp.pocketbase.plist -->
+<!-- deploy/com.homeerp.pocketbase.plist -->
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -148,31 +159,32 @@ PocketBase 以 macOS 原生的 `launchd` 服務常駐執行，開機自動啟動
   <string>com.homeerp.pocketbase</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/cooqle/home-erp/pocketbase</string>
+    <string>/Users/cooqle/Projects/WenDao/backend/pocketbase</string>
     <string>serve</string>
-    <string>--http=0.0.0.0:8090</string>
+    <string>--http=127.0.0.1:8090</string>
   </array>
   <key>WorkingDirectory</key>
-  <string>/Users/cooqle/home-erp</string>
+  <string>/Users/cooqle/Projects/WenDao/backend</string>
   <key>RunAtLoad</key>
   <true/>
   <key>KeepAlive</key>
   <true/>
   <key>StandardOutPath</key>
-  <string>/Users/cooqle/home-erp/logs/pocketbase.log</string>
+  <string>/Users/cooqle/Projects/WenDao/backend/logs/pocketbase.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/cooqle/home-erp/logs/pocketbase-error.log</string>
+  <string>/Users/cooqle/Projects/WenDao/backend/logs/pocketbase-error.log</string>
 </dict>
 </plist>
 ```
 
 部署流程：
-1. 下載 PocketBase macOS ARM64 執行檔至 `/Users/cooqle/home-erp/`
-2. 執行 `./pocketbase serve` 初始化，透過 Admin UI 建立超級管理員帳號
-3. 透過 Admin UI 建立 Collection（資料表）與設定欄位
-4. 建立使用者帳號（Auth Collection 種子資料）
-5. 前端 `npm run build` 後，將 `dist/` 產出複製到 `pb_public/`
-6. 安裝 launchd plist，執行 `launchctl load` 啟動服務
+1. 下載 PocketBase macOS ARM64 執行檔至 `WenDao/backend/`
+2. 執行 `./pocketbase serve` 初始化，透過 superuser UI 建立超級管理員帳號
+3. 透過 migration 檔（`pb_migrations/`）建立 Collection（資料表）與設定欄位，執行 `./pocketbase migrate up` 套用
+4. 建立使用者帳號（Auth Collection 種子資料，密碼從環境變數 `SEED_USER1_PASSWORD`、`SEED_USER2_PASSWORD` 讀取，或由使用者在 superuser UI 手動建立）
+5. 前端 `npm run build` 後，將 `dist/` 產出複製到 `backend/pb_public/`
+6. 安裝 launchd plist（從 `deploy/` 複製至 `~/Library/LaunchAgents/`），執行 `launchctl load` 啟動服務
+7. 設定 `tailscale serve https / http://localhost:8090`，啟用 Tailscale HTTPS
 
 #### 前端靜態檔案部署
 
@@ -180,11 +192,11 @@ PocketBase 以 macOS 原生的 `launchd` 服務常駐執行，開機自動啟動
 
 ```bash
 # 前端建置
-cd home-erp-frontend
+cd frontend
 npm run build
 
 # 部署到 PocketBase 靜態目錄
-cp -r dist/* ../home-erp/pb_public/
+cp -r dist/* ../backend/pb_public/
 ```
 
 PocketBase 的 `pb_public/` 機制：
@@ -197,14 +209,18 @@ PocketBase 的 `pb_public/` 機制：
 1. 在 Mac mini 安裝 Tailscale（`brew install tailscale` 或從官網下載 App）
 2. 在兩支手機安裝 Tailscale App（iOS App Store / Google Play）
 3. 所有設備以同一帳號登入 Tailscale
-4. Mac mini 會獲得一個 Tailscale IP 和 MagicDNS 名稱（如 `mac-mini`）
-5. 手機以 `http://mac-mini:8090` 存取系統（MagicDNS 自動解析）
+4. 在 Tailscale Admin Console（`https://login.tailscale.com/admin`）啟用 **MagicDNS**
+5. 在 Tailscale Admin Console 啟用 **HTTPS Certificates**（為 tailnet 中的設備簽發 TLS 憑證）
+6. Mac mini 會獲得一個 Tailscale IP 和 MagicDNS 名稱（如 `mac-mini.tail1234.ts.net`）
+7. 在 Mac mini 執行 `tailscale serve https / http://localhost:8090`，將 Tailscale HTTPS 443 反向代理至 PocketBase 本機端口
+8. 手機以 `https://mac-mini.tail1234.ts.net` 存取系統（Tailscale 自動簽發並管理 HTTPS 憑證）
+9. 家中電腦也安裝 Tailscale，以同一 HTTPS 網址存取，避免內外網兩套網址造成 PWA 與登入狀態分裂
 
 ### PocketBase 的限制說明
 
-#### 限制 1：EAV 自訂欄位無法用 Schema UI 直接實現
+#### 限制 1：EAV 自訂欄位無法用固定 Schema 直接實現
 
-PocketBase 的 Collection Schema 是固定的（每個 Collection 有預先定義的欄位），不支援「動態欄位」或「每筆記錄不同欄位」。因此 REQ-4 的品類自訂欄位需求無法透過管理後台 UI 直接實現。
+PocketBase 的 Collection Schema 是固定的（每個 Collection 有預先定義的欄位），不支援「動態欄位」或「每筆記錄不同欄位」。因此 REQ-4 的品類自訂欄位需求無法透過單一 Collection 直接實現。
 
 **解決方案：EAV 模式 + 兩個 Collection**
 - `custom_fields` Collection：儲存欄位定義（欄位名稱、型別、是否為數量組成欄位）
@@ -215,7 +231,7 @@ PocketBase 的 Collection Schema 是固定的（每個 Collection 有預先定�
 
 #### 限制 2：複合唯一約束不支援
 
-PocketBase 的 Schema UI 可設定單一欄位為 unique，但不支援跨欄位的複合唯一約束（如「同分類下品牌+品名不可重複」）。
+PocketBase schema 可設定單一欄位為 unique，但不支援跨欄位的複合唯一約束（如「同分類下品牌+品名不可重複」）。
 
 **解決方案：前端查詢驗證**
 - 建立商品前，前端先查詢同分類下是否有相同 brand + name 的商品
@@ -224,18 +240,18 @@ PocketBase 的 Schema UI 可設定單一欄位為 unique，但不支援跨欄位
 
 #### 限制 3：CHECK 約束不支援
 
-PocketBase Schema UI 不支援 CHECK 約束（如「購入日期不可為未來」「總價必須大於 0」）。
+PocketBase schema 不支援 CHECK 約束（如「購入日期不可為未來」「總價必須大於 0」）。
 
 **解決方案：**
 - `total_price > 0`：PocketBase number 欄位可設定 min 驗證（設 min = 0.01）
 - `purchase_date <= today`：前端驗證（送出前檢查日期）
-- 未來可選擇加入 PocketBase JS Hook（`onRecordBeforeCreateRequest`）做伺服器端驗證
+- 未來可選擇加入 PocketBase JS Hook（`onRecordCreateRequest`）做伺服器端驗證
 
-#### 限制 4：JSVM 僅支援 ES5
+#### 限制 4：JSVM 語法限制
 
-PocketBase v0.17+ 內建 JavaScript 虛擬機（JSVM，基於 goja），可撰寫伺服器端 hooks，但**僅支援 ES5 語法**（不支援 `const`/`let`、箭頭函數、模板字串、`async`/`await` 等 ES6+ 語法）。
+PocketBase 0.23 內建 JavaScript 虛擬機（JSVM，基於 goja），可撰寫伺服器端 hooks，支援大部分 **ES2020 語法**（含 `const`/`let`、箭頭函數、模板字串），但**不支援 top-level await**。
 
-**影響：** 本系統的業務邏輯全部在前端以 Vue 3 + TypeScript 實作，不依賴 PocketBase JSVM。若未來需要伺服器端驗證，hooks 程式碼需使用 ES5 語法撰寫。
+**影響：** 本系統的業務邏輯全部在前端以 Vue 3 + TypeScript 實作，不依賴 PocketBase JSVM。若未來需要伺服器端驗證，hooks 程式碼可使用 ES2020 語法撰寫（但需注意 goja 對部分 ES2020 特性的支援差異）。
 
 ## Components and Interfaces
 
@@ -250,7 +266,7 @@ PocketBase 為每個 Collection 自動生成完整的 CRUD REST API，前端透�
 import PocketBase from 'pocketbase'
 
 const pb = new PocketBase(import.meta.env.VITE_POCKETBASE_URL)
-// VITE_POCKETBASE_URL 範例: http://mac-mini:8090 或 http://localhost:8080（開發環境）
+// VITE_POCKETBASE_URL 範例: https://mac-mini.tail1234.ts.net（正式環境）或 http://localhost:8090（開發環境）
 
 export default pb
 ```
@@ -305,12 +321,12 @@ PocketBase 為每個 Collection 自動提供以下操作，前端透過 SDK 呼�
 
 本系統 MVP **不需要 PocketBase JS Hooks**。所有業務邏輯與驗證在前端完成。
 
-未來若需伺服器端強制驗證，可選擇加入以下 hooks（使用 ES5 語法）：
+未來若需伺服器端強制驗證，可選擇加入以下 hooks（使用 ES2020 語法）：
 
 | Hook | 用途 | 對應需求 |
 |------|------|----------|
-| `onRecordBeforeCreateRequest` (purchase_records) | 驗證 purchase_date <= 今天 | REQ-5.5 |
-| `onRecordBeforeDeleteRequest` (categories) | 驗證分類下無商品才允許刪除 | REQ-2.5 |
+| `onRecordCreateRequest` (purchase_records) | 驗證 purchase_date <= 今天 | REQ-5.5 |
+| `onRecordDeleteRequest` (categories) | 驗證分類下無商品才允許刪除 | REQ-2.5 |
 
 > 2 人家庭系統中，前端驗證已足夠。Hooks 為「可選強化」而非必要功能。
 
@@ -319,7 +335,7 @@ PocketBase 為每個 Collection 自動提供以下操作，前端透過 SDK 呼�
 #### 專案結構
 
 ```
-home-erp-frontend/
+frontend/
 ├── src/
 │   ├── composables/          # 業務邏輯（純函數，可單元測試）
 │   │   ├── useUnitPrice.ts
@@ -626,22 +642,24 @@ export function calculateQuantityFromComponents(
 // src/composables/useDepletionEstimate.ts
 /**
  * 計算預計耗盡日期
- * 公式：耗盡日期 = 最近購買日期 + (數量 ÷ 消耗速率) × 週期天數
+ * 公式：耗盡日期 = remainingUpdatedAt + (remainingQty ÷ consumptionRate) × 週期天數
  * monthly = 30 天，weekly = 7 天
  * 若消耗速率未設定或為 0，回傳 null
+ * 若剩餘數量未設定（null），回傳 null（前端顯示「未設定剩餘數量」）
  */
 export function calculateDepletionDate(
-  lastPurchaseQty: number,
+  remainingQty: number | null,
+  remainingUpdatedAt: Date | null,
   consumptionRate: number | null,
-  period: 'monthly' | 'weekly' | null,
-  lastPurchaseDate: Date
+  period: 'monthly' | 'weekly' | null
 ): Date | null {
   if (!consumptionRate || consumptionRate <= 0 || !period) return null
+  if (remainingQty === null || remainingUpdatedAt === null) return null
   
   const periodDays = period === 'monthly' ? 30 : 7
-  const days = (lastPurchaseQty / consumptionRate) * periodDays
+  const days = (remainingQty / consumptionRate) * periodDays
   
-  const result = new Date(lastPurchaseDate)
+  const result = new Date(remainingUpdatedAt)
   result.setDate(result.getDate() + Math.round(days))
   return result
 }
@@ -651,20 +669,23 @@ export function calculateDepletionDate(
 
 ```typescript
 // src/composables/useDepletionStatus.ts
-type DepletionStatus = 'unset' | 'normal' | 'soon' | 'depleted'
+type DepletionStatus = 'unset' | 'no_remaining' | 'normal' | 'soon' | 'depleted'
 
 /**
  * 根據預計耗盡日期與消耗速率分類消耗狀態
  * - unset: 未設定消耗速率（不計算耗盡日期）
+ * - no_remaining: 已設定消耗速率但未輸入剩餘數量（不計算耗盡日期）
  * - normal: 距耗盡日期超過 7 天
- * - soon: 距耗盡日期 0-7 天（即將耗盡）
- * - depleted: 耗盡日期已過（已耗盡）
+ * - soon: 距耗盡日期 0-7 天，含今天（即 0 ≤ diffDays ≤ 7，即將耗盡）
+ * - depleted: 耗盡日期已過（diffDays < 0，已耗盡）
  */
 export function getDepletionStatus(
   depletionDate: Date | null,
-  consumptionRate: number | null
+  consumptionRate: number | null,
+  remainingQty: number | null
 ): DepletionStatus {
   if (!consumptionRate || consumptionRate <= 0) return 'unset'
+  if (remainingQty === null) return 'no_remaining'
   if (!depletionDate) return 'unset'
   
   const today = new Date()
@@ -677,8 +698,8 @@ export function getDepletionStatus(
   )
   
   if (diffDays > 7) return 'normal'
-  if (diffDays > 0) return 'soon'
-  return 'depleted'
+  if (diffDays >= 0) return 'soon'   // 0 ≤ diffDays ≤ 7（含今天）
+  return 'depleted'                   // diffDays < 0
 }
 ```
 
@@ -686,19 +707,34 @@ export function getDepletionStatus(
 
 ```typescript
 // src/composables/usePriceComparison.ts
-type PriceComparison = 'higher' | 'lower' | 'equal'
+type PriceComparison = 'higher' | 'lower' | 'equal' | 'na'
 
 /**
  * 比較當次單位均價與歷史均價
+ * 若任一方為 null（無法計算），回傳 'na'（前端顯示「無法比較」）
  */
 export function compareWithHistoricalAverage(
-  unitPrice: number,
-  historicalAverage: number
+  unitPrice: number | null,
+  historicalAverage: number | null
 ): PriceComparison {
+  if (unitPrice === null || historicalAverage === null) return 'na'
   if (unitPrice > historicalAverage) return 'higher'
   if (unitPrice < historicalAverage) return 'lower'
   return 'equal'
 }
+```
+
+#### 7. 新增購買記錄後更新剩餘數量提示（Q-1）
+
+當使用者成功新增一筆購買記錄後，前端自動彈出 QDialog 詢問「是否更新此商品的剩餘數量？」，預先帶入該商品**目前的剩餘數量**（尚未設定時留空），使用者修改後手動儲存。不預設為 0，避免使用者直接按儲存就讓商品變成「即將耗盡」。此邏輯由前端 store + 元件實作，不需 PocketBase Hook。
+
+```typescript
+// 前端邏輯摘要（usePurchaseStore.createRecord 成功後）
+// 1. 建立購買記錄成功
+// 2. 彈出 QDialog：「是否更新此商品的剩餘數量？」
+// 3. 預先帶入目前的 remaining_quantity（null 時留空），使用者修改為實際剩餘數量
+// 4. 使用者確認後，更新 products 的 remaining_quantity 與 remaining_updated_at
+//    remaining_updated_at = 當天日期（前端自動填入）
 ```
 
 ### 頁面與路由對照
@@ -709,13 +745,13 @@ export function compareWithHistoricalAverage(
 | 首頁 / 儀表板 | / | REQ-7 | 補貨提醒（即將耗盡、已耗盡商品清單） |
 | 分類管理 | /categories | REQ-2 | 分類清單、新增表單 |
 | 編輯分類 | /categories/:id/edit | REQ-4 | 分類名稱編輯、自訂欄位管理 |
-| 商品列表 | /products | REQ-3, REQ-7 | 商品清單（含消耗預估資訊），可篩選分類 |
-| 新增商品 | /products/new | REQ-3 | 品牌、品名、計量單位輸入 |
-| 商品詳情 | /products/:id | REQ-6, REQ-7, REQ-8 | 歷史均價、價格趨勢圖、消耗速率設定、購買歷史 |
-| 編輯商品 | /products/:id/edit | REQ-7 | 消耗速率、消耗週期、備註設定 |
+| 商品列表 | /products | REQ-3, REQ-7 | 商品清單（含消耗預估資訊、剩餘數量、久未更新提示），可篩選分類 |
+| 新增商品 | /products/new | REQ-3 | 品牌、品名、計價單位、消耗單位輸入 |
+| 商品詳情 | /products/:id | REQ-6, REQ-7, REQ-8 | 歷史均價、價格趨勢圖、消耗速率設定、剩餘數量、久未更新提示、購買歷史 |
+| 編輯商品 | /products/:id/edit | REQ-7 | 消耗速率、消耗週期、消耗單位、剩餘數量、備註設定 |
 | 購買記錄列表 | /purchases | REQ-5, REQ-8 | 所有記錄（按日期新→舊），可篩選分類 / 日期 |
-| 新增購買記錄 | /purchases/new | REQ-4, REQ-5 | 表單（含自訂欄位動態顯示），前端計算數量與均價 |
-| 購買記錄詳情 | /purchases/:id | REQ-6, REQ-8 | 單筆記錄詳情、單位均價與歷史均價比較 |
+| 新增購買記錄 | /purchases/new | REQ-4, REQ-5 | 表單（含自訂欄位動態顯示），前端計算數量與均價，存檔後提示更新剩餘數量 |
+| 購買記錄詳情 | /purchases/:id | REQ-5, REQ-6, REQ-8 | 單筆記錄詳情（含新增者名稱與新增時間）、單位均價與歷史均價比較 |
 | 編輯購買記錄 | /purchases/:id/edit | REQ-5 | 編輯表單 |
 
 ### 導覽結構
@@ -805,9 +841,12 @@ erDiagram
         text category_id FK "所屬分類"
         text brand "品牌"
         text name "品名"
-        text unit "計量單位"
+        text unit "計價單位"
+        text consumption_unit "消耗單位，可為空"
         number consumption_rate "消耗速率，可為空"
         text consumption_period "monthly 或 weekly，可為空"
+        number remaining_quantity "剩餘數量，手動輸入，可為空"
+        date remaining_updated_at "剩餘數量更新日期，可為空"
         text consumption_note "消耗規劃備註，可為空"
         timestamp created "系統自動"
         timestamp updated "系統自動"
@@ -836,11 +875,11 @@ erDiagram
 
 ### 各 Collection 欄位定義
 
-以下欄位定義透過 PocketBase Admin UI 建立。PocketBase 自動為每個 Collection 提供 `id`（text，隨機生成）、`created`（timestamp）、`updated`（timestamp）三個系統欄位，不需手動建立。
+以下欄位定義透過 PocketBase migration 檔（`pb_migrations/`）建立。PocketBase 自動為每個 Collection 提供 `id`（text，隨機生成）、`created`（timestamp）、`updated`（timestamp）三個系統欄位，不需手動建立。
 
 #### users（Auth Collection — 使用者）
 
-Auth Collection 自帶身份驗證欄位（email、password、tokenKey、verified），以下僅列出需在 Admin UI 設定的部分。
+Auth Collection 自帶身份驗證欄位（email、password、tokenKey、verified），以下僅列出需在 migration 中設定的部分。
 
 | 欄位 | PocketBase 型別 | 限制 | 說明 |
 |------|----------------|------|------|
@@ -853,9 +892,10 @@ Auth Collection 設定：
 - 不開啟 OAuth2
 - 不開啟 Email verification（家庭系統不需要）
 - API Rule — List/View: `@request.auth.id != ""`（已登入使用者可查看使用者清單，用於顯示新增者名稱）
-- API Rule — Create/Update/Delete: 留空（僅管理員可透過 Admin UI 管理，一般使用者無法自行建立帳號）
+- API Rule — Create/Update/Delete: **Locked（null，僅 superuser 可透過 superuser UI 操作）**
+  - 注意：在 PocketBase 中，空字串 `""` 代表任何人（含未登入者）都能操作；只有 **Locked（null）** 才代表僅 superuser 可操作。
 
-> 使用者帳號於環境建置時透過 Admin UI 建立（種子資料），不提供註冊功能。2 位使用者的 email 與初始密碼於第一個 task 中設定。
+> 使用者帳號於環境建置時透過 migration 或 superuser UI 建立（種子資料），不提供註冊功能。2 位使用者的 email 與初始密碼於第一個 task 中設定。密碼不可寫入 migration 檔（repo 可能公開），種子使用者的初始密碼從環境變數 `SEED_USER1_PASSWORD`、`SEED_USER2_PASSWORD` 讀取，或由使用者在 superuser UI 手動建立。
 
 #### categories（Base Collection — 商品分類）
 
@@ -872,14 +912,14 @@ API Rule — Create/Update/Delete: `@request.auth.id != ""`
 |------|----------------|------|------|
 | category | relation → categories | required, Cascade | 所屬分類（刪除分類時連帶刪除自訂欄位定義） |
 | field_name | text | required, max 100 | 欄位名稱（如「抽數(單包)」「層數」） |
-| field_type | select | required, 選項: `['number', 'text']` | 欄位型別 |
-| is_quantity_component | bool | required, default false | true = 數量組成欄位，false = 一般資訊欄位 |
+| field_type | select | required, 選項: `['number', 'text']` | 欄位型別（已有購買記錄使用時禁止修改） |
+| is_quantity_component | bool | required, default false | true = 數量組成欄位，false = 一般資訊欄位（已有購買記錄使用時禁止修改） |
 | display_order | number | required, default 0, min 0 | 表單中的顯示順序（由小到大） |
 
 API Rule — List/View: `@request.auth.id != ""`
 API Rule — Create/Update/Delete: `@request.auth.id != ""`
 
-> 複合唯一約束 `(category_id, field_name)` 無法在 PocketBase Schema UI 設定。由前端在新增/編輯時查詢驗證。
+> 複合唯一約束 `(category_id, field_name)` 無法在 PocketBase schema 設定。由前端在新增/編輯時查詢驗證。
 
 #### products（Base Collection — 商品）
 
@@ -888,15 +928,18 @@ API Rule — Create/Update/Delete: `@request.auth.id != ""`
 | category | relation → categories | required, Restrict | 所屬分類（有商品時禁止刪除分類） |
 | brand | text | required, max 100 | 品牌（如「春風」） |
 | name | text | required, max 200 | 品名（如「抽取式衛生紙」） |
-| unit | text | required, max 20 | 計量單位（如「抽」「ml」「g」「片」） |
-| consumption_rate | number | optional, min 0.01 | 消耗速率（如 2.0 表示每月/每週消耗 2 單位），未設定時為 null |
+| unit | text | required, max 20 | 計價單位（如「抽」「ml」「g」「片」），用於計算單位均價 |
+| consumption_unit | text | optional, max 20 | 消耗單位（如「包」），用於消耗速率與剩餘數量。設定消耗速率時必填 |
+| consumption_rate | number | optional, min 0.01 | 消耗速率（如 2.0 表示每月/每週消耗 2 單位，以消耗單位計），未設定時為 null |
 | consumption_period | select | optional, 選項: `['monthly', 'weekly']` | 消耗週期，未設定時為 null |
+| remaining_quantity | number | optional, min 0 | 目前剩餘數量（手動輸入，以消耗單位計），未設定時為 null |
+| remaining_updated_at | date | optional | 剩餘數量最後一次更新的日期（前端儲存時自動填入當天） |
 | consumption_note | text | optional, max 500 | 消耗規劃備註（如「2026年預計消耗12包」） |
 
 API Rule — List/View: `@request.auth.id != ""`
 API Rule — Create/Update/Delete: `@request.auth.id != ""`
 
-> 複合唯一約束 `(category_id, brand, name)` 無法在 PocketBase Schema UI 設定。由前端在新增時查詢驗證。
+> 複合唯一約束 `(category_id, brand, name)` 無法在 PocketBase schema 設定。由前端在新增時查詢驗證。
 
 #### purchase_records（Base Collection — 購買記錄）
 
@@ -920,13 +963,13 @@ API Rule — Create/Update/Delete: `@request.auth.id != ""`
 | 欄位 | PocketBase 型別 | 限制 | 說明 |
 |------|----------------|------|------|
 | purchase_record | relation → purchase_records | required, Cascade | 所屬購買記錄（刪除記錄時連帶刪除欄位值） |
-| custom_field | relation → custom_fields | required, Cascade | 對應的自訂欄位定義（刪除欄位定義時連帶刪除值） |
+| custom_field | relation → custom_fields | required, Restrict | 對應的自訂欄位定義（有記錄使用時禁止刪除欄位定義，避免誤刪歷史資料） |
 | field_value | text | required, max 255 | 欄位值（儲存為字串，使用時前端轉型） |
 
 API Rule — List/View: `@request.auth.id != ""`
 API Rule — Create/Update/Delete: `@request.auth.id != ""`
 
-> 複合唯一約束 `(purchase_record_id, custom_field_id)` 無法在 PocketBase Schema UI 設定。由前端邏輯保證一筆記錄對同一欄位只存一個值。
+> 複合唯一約束 `(purchase_record_id, custom_field_id)` 無法在 PocketBase schema 設定。由前端邏輯保證一筆記錄對同一欄位只存一個值。
 
 ### 自訂欄位機制說明（EAV 模式）
 
@@ -972,7 +1015,7 @@ categories (id=cat1, name=衛生紙)
 ├── custom_fields (id=cf2, category=cat1, field_name=包數, is_quantity_component=true)
 └── custom_fields (id=cf3, category=cat1, field_name=層數, is_quantity_component=false)
 
-products (id=prod1, category=cat1, brand=春風, name=抽取式衛生紙, unit=抽)
+products (id=prod1, category=cat1, brand=春風, name=抽取式衛生紙, unit=抽, consumption_unit=包)
 
 purchase_records (id=pr1, product=prod1, total_price=599, quantity=1200, unit_price=0.4992)
 ├── field_values (id=fv1, purchase_record=pr1, custom_field=cf1, field_value=120)
@@ -983,6 +1026,18 @@ purchase_records (id=pr1, product=prod1, total_price=599, quantity=1200, unit_pr
 ### 索引設計
 
 PocketBase 自動為 relation 欄位建立索引。2 人系統資料量極小，不需額外手動建立索引。
+
+### 日期處理規則
+
+台灣時區為 UTC+8，所有日期欄位的處理遵循以下規則：
+
+| 項目 | 規則 | 適用欄位 |
+|------|------|----------|
+| 儲存格式 | 以 `YYYY-MM-DD 00:00:00.000Z` 儲存，**不做時區轉換**。例如使用者選 2026-10-30，就存 `2026-10-30 00:00:00.000Z` | `purchase_date`、`remaining_updated_at` |
+| 「今天」定義 | 以使用者裝置的**本地日期**為準（Asia/Taipei） | AC-5.5（不可為未來日期）、AC-7.4/7.5（消耗狀態判斷）、AC-7.14（久未更新判斷） |
+| 日期區間篩選 | `purchase_date >= "開始 00:00:00" && purchase_date <= "結束 23:59:59"`，**包含結束日當天** | AC-8.6 |
+| 未來日期判斷 | 購入日期 > 本地今天 → 拒絕 | AC-5.5 |
+| 久未更新判斷 | 本地今天 − `remaining_updated_at` > 30 天 → 顯示提示 | AC-7.14 |
 
 ## Correctness Properties
 
@@ -1023,7 +1078,7 @@ PocketBase 自動為 relation 欄位建立索引。2 人系統資料量極小，
 
 ### Property 5: Depletion date calculation
 
-*For any* product with a valid last purchase quantity (> 0), consumption rate (> 0), and consumption period, the estimated depletion date SHALL equal the last purchase date plus (quantity / consumption_rate) multiplied by period_days (monthly = 30, weekly = 7).
+*For any* product with a valid remaining_quantity (> 0), remaining_updated_at (date), consumption rate (> 0), and consumption period, the estimated depletion date SHALL equal the remaining_updated_at plus (remaining_quantity / consumption_rate) multiplied by period_days (monthly = 30, weekly = 7). If remaining_quantity is null or remaining_updated_at is null, the system SHALL return null.
 
 **Validates: Requirements 7.2**
 
@@ -1031,17 +1086,18 @@ PocketBase 自動為 relation 欄位建立索引。2 人系統資料量極小，
 
 *For any* product, the depletion status SHALL be correctly classified as follows:
 - If consumption_rate is not set (null or 0): "未設定消耗速率" (no depletion date computed)
+- If consumption_rate is set but remaining_quantity is null: "未設定剩餘數量" (no depletion date computed)
 - If days_until_depletion > 7: normal (no alert displayed)
-- If 0 < days_until_depletion <= 7: "即將耗盡"
-- If days_until_depletion <= 0: "已耗盡"
+- If 0 ≤ days_until_depletion ≤ 7: "即將耗盡" (including today)
+- If days_until_depletion < 0: "已耗盡"
 
-**Validates: Requirements 7.4, 7.5, 7.7**
+**Validates: Requirements 7.4, 7.5, 7.7, 7.12**
 
 ### Property 7: Price comparison with historical average
 
-*For any* purchase record's unit_price and the product's historical average, the comparison result SHALL be correctly classified as "高於" (unit_price > average), "低於" (unit_price < average), or "等於" (unit_price == average).
+*For any* purchase record's unit_price and the product's historical average, the comparison result SHALL be correctly classified as "高於" (unit_price > average), "低於" (unit_price < average), or "等於" (unit_price == average). If either unit_price or historical_average is null, the system SHALL return "na" (displayed as "無法比較").
 
-**Validates: Requirements 8.9**
+**Validates: Requirements 8.9, 8.10**
 
 ## Error Handling
 
@@ -1055,7 +1111,7 @@ PocketBase 自動為 relation 欄位建立索引。2 人系統資料量極小，
 | PocketBase API 錯誤（HTTP 4xx） | 前端攔截 PocketBase SDK 拋出的 `ClientResponseError`，根據狀態碼顯示對應訊息 | 前端 store |
 | PocketBase API 錯誤（HTTP 5xx） | 顯示「系統暫時無法使用，請稍後再試」 | 前端 store |
 | 網路中斷（Tailscale 未連線） | PocketBase SDK 請求超時/失敗，前端顯示「無法連線至伺服器，請確認 Tailscale 連線狀態」 | 前端 store |
-| CDN 載入失敗（Chart.js） | 圖表區域顯示「圖表載入失敗」，頁面其餘功能正常 | 前端元件 |
+| 圖表無資料 | 該商品沒有可計算單位均價的購買記錄（quantity 全為 null）時，圖表區域顯示「尚無足夠資料顯示趨勢圖」 | 前端元件 |
 
 ### PocketBase API 錯誤處理
 
@@ -1119,6 +1175,9 @@ try {
 | MSG-005 | 記錄更新成功 | 更新購買記錄成功 | REQ-5.7 |
 | MSG-006 | 記錄刪除成功 | 刪除購買記錄成功 | REQ-5.9 |
 | MSG-007 | 商品更新成功 | 更新商品（消耗速率等）成功 | REQ-7.1（設計補充） |
+| MSG-008 | 分類更新成功 | 更新分類名稱成功 | REQ-2.7 |
+| MSG-009 | 欄位刪除成功 | 刪除尚未被使用的自訂欄位成功 | REQ-4.9 |
+| MSG-010 | 欄位更新成功 | 修改自訂欄位的欄位名稱或顯示順序成功 | REQ-4.11 |
 
 > 標註「設計補充」的訊息未在 requirements.md 中明確列出，但為保持使用者體驗一致性而新增。
 
@@ -1140,12 +1199,18 @@ try {
 | ERR-012 | 結束日期不可早於開始日期 | 日期區間篩選時結束 < 開始 | REQ-8.7 |
 | ERR-013 | 系統暫時無法使用，請稍後再試 | PocketBase API 5xx 錯誤 | 設計補充 |
 | ERR-014 | 無法連線至伺服器，請確認 Tailscale 連線狀態 | 網路中斷或伺服器未啟動 | 設計補充 |
+| ERR-015 | 剩餘數量不可為負數 | 剩餘數量欄位輸入負數 | REQ-7.10 |
+| ERR-016 | 請設定消耗單位 | 設定消耗速率但未填寫消耗單位 | REQ-7.11 |
+| ERR-017 | 此欄位名稱已存在於此分類 | 同一分類下自訂欄位名稱重複 | REQ-4.7 |
+| ERR-018 | 此欄位已有購買記錄使用，無法刪除 | 刪除已有記錄使用的自訂欄位 | REQ-4.8 |
+| ERR-019 | 此欄位已有購買記錄使用，無法修改型別或計算設定 | 修改有記錄使用的欄位之型別或數量組成設定 | REQ-4.10 |
 
 #### 確認對話框
 
 | 編號 | 訊息文字 | 觸發情境 | 對應需求 |
 |------|----------|----------|----------|
 | CONFIRM-001 | 確定要刪除此筆記錄嗎？ | 點擊刪除購買記錄按鈕時 | REQ-5.8 |
+| CONFIRM-002 | 是否更新此商品的剩餘數量？ | 新增購買記錄成功後 | REQ-7.13 |
 
 #### 系統狀態訊息
 
@@ -1153,20 +1218,23 @@ try {
 |------|----------|----------|----------|
 | STATUS-001 | 無法計算 | 數量為 0 或缺失時的單位均價 | REQ-6.5 |
 | STATUS-002 | 未設定消耗速率 | 商品未設定消耗速率 | REQ-7.7 |
-| STATUS-003 | 即將耗盡 | 預計耗盡日期距今 <= 7 天 | REQ-7.4 |
+| STATUS-003 | 即將耗盡 | 預計耗盡日期距今 0-7 天（含今天） | REQ-7.4 |
 | STATUS-004 | 已耗盡 | 預計耗盡日期已過 | REQ-7.5 |
-| STATUS-005 | 圖表載入失敗 | Chart.js CDN 載入失敗 | 設計補充 |
+| STATUS-005 | 尚無足夠資料顯示趨勢圖 | 該商品沒有可計算單位均價的購買記錄（quantity 全為 null） | 設計補充 |
+| STATUS-006 | 無法比較 | 當次單位均價或歷史均價為「無法計算」 | REQ-8.10 |
+| STATUS-007 | 未設定剩餘數量 | 已設定消耗速率但尚未輸入剩餘數量 | REQ-7.12 |
+| STATUS-008 | 剩餘數量已久未更新 | remaining_updated_at 距今超過 30 天 | REQ-7.14 |
 
 ### 外部依賴
 
 | 依賴 | 用途 | 版本 | 失敗時處理方式 |
 |------|------|------|---------------|
-| PocketBase | 後端（API + DB + 靜態檔案服務） | 0.22+ | 服務未啟動時前端顯示 ERR-014；SQLite 檔案損毀需從備份還原 |
+| PocketBase | 後端（API + DB + 靜態檔案服務） | 0.23 以上（task 1.1 開工時確認最新穩定版並鎖定確切版本） | 服務未啟動時前端顯示 ERR-014；SQLite 檔案損毀需從備份還原 |
 | Vue 3 | 前端框架 | 3.4+ | 編譯期錯誤，不會進入執行期 |
 | Quasar Framework | UI 元件 + PWA + 建置 | 2.15+ | CDN 不適用（Vite 建置打包），不會執行期失敗 |
 | Pinia | 前端 state 管理 | 2.1+ | 編譯期依賴 |
-| pocketbase (npm) | PocketBase JS SDK | 0.21+ | API 請求失敗時拋出 `ClientResponseError`，前端攔截處理 |
-| Chart.js | 價格趨勢圖（CDN 引入） | 4.x | CDN 失敗時圖表區域顯示 STATUS-005，頁面其餘功能正常 |
+| pocketbase (npm) | PocketBase JS SDK | 0.22 以上，須與 PocketBase 版本相容（PocketBase 0.23+ 需要 SDK 0.22+；0.21.x 不相容，且沒有 `pb.authStore.record`） | API 請求失敗時拋出 `ClientResponseError`，前端攔截處理 |
+| Chart.js | 價格趨勢圖（npm 安裝，Vite 打包） | 4.x | N/A（Vite 打包，無 CDN 依賴）；無資料時顯示 STATUS-005 |
 | Tailscale | 外網私人 VPN | latest | 通道中斷時外網無法存取，內網不受影響，需重新連接 Tailscale |
 | fast-check | 屬性測試框架 | 3.x | 僅用於測試，不影響正式環境 |
 | Vitest | 單元測試框架 | 1.x+ | 僅用於測試，不影響正式環境 |
@@ -1207,6 +1275,7 @@ try {
 | 空分類名稱被拒 | REQ-2.3 | EDGE_CASE |
 | 重複分類名稱被拒 | REQ-2.4 | EDGE_CASE |
 | 刪除空分類成功 | REQ-2.6 | EXAMPLE |
+| 分類名稱更新成功 | REQ-2.7 | EXAMPLE |
 | 建立商品成功 | REQ-3.1 | EXAMPLE |
 | 空品牌品名被拒 | REQ-3.3 | EDGE_CASE |
 | 未設定單位被拒 | REQ-3.4 | EDGE_CASE |
@@ -1215,6 +1284,11 @@ try {
 | 未來日期被拒 | REQ-5.5 | EDGE_CASE |
 | 必填欄位缺失被拒 | REQ-5.3 | EDGE_CASE |
 | 結束日期早於開始日期被拒 | REQ-8.7 | EDGE_CASE |
+| 剩餘數量輸入負數被拒 | REQ-7.10 | EDGE_CASE |
+| 設定消耗速率但未填消耗單位被拒 | REQ-7.11 | EDGE_CASE |
+| 自訂欄位名稱重複被拒 | REQ-4.7 | EDGE_CASE |
+| 刪除有紀錄使用的自訂欄位被拒 | REQ-4.8 | EDGE_CASE |
+| 修改有紀錄欄位的型別被拒 | REQ-4.10 | EDGE_CASE |
 
 ### 屬性測試（Property-Based Test）
 
@@ -1247,9 +1321,9 @@ fast-check 是 JavaScript/TypeScript 生態的屬性測試框架，類似 QuickC
 | testQuantityFromComponents | Property 2 | REQ-4.3 | 生成隨機正整數集合作為數量組成欄位值，驗證乘積正確；生成空集合，驗證回傳 null |
 | testQuantityComponentValidation | Property 3 | REQ-4.6 | 生成隨機非正值（0 和負數），驗證全部被拒；生成隨機正值，驗證全部通過 |
 | testHistoricalAverageCalculation | Property 4 | REQ-6.3 | 生成隨機 unit_price 集合，驗證平均值 = mean，且 min <= avg <= max |
-| testDepletionDateCalculation | Property 5 | REQ-7.2 | 生成隨機 quantity、rate、period、date，驗證耗盡日期 = date + (qty/rate) * period_days |
-| testDepletionStatusClassification | Property 6 | REQ-7.4, REQ-7.5, REQ-7.7 | 生成隨機耗盡日期（涵蓋未設定、正常、即將耗盡、已耗盡），驗證狀態分類正確 |
-| testPriceComparison | Property 7 | REQ-8.9 | 生成隨機 unit_price 和 historical_average，驗證比較結果正確 |
+| testDepletionDateCalculation | Property 5 | REQ-7.2 | 生成隨機 remainingQty、remainingUpdatedAt、rate、period，驗證耗盡日期 = remainingUpdatedAt + (remainingQty/rate) * period_days；生成 null remainingQty，驗證回傳 null |
+| testDepletionStatusClassification | Property 6 | REQ-7.4, REQ-7.5, REQ-7.7, REQ-7.12 | 生成隨機耗盡日期（涵蓋未設定消耗速率、未設定剩餘數量、正常、即將耗盡含今天 diffDays=0、已耗盡），驗證狀態分類正確 |
+| testPriceComparison | Property 7 | REQ-8.9, REQ-8.10 | 生成隨機 unit_price 和 historical_average，驗證比較結果正確；生成 null 輸入，驗證回傳 'na' |
 
 **fast-check 測試範例（Property 1）：**
 
@@ -1311,19 +1385,29 @@ describe('Property 6: Depletion status classification', () => {
     fc.assert(fc.property(
       fc.constantFrom(null, 0, -1),
       (rate) => {
-        const status = getDepletionStatus(new Date(), rate)
+        const status = getDepletionStatus(new Date(), rate, 10)
         return status === 'unset'
       }
     ))
   })
 
-  it('should classify "soon" when days until depletion is 1-7', () => {
+  it('should classify no_remaining when remainingQty is null', () => {
     fc.assert(fc.property(
-      fc.integer({ min: 1, max: 7 }),
+      fc.float({ min: 0.01, max: 100 }),
+      (rate) => {
+        const status = getDepletionStatus(new Date(), rate, null)
+        return status === 'no_remaining'
+      }
+    ))
+  })
+
+  it('should classify "soon" when days until depletion is 0-7 (including today)', () => {
+    fc.assert(fc.property(
+      fc.integer({ min: 0, max: 7 }),
       (daysUntil) => {
         const depletionDate = new Date()
         depletionDate.setDate(depletionDate.getDate() + daysUntil)
-        const status = getDepletionStatus(depletionDate, 1.0)
+        const status = getDepletionStatus(depletionDate, 1.0, 10)
         return status === 'soon'
       }
     ))
@@ -1335,7 +1419,7 @@ describe('Property 6: Depletion status classification', () => {
       (daysPast) => {
         const depletionDate = new Date()
         depletionDate.setDate(depletionDate.getDate() - daysPast)
-        const status = getDepletionStatus(depletionDate, 1.0)
+        const status = getDepletionStatus(depletionDate, 1.0, 10)
         return status === 'depleted'
       }
     ))
@@ -1371,8 +1455,11 @@ describe('Property 6: Depletion status classification', () => {
 | 動態自訂欄位顯示 | REQ-4.5 | 建立有自訂欄位的分類商品，渲染新增記錄表單，驗證欄位出現 |
 | 購買記錄自動記錄使用者 | REQ-5.6 | 登入後建立記錄，驗證 user 欄位設為當前使用者 ID |
 | 購買記錄前端計算寫入 | REQ-6.1 | 填入總價與數量組成欄位值，驗證 API 請求包含計算後的 quantity 和 unit_price |
+| 購買記錄後提示更新剩餘數量 | REQ-7.13 | 建立記錄成功後，驗證 QDialog 彈出詢問是否更新剩餘數量 |
 | 購買記錄按日期排序 | REQ-8.1 | MSW 回傳多筆不同日期記錄，驗證列表按日期降序排列 |
+| 購買記錄列表含新增者 | REQ-8.3 | MSW 回傳記錄含 expand.user，驗證列表顯示新增者名稱 |
 | 分類篩選 | REQ-8.5 | 設定篩選條件，驗證 API 請求的 filter 參數正確 |
-| 日期區間篩選 | REQ-8.6 | 設定日期區間，驗證 API 請求的 filter 參數正確 |
+| 日期區間篩選 | REQ-8.6 | 設定日期區間，驗證 API 請求的 filter 參數正確（含結束日當天） |
 | 首頁補貨提醒 | REQ-7.6 | MSW 回傳即將耗盡/已耗盡商品，渲染首頁，驗證提醒清單正確 |
+| 久未更新提醒 | REQ-7.14 | MSW 回傳 remaining_updated_at 超過 30 天的商品，驗證顯示 STATUS-008 |
 | 響應式設計 | REQ-9.2 | 以手機 viewport 尺寸渲染頁面，驗證 Quasar RWD class 正確套用 |
