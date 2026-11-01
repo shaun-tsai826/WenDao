@@ -56,7 +56,7 @@
     - `consumption_note`（text, optional, max 500）
     - _對應：REQ-3, AC-3.1, AC-3.2, REQ-7, AC-7.1, AC-7.9_
 
-  - [ ] 1.5 撰寫 migration 檔建立 purchase_records Collection 及其欄位
+  - [x] 1.5 撰寫 migration 檔建立 purchase_records Collection 及其欄位
     - `product`（relation → products, required, Restrict）
     - `purchase_date`（date, required）
     - `store`（text, required, max 100）

@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v1.5（2026-11-01）
-> 變更摘要：v1.5 完成 task 1.4（products）。新增「需回寫 Kiro 的變更」清單。
+> 版本：v1.6（2026-11-01）
+> 變更摘要：v1.6 完成 task 1.5（purchase_records），新增 K-6。
+> v1.5 完成 task 1.4（products）。新增「需回寫 Kiro 的變更」清單。
 > v1.4 完成 task 1.3（custom_fields）。
 > v1.3 完成 task 1.2（users 設定、categories 建立）。
 > v1.2 完成 task 1.1（PocketBase 0.40.6、superuser 建立），新增 docs/setup-pocketbase.md。
@@ -10,10 +11,10 @@
 
 ## 目前階段
 
-**實作中。** 已完成 task 1.1～1.4，下一步是 task 1.5。
+**實作中。** 已完成 task 1.1～1.5，下一步是 task 1.6。
 
 ```
-規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（1.4 完成，下一步 1.5）
+規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（1.5 完成，下一步 1.6）
   (完成)       (完成)          (完成)            (完成)        ◄ 目前在這裡
 ```
 
@@ -42,10 +43,11 @@
 | 2026-11-01 | **task 1.2**：migration `1793536337_users_categories.js`（users.name 改必填、只用 email 登入；新增 categories，name 必填、上限 100 字、UNIQUE INDEX），已在臨時資料庫用 API 驗證 | `docs/setup-pocketbase.md` v1.1 |
 | 2026-11-01 | **task 1.3**：migration `1793538685_custom_fields.js`（category 關聯 Cascade、field_type 選項 number/text、(category, field_name) 複合 UNIQUE INDEX），已在臨時資料庫用 API 驗證 | — |
 | 2026-11-01 | **task 1.4**：migration `1793539175_products.js`（category 關聯 Restrict、(category, brand, name) 複合 UNIQUE INDEX、消耗與剩餘數量欄位），已在臨時資料庫用 API 驗證 | — |
+| 2026-11-01 | **task 1.5**：migration `1793539430_purchase_records.js`（product、user 關聯皆 Restrict；total_price 必填且 ≥ 0.01），已在臨時資料庫用 API 驗證 | — |
 
 ## 待辦（依順序）
 
-1. **[Claude Code]** task 1.5：撰寫 migration 檔，建立 purchase_records Collection。
+1. **[Claude Code]** task 1.6：撰寫 migration 檔，建立 purchase_record_field_values Collection。
 2. 之後依 `tasks.md` 順序，一次做一個 task → 勾選 `[x]` → commit（message 帶 task 編號）。
 
 ## 重要決定紀錄
@@ -64,6 +66,7 @@
 | PocketBase 的 required | bool 設 required 代表「必須是 true」，number 設 required 代表「不可為 0」（已實測）。所以「預設 false / 0」的欄位一律**不設 required**。PocketBase 沒有欄位預設值，沒填時會存 false / 0 | task 1.3 |
 | 自訂欄位名稱唯一 | 使用者決定**加上** `(category, field_name)` 複合 UNIQUE INDEX，前端仍會先查詢並顯示友善訊息 | task 1.3 |
 | 剩餘數量「未設定」 | PocketBase 的 number 存不了 null（沒填或送 null 都會存 0，已實測）。使用者決定：**`remaining_updated_at` 為空 = 未設定**，前端讀取商品時把 remaining_quantity 轉成 null；兩個欄位一起寫入、一起清空。consumption_rate 的 0 = 未設定 | task 1.4 |
+| 購買記錄的數量缺失 | quantity 沒填會存 0；**quantity = 0 視為缺失**（AC-6.5 原本就把 0 和缺失一樣處理）。前端讀取時把 quantity 0 與它的 unit_price 都轉成 null，算歷史均價時排除這些記錄 | task 1.5 |
 | 商品唯一 | 使用者決定**加上** `(category, brand, name)` 複合 UNIQUE INDEX（只擋完全相同）；AC-3.6 的正規化比對由前端負責 | task 1.4 |
 | Kiro 不能 push | Kiro 改完的文件由 Claude Code 審查後 commit / push | — |
 
@@ -76,6 +79,7 @@
 | K-3 | task 1.3 | 刪除「複合唯一約束無法在 PocketBase schema 設定」，改為 `(category, field_name)` UNIQUE INDEX + 前端查詢 |
 | K-4 | task 1.4 | products 同上，改為 `(category, brand, name)` UNIQUE INDEX + 前端正規化查詢 |
 | K-5 | task 1.4 | products 的「未設定時為 null」改為：consumption_rate 未設定存 0；remaining_quantity 以 `remaining_updated_at` 為空判斷未設定，前端讀取時轉成 null（getDepletionStatus 的邏輯不變） |
+| K-6 | task 1.5 | purchase_records 的「可為 null」改為：quantity 沒填存 0，0 = 缺失；unit_price 在 quantity 為 0 時視為 null（前端讀取轉換、歷史均價排除）。另註明：總價送 0 時 PocketBase 回 `validation_required`、負數回 `validation_min_number_constraint`，前端依 AC-5.11 一律顯示「總價必須大於 0」 |
 
 ## 下次接手時
 
