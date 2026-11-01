@@ -35,7 +35,7 @@
     - 執行 `./pocketbase migrate up` 套用，並在 superuser UI 確認
     - _對應：REQ-1, REQ-2, AC-2.1_
 
-  - [ ] 1.3 撰寫 migration 檔建立 custom_fields Collection（EAV 定義層）及其欄位
+  - [x] 1.3 撰寫 migration 檔建立 custom_fields Collection（EAV 定義層）及其欄位
     - `category`（relation → categories, required, Cascade）
     - `field_name`（text, required, max 100）
     - `field_type`（select, required, 選項 `['number', 'text']`）
