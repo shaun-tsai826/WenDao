@@ -1,7 +1,8 @@
 # PocketBase 環境建置教學（setup-pocketbase.md）
 
-> 版本：v1.0（2026-11-01）
-> 變更摘要：初次建立（task 1.1）。涵蓋下載、checksum 驗證、第一次啟動、建立 superuser 與疑難排解。
+> 版本：v1.1（2026-11-01）
+> 變更摘要：v1.1 新增第 7 節 migration 操作（task 1.2）、疑難排解補上 migration 相關項目。
+> v1.0 初次建立（task 1.1）。涵蓋下載、checksum 驗證、第一次啟動、建立 superuser 與疑難排解。
 
 ## 這是什麼？
 
@@ -105,6 +106,65 @@ sqlite3 pb_data/data.db "select email from _superusers;"
 
 > 如果只看到 `__pbinstaller@example.com`，代表**還沒建立**。這是 PocketBase 為了安裝連結自動產生的暫時帳號，建立真正的 superuser 之後就會消失。
 
+## 7. 用 migration 建立資料表（task 1.2 起）
+
+**migration** 是「資料表結構的施工圖」。把「要建哪些表、欄位有哪些限制」寫成 `pb_migrations/` 裡的 JS 檔並進 git，換電腦時照圖施工就能長出一模一樣的結構，不用手動在後台點來點去。
+
+### 7.1 建立新的 migration 檔
+
+```bash
+cd ~/Projects/WenDao/backend
+./pocketbase migrate create "users_categories"
+```
+
+會產生 `pb_migrations/<時間戳>_users_categories.js`，裡面有兩段：
+
+- `migrate((app) => { ... }, ...)` 的第一段：**up**，套用時做的事。
+- 第二段：**down**，還原時做的事（反過來做一次）。
+
+### 7.2 套用
+
+```bash
+# 1. 先停掉正在跑的 serve（在 serve 視窗按 Ctrl + C）
+# 2. 備份資料庫（養成習慣，正式使用後特別重要）
+mkdir -p ~/Backups/WenDao
+sqlite3 pb_data/data.db ".backup '$HOME/Backups/WenDao/data-$(date +%Y%m%d-%H%M).db'"
+# 3. 套用
+./pocketbase migrate up
+# 4. 重新啟動
+./pocketbase serve --http=127.0.0.1:8090
+```
+
+> `serve` 啟動時也會自動套用還沒跑過的 migration，所以第 3 步其實可以省略。分開執行比較容易看到錯誤訊息。
+
+確認已套用：
+
+```bash
+sqlite3 pb_data/data.db "select file from _migrations order by applied desc limit 3;"
+```
+
+### 7.3 在臨時資料庫測試（不碰正式資料）
+
+```bash
+cd ~/Projects/WenDao/backend
+T=~/Downloads/pbtest; rm -rf $T; mkdir -p $T
+O=(--dir=$T/pb_data --migrationsDir=$PWD/pb_migrations --automigrate=false)
+./pocketbase migrate up $O
+./pocketbase superuser upsert test@test.local testpassword123 $O
+./pocketbase serve --http=127.0.0.1:8099 $O
+```
+
+- 一定要加 `--migrationsDir`：只指定 `--dir` 時，PocketBase 會到 `$T/pb_migrations` 找檔案，結果什麼都沒套用。
+- zsh 要用 `O=(...)` array 的寫法。寫成 `O="..."` 的話，三個參數會被當成一整串字。
+- 測完按 `Ctrl + C`，再 `rm -rf ~/Downloads/pbtest`。
+
+### 7.4 注意：在後台改結構會自動產生 migration 檔
+
+PocketBase 預設開啟 **automigrate**：在 superuser UI 新增或修改 Collection 時，會自動在 `pb_migrations/` 產生一個檔案。
+
+- 這是正常行為，代表你的修改也被記錄下來了。
+- 本專案的結構以 task 寫的 migration 為準，**請不要在後台直接改 Collection 結構**。如果不小心改了，先跟 Claude Code 說，再決定要保留還是刪除那個自動產生的檔案。
+
 ## 疑難排解
 
 | 狀況 | 原因 | 處理方式 |
@@ -114,4 +174,6 @@ sqlite3 pb_data/data.db "select email from _superusers;"
 | `zsh: permission denied: ./pocketbase` | 執行檔失去執行權限 | `chmod +x pocketbase` |
 | pbinstall 網址失效或忘記複製 | 網址只在第一次啟動時印出 | 改用做法 B 的指令建立 |
 | 忘記 superuser 密碼 | — | 用同一個 email 再執行一次 `./pocketbase superuser upsert`，就會覆蓋密碼 |
+| `migrate up` 顯示 `No new migrations to apply.`，但表沒建出來 | 用了 `--dir` 卻沒有指定 `--migrationsDir` | 參考 7.3 節，補上 `--migrationsDir` |
+| migration 套用失敗，想退回上一步 | — | 先停掉 serve，執行 `./pocketbase migrate down 1`。或者用 7.2 節的備份檔蓋回 `pb_data/data.db` |
 | 想從頭來過 | — | 停止服務後，刪除 `backend/pb_data/` 再重新啟動。**資料會全部消失**，正式使用後請勿這樣做 |

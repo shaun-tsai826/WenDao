@@ -28,7 +28,7 @@
     - 透過 superuser UI（`http://localhost:8090/_/`）建立超級管理員帳號（非系統預設共用帳號）
     - _對應：REQ-1_
 
-  - [ ] 1.2 撰寫 migration 檔建立 users（Auth Collection）與 categories（Base Collection）及其欄位
+  - [x] 1.2 撰寫 migration 檔建立 users（Auth Collection）與 categories（Base Collection）及其欄位
     - 在 `backend/pb_migrations/` 撰寫 JS migration 檔
     - users：設定 `name`（text, required）欄位；關閉 username 登入與 OAuth2、不開啟 email verification
     - categories：設定 `name`（text, unique, required, max 100）
