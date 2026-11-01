@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v2.1（2026-11-01）
-> 變更摘要：v2.1 完成 task 2.2（SDK / chart.js / fast-check、PocketBase 網址）。新增 K-9；記錄暫停使用 Kiro 與 2.6 前先做設計稿。
+> 版本：v2.2（2026-11-01）
+> 變更摘要：v2.2 K-1～K-9 已回寫 design.md v2.4、tasks.md v1.3。
+> v2.1 完成 task 2.2（SDK / chart.js / fast-check、PocketBase 網址）。新增 K-9；記錄暫停使用 Kiro 與 2.6 前先做設計稿。
 > v2.0 完成 task 2.1（Quasar 前端專案），新增 docs/setup-frontend.md 與 K-8。
 > v1.9 完成 task 1.8（種子資料），task 1（環境建置）全部完成。
 > v1.8 完成 task 1.7（API Rules，公開註冊已關閉）。
@@ -31,8 +32,8 @@
 | 文件 | 版本 |
 |---|---|
 | requirements.md | v1.3 |
-| design.md | v2.3 |
-| tasks.md | v1.2（勾選狀態持續更新） |
+| design.md | v2.4 |
+| tasks.md | v1.3（勾選狀態持續更新） |
 | BDD.md | v1.1 |
 | review-notes.md | v1.2 |
 
@@ -57,6 +58,7 @@
 | 2026-11-01 | **task 1.8**：使用者在 superuser UI 手動建立 2 位家庭使用者（email 不寫進 repo）；migration `1793544611_seed_data.js` 建立分類「衛生紙」「蔬菜」、衛生紙的 3 個自訂欄位、商品「春風 抽取式衛生紙」 | — |
 | 2026-11-01 | **task 2.1**：`npm init quasar@5.0.35` 建立 `frontend/`（TypeScript、Sass、ESLint + Prettier、Pinia、手動路由），加入 PWA 模式並依 design.md 調整 manifest。lint、typecheck、`quasar build -m pwa`、dev server 都驗證通過 | `docs/setup-frontend.md` v1.0 |
 | 2026-11-01 | **task 2.2**：安裝 pocketbase 0.28.1（鎖定）、chart.js 4.6.1、fast-check 4.10.2；`build.defineEnv` 設定 `VITE_POCKETBASE_URL`（開發 `http://localhost:8090`、正式 `/`）。已驗證兩種模式的值、SDK 連線、CORS | `docs/setup-frontend.md` v1.1 |
+| 2026-11-01 | 規格回寫 K-1～K-9（使用者同意，不經 Kiro） | design.md v2.4、tasks.md v1.3 |
 
 ## 待辦（依順序）
 
@@ -89,6 +91,9 @@
 | Kiro 不能 push | Kiro 改完的文件由 Claude Code 審查後 commit / push | — |
 
 ## 待回寫規格的變更（暫停使用 Kiro 期間，經使用者同意後由 Claude Code 直接改）
+
+> **K-1～K-9 已於 2026-11-01 回寫**至 design.md v2.4、tasks.md v1.3（使用者同意）。以下保留作為紀錄；新的落差請從 K-10 開始編號。
+
 
 | # | 來源 | 內容 |
 |---|---|---|

@@ -1,7 +1,8 @@
 # Implementation Plan: home-erp 家庭用品管理 ERP
 
-> 版本：v1.2（2026-11-01）
-> 變更摘要：v1.2 依 review-notes v1.2 修正：PocketBase / JS SDK 版本改為開工時確認後鎖定，SDK 須 0.22 以上（F-1）；8.4 對話框預設值改為目前的剩餘數量（F-4）；7.7 補上 ERR-015、ERR-016、STATUS-008 測試（F-5）。
+> 版本：v1.3（2026-11-01）
+> 變更摘要：v1.3 依實作結果回寫 K-1、K-2、K-8、K-9（經使用者同意）：1.2 users 改為修改系統預設 Collection；1.8 使用者改為手動建立；2.1 的 `quasar.config.js` 改為 `quasar.config.ts` 與 `src-pwa/manifest.json`；2.2 的 `build.env` 改為 `build.defineEnv`，正式環境網址改為 `/`；1.3 的 required 依 PocketBase 語意調整（K-2）。
+> v1.2 變更摘要：v1.2 依 review-notes v1.2 修正：PocketBase / JS SDK 版本改為開工時確認後鎖定，SDK 須 0.22 以上（F-1）；8.4 對話框預設值改為目前的剩餘數量（F-4）；7.7 補上 ERR-015、ERR-016、STATUS-008 測試（F-5）。
 > v1.1 變更摘要：依 review-notes R-1~R-6、C-6~C-13、Q-1~Q-4 修正。主要變更：Collection 改由 migration 檔建立（R-6）、路徑改為 repo 內（R-6）、PocketBase 版本鎖定 0.23.4 + SDK 0.21.5（R-4）、Chart.js 改 npm（R-5）、users API Rule 改 Locked（R-1）、新增 tailscale serve 步驟（R-2）、新增剩餘數量與消耗單位欄位及計算（C-6/C-8）、消耗狀態邊界修正（C-7）、購買記錄列表補新増者（C-9）、自訂欄位編輯/刪除限制（C-10）、價格比較 null 處理（C-12）、所有測試任務改為必做（C-13）、新增 task 7.8 久未更新提醒（Q-3）、新增 task 8.4 剩餘數量更新對話框（Q-1）。
 
 ## Overview
@@ -30,7 +31,7 @@
 
   - [x] 1.2 撰寫 migration 檔建立 users（Auth Collection）與 categories（Base Collection）及其欄位
     - 在 `backend/pb_migrations/` 撰寫 JS migration 檔
-    - users：設定 `name`（text, required）欄位；關閉 username 登入與 OAuth2、不開啟 email verification
+    - users：修改 PocketBase 自動建立的系統預設 users，`name`（text）改為 required；登入識別欄位只用 email（0.23+ 無 username）、關閉 OAuth2、不開啟 email verification
     - categories：設定 `name`（text, unique, required, max 100）
     - 執行 `./pocketbase migrate up` 套用，並在 superuser UI 確認
     - _對應：REQ-1, REQ-2, AC-2.1_
@@ -39,8 +40,8 @@
     - `category`（relation → categories, required, Cascade）
     - `field_name`（text, required, max 100）
     - `field_type`（select, required, 選項 `['number', 'text']`）
-    - `is_quantity_component`（bool, required, default false）
-    - `display_order`（number, required, default 0, min 0）
+    - `is_quantity_component`（bool, optional，沒填存 false）
+    - `display_order`（number, optional，沒填存 0, min 0）
     - _對應：REQ-4, AC-4.1, AC-4.2_
 
   - [x] 1.4 撰寫 migration 檔建立 products Collection 及其欄位
@@ -79,7 +80,7 @@
     - _對應：REQ-1, AC-1.3_
 
   - [x] 1.8 建立種子資料（透過 migration 或 superuser UI 手動建立）
-    - 建立 2 位使用者（Auth Collection）：密碼從環境變數 `SEED_USER1_PASSWORD`、`SEED_USER2_PASSWORD` 讀取，**不寫進 migration 檔**（repo 可能公開）；或由使用者在 superuser UI 手動建立
+    - 建立 2 位使用者（Auth Collection）：由使用者在 superuser UI 手動建立；密碼與真實 email **不寫進任何進 git 的檔案**（repo 為 public）
     - 建立 2 個範例分類（如「衛生紙」「蔬菜」）
     - 為「衛生紙」分類建立 3 個自訂欄位：抽數(單包)[數量組成]、包數[數量組成]、層數[一般資訊]
     - 建立 1 個範例商品：春風抽取式衛生紙（brand=春風、name=抽取式衛生紙、unit=抽、consumption_unit=包）
@@ -88,12 +89,12 @@
 - [ ] 2. 前端專案初始化：Quasar + Pinia + PocketBase SDK + 路由
   - [x] 2.1 建立 Quasar 專案（Vue 3 + Vite + PWA 模式）與基礎設定
     - 使用 `npm init quasar` 建立 SPA 專案於 `frontend/` 目錄，啟用 Pinia、Vue Router
-    - 設定 `quasar.config.js`（含 PWA manifest 與 Workbox `generateSW`）
+    - 執行 `quasar mode add pwa`；`quasar.config.ts` 設定 Workbox `GenerateSW`，PWA manifest 寫在 `src-pwa/manifest.json`
     - _對應：REQ-9, AC-9.2_
 
   - [x] 2.2 安裝依賴並設定建置工具
     - 安裝 `pocketbase`（JS SDK，版本依 1.1 確認的相容版本，須 0.22 以上）、`chart.js`、`fast-check`
-    - 設定 `quasar.config.js` 的 `build.env` 環境變數 `VITE_POCKETBASE_URL`（正式環境：`https://<mac-mini>.<tailnet>.ts.net`；開發環境：`http://localhost:8090`）
+    - 設定 `quasar.config.ts` 的 `build.defineEnv` 變數 `VITE_POCKETBASE_URL`（正式環境：`/`，與 pb_public 同網址；開發環境：`http://localhost:8090`）
     - _對應：REQ-9_
 
   - [ ] 2.3 建立 PocketBase client 初始化（src/lib/pocketbase.ts）與 boot 檔
@@ -399,7 +400,7 @@
     - _對應：REQ-9_
 
   - [ ] 13.2 啟用 Quasar PWA 模式與建置驗證
-    - 確認 `quasar.config.js` 的 PWA manifest（名稱、圖示、display: standalone）與 Workbox service worker 設定
+    - 確認 `src-pwa/manifest.json` 的 PWA manifest（名稱、圖示、display: standalone）與 `quasar.config.ts` 的 Workbox service worker 設定
     - 執行 `quasar build -m pwa` 驗證產出含 manifest 與 service worker
     - _對應：REQ-9, AC-9.1, AC-9.2_
 

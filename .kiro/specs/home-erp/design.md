@@ -1,7 +1,8 @@
 # Design Document
 
-> 版本：v2.3（2026-11-01）
-> 變更摘要：v2.3 task 1.1 確認並鎖定版本：PocketBase 0.40.6、JS SDK 0.28.1。
+> 版本：v2.4（2026-11-01）
+> 變更摘要：v2.4 依實作結果回寫 K-1～K-9（暫停使用 Kiro，經使用者同意由 Claude Code 修改）：users 改為修改系統預設 Collection（K-1）；PocketBase required / null 語意與讀取轉換規則（K-2、K-5、K-6）；三個複合唯一約束改用 UNIQUE INDEX（K-3、K-4、K-7）；前端結構對齊 @quasar/app-vite 3（K-8）；VITE_POCKETBASE_URL 改用 build.defineEnv，正式環境為 `/`（K-9）。
+> v2.3 變更摘要：v2.3 task 1.1 確認並鎖定版本：PocketBase 0.40.6、JS SDK 0.28.1。
 > v2.2 變更摘要：v2.2 依 review-notes v1.2 修正：JS SDK 版本改為與 PocketBase 0.23+ 相容的 0.22 以上，確切版本於 task 1.1 確認後鎖定（F-1）；剩餘數量對話框預設值改為目前的剩餘數量（F-4）。
 > v2.1 變更摘要：依 review-notes R-1~R-6、C-6~C-13、Q-1~Q-4 修正。主要變更：users API Rule 改為 Locked（R-1）、外網存取改用 tailscale serve + HTTPS（R-2）、登入後導向首頁（R-3）、PocketBase 版本鎖定 0.23.4 + SDK 0.21.5（R-4）、Chart.js 改 npm 安裝（R-5）、路徑改為 repo 內 + migrations 建表（R-6）、新增剩餘數量與消耗單位欄位及計算（C-6/C-8）、消耗狀態邊界修正（C-7）、購買記錄列表補新増者（C-9）、自訂欄位關聯改 Restrict + 編輯限制（C-10）、日期處理規則（C-11）、價格比較 null 處理（C-12）、新增訊息 ERR-015~019/MSG-008~010/STATUS-006~008。
 
@@ -267,7 +268,9 @@ PocketBase 為每個 Collection 自動生成完整的 CRUD REST API，前端透�
 import PocketBase from 'pocketbase'
 
 const pb = new PocketBase(import.meta.env.VITE_POCKETBASE_URL)
-// VITE_POCKETBASE_URL 範例: https://mac-mini.tail1234.ts.net（正式環境）或 http://localhost:8090（開發環境）
+// VITE_POCKETBASE_URL 由 quasar.config.ts 的 build.defineEnv 設定：
+// - 開發（quasar dev）：http://localhost:8090
+// - 正式（quasar build）：'/'（前端放在 PocketBase 的 pb_public，與 API 同網址；不把 Tailscale 主機名稱寫進 public repo）
 
 export default pb
 ```
@@ -376,10 +379,12 @@ frontend/
 │   │   └── pocketbase.ts     # 啟動時初始化 PocketBase + authStore
 │   ├── App.vue
 │   └── quasar-variables.sass
-├── quasar.config.js          # Quasar 設定（含 PWA）
+├── src-pwa/
+│   ├── manifest.json         # PWA manifest（名稱、顏色、圖示）
+│   └── register-sw.ts        # 註冊 service worker
+├── quasar.config.ts          # Quasar 設定（含 PWA、build.defineEnv；Vite 設定也由這裡管理，沒有 vite.config.ts）
 ├── package.json
-├── tsconfig.json
-└── vite.config.ts
+└── tsconfig.json
 ```
 
 #### 路由設計（vue-router）
@@ -517,11 +522,11 @@ export const usePurchaseStore = defineStore('purchase', {
 
 ```typescript
 // src/boot/pocketbase.ts
-import { boot } from 'quasar/wrappers'
+import { defineBoot } from '#q-app'
 import pb from 'lib/pocketbase'
 import { useAuthStore } from 'stores/auth'
 
-export default boot(({ app }) => {
+export default defineBoot(() => {
   // 啟動時從 localStorage 恢復 auth 狀態（PocketBase SDK 自動處理）
   const authStore = useAuthStore()
   authStore.user = pb.authStore.record
@@ -537,34 +542,42 @@ export default boot(({ app }) => {
 
 #### PWA 設定
 
-在 `quasar.config.js` 中啟用 PWA 模式：
+PWA 模式由 `quasar mode add pwa` 加入（@quasar/app-vite 3）。設定分成兩個檔案：
 
-```javascript
-// quasar.config.js（PWA 相關設定）
-module.exports = {
-  pwa: {
-    workboxMode: 'generateSW',  // 自動生成 service worker
-    manifest: {
-      name: '家庭ERP',
-      short_name: 'HomeERP',
-      description: '家庭用品管理系統',
-      display: 'standalone',
-      orientation: 'portrait',
-      background_color: '#ffffff',
-      theme_color: '#027be3',
-      icons: [
-        { src: 'icons/icon-128.png', sizes: '128x128', type: 'image/png' },
-        { src: 'icons/icon-256.png', sizes: '256x256', type: 'image/png' },
-        { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-      ],
-    },
-  },
+```typescript
+// quasar.config.ts（PWA 相關設定）
+pwa: {
+  workboxMode: 'GenerateSW', // 自動生成 service worker
+},
+```
+
+```json
+// src-pwa/manifest.json
+{
+  "name": "家庭ERP",
+  "short_name": "HomeERP",
+  "description": "家庭用品管理系統",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#027be3",
+  "display": "standalone",
+  "icons": [
+    { "src": "icons/icon-128x128.png", "sizes": "128x128", "type": "image/png" },
+    { "src": "icons/icon-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-256x256.png", "sizes": "256x256", "type": "image/png" },
+    { "src": "icons/icon-384x384.png", "sizes": "384x384", "type": "image/png" },
+    { "src": "icons/icon-512x512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-monochrome-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "monochrome" }
+  ]
 }
 ```
 
+> 圖示目前使用 Quasar 預設圖示（`public/icons/`），之後以相同檔名覆蓋即可替換。不使用 `display_override`（`fullscreen` 會蓋掉手機狀態列，與 `standalone` 衝突）。
+
 PWA 模式重點：
 - **manifest**：定義 App 名稱、圖示、顯示模式，手機「加到主畫面」後以全螢幕 App 形式開啟
-- **service worker**（Workbox `generateSW`）：自動快取靜態資源，離線時仍可開啟 App 框架（API 資料仍需網路）
+- **service worker**（Workbox `GenerateSW`）：自動快取靜態資源，離線時仍可開啟 App 框架（API 資料仍需網路）
 - **建置指令**：`quasar build -m pwa`，產出含 manifest 和 service worker 的完整 PWA
 
 ### 前端業務邏輯（核心計算）
@@ -880,7 +893,7 @@ erDiagram
 
 #### users（Auth Collection — 使用者）
 
-Auth Collection 自帶身份驗證欄位（email、password、tokenKey、verified），以下僅列出需在 migration 中設定的部分。
+PocketBase 0.23+ 第一次啟動時會**自動建立** `users` Collection，所以 migration 是「修改」這個系統預設的 Collection，而不是新建。Auth Collection 自帶身份驗證欄位（email、password、tokenKey、verified），系統預設的 `avatar`（file）欄位保留但不使用。以下僅列出需在 migration 中設定的部分。
 
 | 欄位 | PocketBase 型別 | 限制 | 說明 |
 |------|----------------|------|------|
@@ -889,14 +902,14 @@ Auth Collection 自帶身份驗證欄位（email、password、tokenKey、verifie
 | name | text | required | 顯示名稱（顯示於購買記錄與右上角） |
 
 Auth Collection 設定：
-- 開啟「Allow username」為關閉（使用 email 登入）
+- 登入識別欄位只用 email（`passwordAuth.identityFields = ["email"]`；0.23+ 已沒有 username 欄位）
 - 不開啟 OAuth2
 - 不開啟 Email verification（家庭系統不需要）
 - API Rule — List/View: `@request.auth.id != ""`（已登入使用者可查看使用者清單，用於顯示新增者名稱）
 - API Rule — Create/Update/Delete: **Locked（null，僅 superuser 可透過 superuser UI 操作）**
   - 注意：在 PocketBase 中，空字串 `""` 代表任何人（含未登入者）都能操作；只有 **Locked（null）** 才代表僅 superuser 可操作。
 
-> 使用者帳號於環境建置時透過 migration 或 superuser UI 建立（種子資料），不提供註冊功能。2 位使用者的 email 與初始密碼於第一個 task 中設定。密碼不可寫入 migration 檔（repo 可能公開），種子使用者的初始密碼從環境變數 `SEED_USER1_PASSWORD`、`SEED_USER2_PASSWORD` 讀取，或由使用者在 superuser UI 手動建立。
+> 使用者帳號於環境建置時透過 migration 或 superuser UI 建立（種子資料），不提供註冊功能。密碼與真實 email 不可寫入 migration 檔或任何進 git 的檔案（repo 為 public）。本專案的 2 位使用者已由使用者在 superuser UI 手動建立（task 1.8）。
 
 #### categories（Base Collection — 商品分類）
 
@@ -914,13 +927,13 @@ API Rule — Create/Update/Delete: `@request.auth.id != ""`
 | category | relation → categories | required, Cascade | 所屬分類（刪除分類時連帶刪除自訂欄位定義） |
 | field_name | text | required, max 100 | 欄位名稱（如「抽數(單包)」「層數」） |
 | field_type | select | required, 選項: `['number', 'text']` | 欄位型別（已有購買記錄使用時禁止修改） |
-| is_quantity_component | bool | required, default false | true = 數量組成欄位，false = 一般資訊欄位（已有購買記錄使用時禁止修改） |
-| display_order | number | required, default 0, min 0 | 表單中的顯示順序（由小到大） |
+| is_quantity_component | bool | optional（沒填存 false） | true = 數量組成欄位，false = 一般資訊欄位（已有購買記錄使用時禁止修改） |
+| display_order | number | optional（沒填存 0）, min 0 | 表單中的顯示順序（由小到大） |
 
 API Rule — List/View: `@request.auth.id != ""`
 API Rule — Create/Update/Delete: `@request.auth.id != ""`
 
-> 複合唯一約束 `(category_id, field_name)` 無法在 PocketBase schema 設定。由前端在新增/編輯時查詢驗證。
+> 複合唯一約束：`CREATE UNIQUE INDEX idx_custom_fields_category_field_name ON custom_fields (category, field_name)`。前端仍在新增/編輯時先查詢，以顯示友善錯誤訊息（ERR：此欄位名稱已存在於此分類）；INDEX 是最後一道防線（例如兩人同時新增）。
 
 #### products（Base Collection — 商品）
 
@@ -931,16 +944,16 @@ API Rule — Create/Update/Delete: `@request.auth.id != ""`
 | name | text | required, max 200 | 品名（如「抽取式衛生紙」） |
 | unit | text | required, max 20 | 計價單位（如「抽」「ml」「g」「片」），用於計算單位均價 |
 | consumption_unit | text | optional, max 20 | 消耗單位（如「包」），用於消耗速率與剩餘數量。設定消耗速率時必填 |
-| consumption_rate | number | optional, min 0.01 | 消耗速率（如 2.0 表示每月/每週消耗 2 單位，以消耗單位計），未設定時為 null |
-| consumption_period | select | optional, 選項: `['monthly', 'weekly']` | 消耗週期，未設定時為 null |
-| remaining_quantity | number | optional, min 0 | 目前剩餘數量（手動輸入，以消耗單位計），未設定時為 null |
+| consumption_rate | number | optional, min 0.01 | 消耗速率（如 2.0 表示每月/每週消耗 2 單位，以消耗單位計），未設定時存 0（＝未設定） |
+| consumption_period | select | optional, 選項: `['monthly', 'weekly']` | 消耗週期，未設定時為空字串 |
+| remaining_quantity | number | optional, min 0 | 目前剩餘數量（手動輸入，以消耗單位計）。是否已設定以 `remaining_updated_at` 是否為空判斷，詳見「PocketBase 的 required 與 null 語意」 |
 | remaining_updated_at | date | optional | 剩餘數量最後一次更新的日期（前端儲存時自動填入當天） |
 | consumption_note | text | optional, max 500 | 消耗規劃備註（如「2026年預計消耗12包」） |
 
 API Rule — List/View: `@request.auth.id != ""`
 API Rule — Create/Update/Delete: `@request.auth.id != ""`
 
-> 複合唯一約束 `(category_id, brand, name)` 無法在 PocketBase schema 設定。由前端在新增時查詢驗證。
+> 複合唯一約束：`CREATE UNIQUE INDEX idx_products_category_brand_name ON products (category, brand, name)`，只擋「完全相同」的字串。AC-3.6 要求的忽略大小寫、前後空白、全半形比對由前端正規化後查詢驗證。
 
 #### purchase_records（Base Collection — 購買記錄）
 
@@ -950,8 +963,8 @@ API Rule — Create/Update/Delete: `@request.auth.id != ""`
 | purchase_date | date | required | 購入日期（前端驗證不可為未來日期） |
 | store | text | required, max 100 | 購買地點（如「蝦皮」「全聯」「家樂福」） |
 | total_price | number | required, min 0.01 | 總價（必須大於 0） |
-| quantity | number | optional, min 0 | 總數量（前端計算後寫入，可為 null） |
-| unit_price | number | optional | 單位均價（前端計算後寫入，可為 null） |
+| quantity | number | optional, min 0 | 總數量（前端計算後寫入；沒有數量時存 0，0 ＝ 缺失） |
+| unit_price | number | optional | 單位均價（前端計算後寫入；quantity 為 0 時視為 null） |
 | user | relation → users | required | 新增此記錄的使用者 |
 
 API Rule — List/View: `@request.auth.id != ""`
@@ -970,7 +983,28 @@ API Rule — Create/Update/Delete: `@request.auth.id != ""`
 API Rule — List/View: `@request.auth.id != ""`
 API Rule — Create/Update/Delete: `@request.auth.id != ""`
 
-> 複合唯一約束 `(purchase_record_id, custom_field_id)` 無法在 PocketBase schema 設定。由前端邏輯保證一筆記錄對同一欄位只存一個值。
+> 複合唯一約束：`CREATE UNIQUE INDEX idx_prfv_record_field ON purchase_record_field_values (purchase_record, custom_field)`。前端邏輯仍保證一筆記錄對同一欄位只存一個值，INDEX 是最後一道防線。
+
+#### PocketBase 的 required 與 null 語意（實作注意）
+
+PocketBase 的欄位行為與一般資料庫不同，以下規則已在 task 1.3～1.5 實測確認：
+
+| 情況 | PocketBase 行為 | 本專案的處理 |
+|---|---|---|
+| bool 設 `required` | 代表「必須是 true」，存 false 會失敗 | 預設 false 的 bool 一律不設 required |
+| number 設 `required` | 代表「不可為 0」，存 0 會失敗 | 預設 0 的 number 不設 required；`total_price` 本來就要大於 0，可以設 required |
+| number 沒填或送 `null` | 一律存 **0**（存不了 null） | 見下方讀取轉換 |
+| date 沒填 | 存空字串 `''` | 前端視為 null |
+| number 有 `min` 但沒填 | 沒填的 0 不受 `min` 檢查 | `consumption_rate` 的 `min 0.01` 只檢查有填的值 |
+
+**讀取轉換（前端集中在一個地方處理，各 composable 仍以 null 表示「未設定 / 缺失」）：**
+
+- `products.consumption_rate`：0 ＝ 未設定（`getDepletionStatus` 原本就把 0 當成 unset）。
+- `products.remaining_quantity`：以 **`remaining_updated_at` 為空**判斷「未設定」，此時轉成 null；有日期時 0 代表「剩 0」。兩個欄位必須一起寫入、一起清空。
+- `purchase_records.quantity`：0 ＝ 缺失，轉成 null（AC-6.5 原本就把 0 和缺失一樣處理）。
+- `purchase_records.unit_price`：quantity 為 0 時轉成 null；計算歷史均價時排除這些記錄。
+
+**錯誤碼差異：** `total_price` 送 0 時 PocketBase 回 `validation_required`，送負數回 `validation_min_number_constraint`。前端依 AC-5.11 一律只顯示「總價必須大於 0」，不可直接把 PocketBase 錯誤碼對應成訊息。
 
 ### 自訂欄位機制說明（EAV 模式）
 
