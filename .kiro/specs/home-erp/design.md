@@ -1,7 +1,8 @@
 # Design Document
 
-> 版本：v2.7（2026-11-01）
-> 變更摘要：v2.7 回寫 K-13（使用者同意）：useAuthStore 改由 syncFromPb() 從 SDK 複製登入狀態，boot 註冊 pb.authStore.onChange；新增 src/types/models.ts（6 張表的型別）。
+> 版本：v2.8（2026-11-02）
+> 變更摘要：v2.8 新增「UI 設計規範」（使用者確認：設計稿 B 資訊卡片風格 + A 的 Huninn 粉圓體）；PWA manifest 的 theme_color / background_color 改為規範色。
+> v2.7 變更摘要：v2.7 回寫 K-13（使用者同意）：useAuthStore 改由 syncFromPb() 從 SDK 複製登入狀態，boot 註冊 pb.authStore.onChange；新增 src/types/models.ts（6 張表的型別）。
 > v2.6 變更摘要：v2.6 回寫 K-12（使用者同意）：功能頁改為 MainLayout 子路由；守衛改為純函數 authGuard，登入狀態取自 pb.authStore.isValid；history 模式由 quasar.config.ts 設定；保留 404 頁。
 > v2.5 變更摘要：v2.5 回寫 K-10、K-11（使用者同意）：import 路徑改用 Quasar 3 內建的 `@/` 別名；boot 範例改為呼叫 `src/lib/restoreAuth.ts`（含 authRefresh），Pinia 同步改在 auth store 內處理。
 > v2.4 變更摘要：v2.4 依實作結果回寫 K-1～K-9（暫停使用 Kiro，經使用者同意由 Claude Code 修改）：users 改為修改系統預設 Collection（K-1）；PocketBase required / null 語意與讀取轉換規則（K-2、K-5、K-6）；三個複合唯一約束改用 UNIQUE INDEX（K-3、K-4、K-7）；前端結構對齊 @quasar/app-vite 3（K-8）；VITE_POCKETBASE_URL 改用 build.defineEnv，正式環境為 `/`（K-9）。
@@ -606,8 +607,8 @@ pwa: {
   "short_name": "HomeERP",
   "description": "家庭用品管理系統",
   "orientation": "portrait",
-  "background_color": "#ffffff",
-  "theme_color": "#027be3",
+  "background_color": "#f3f5f7",
+  "theme_color": "#1d5fd6",
   "display": "standalone",
   "icons": [
     { "src": "icons/icon-128x128.png", "sizes": "128x128", "type": "image/png" },
@@ -838,6 +839,109 @@ graph LR
     Categories -->|編輯按鈕| EditCategory[編輯分類<br/>/categories/:id/edit]
     Categories -->|新增商品| NewProduct
 ```
+
+### UI 設計規範
+
+> 2026-11-02 由使用者從 3 種設計稿中選定：**B「資訊卡片」的版面與配色 + A 的 Huninn 粉圓體**。
+> 設計稿（參考用，僅本人可開啟）：https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf（中間一排 B）。
+> 方向來源：ui-ux-pro-max（UX 規則、繁中字體）與 taste-skill 的 app 風格 `pastel-consumer`（淡色分類圖塊、同色系深色文字、單一大圓角）。
+
+**一句話原則：** 白色卡片放在淺灰底上；顏色只用在「資料與狀態」，不用在裝飾；每個狀態都有文字，不只靠顏色。
+
+#### 色彩（CSS 變數，對應 Quasar 色彩）
+
+| 變數 | 色碼 | 用途 | Quasar |
+|------|------|------|--------|
+| `--ground` | `#f3f5f7` | 頁面底色 | — |
+| `--surface` | `#ffffff` | 卡片、底部導覽列 | — |
+| `--border` | `#e6e6e6` | 導覽列上緣分隔線 | — |
+| `--rule` | `#f0f1f3` | 卡片內的列分隔線（1px） | — |
+| `--control` | `#d6d9dd` | 輸入框、次要按鈕的邊框 | — |
+| `--text` | `#1b1d1f` | 主要文字 | `$dark` |
+| `--muted` | `#5c6064` | 次要說明文字（對白底 6.3:1、對頁面底 5.8:1） | — |
+| `--accent` | `#1d5fd6` | 主要按鈕、導覽列目前頁、連結 | `$primary` |
+| `--accent-soft` / `--accent-ink` | `#dcf1ff` / `#0a3a80` | 自動計算結果區塊、品牌淡色 | `$secondary`（淡色）|
+| `--positive` | `#2f7a45` | 成功提示 | `$positive` |
+| `--negative` | `#c41c29` | 錯誤提示 | `$negative` |
+| `--warning` | `#92400e` | 警告提示 | `$warning` |
+
+**消耗狀態**（淡色底 + 同色系深色字；文字一律用訊息集中表）：
+
+| 狀態（`DepletionStatus`） | 標籤文字 | 底色 / 字色 | 第二行說明範例 |
+|---|---|---|---|
+| `depleted` | STATUS-004「已耗盡」 | `#ffedea` / `#831c1e` | 「10/25 已用完，已過 8 天」 |
+| `soon` | STATUS-003「即將耗盡」 | `#fff4dc` / `#7a3f06` | 「剩 6 天 · 預計 11/8」 |
+| `normal` | 不顯示標籤，只用一般文字 | — / `--muted` | 「剩 9 天 · 11/11」 |
+| `unset` | STATUS-002「未設定消耗速率」 | `#eef1f4` / `#3a3d40` | — |
+| `no_remaining` | STATUS-007「未設定剩餘數量」 | `#eef1f4` / `#3a3d40` | — |
+| 久未更新（REQ-7.14） | STATUS-008「剩餘數量已久未更新」 | `#eef1f4` / `#3a3d40` | 「上次更新 10/2」 |
+
+**分類圖塊**（依分類建立順序輪流使用，第 7 個起重複；圖塊內放分類名稱前 2 個字）：
+
+| # | 底色 / 字色 |
+|---|---|
+| 1 | `#dcf1ff` / `#0a3a80`（藍） |
+| 2 | `#def5f1` / `#0b4a42`（青綠） |
+| 3 | `#fdf0d9` / `#6b3d06`（琥珀） |
+| 4 | `#fde7ee` / `#7a1f44`（玫瑰） |
+| 5 | `#e3f4dc` / `#24501a`（綠） |
+| 6 | `#eef1f4` / `#3a3d40`（灰） |
+
+**使用者代表色**（頭像淡色底，色相相差 60 度以上）：第 1 位 `#dcf1ff` / `#0a3a80`，第 2 位 `#fde7ee` / `#7a1f44`。頭像內放名稱的**最後一個字**（老皮 →「皮」、阿寶 →「寶」）。
+
+#### 字體
+
+- 字體：**Huninn 粉圓體**（Google Fonts，只有 400 一種粗細），備用字體 `'PingFang TC', 'Noto Sans TC', sans-serif`。
+- **全站只用 weight 400**，並設定 `font-synthesis: none`（避免瀏覽器假粗體讓中文糊掉）。層級靠**字級與顏色**區分，不靠粗細。
+- 數字一律 `font-variant-numeric: tabular-nums`，表格與清單中的數字靠右對齊。（Huninn 是否支援等寬數字待 task 2.6 實測；不支援時數字欄改用固定寬度靠右對齊）
+
+| 用途 | 字級 | 行高 |
+|---|---|---|
+| 首頁 / 列表頁標題（h1） | 26px | 1.3 |
+| 子頁標題（新增、編輯、詳情的頂欄 h1） | 20px | 1.3 |
+| 摘要大數字（例：已耗盡 1 項） | 32px | 1.2 |
+| 計算結果數字（總數量、單位均價） | 24px | 1.2 |
+| 項目名稱、輸入框文字 | 16px | 1.5 |
+| 區塊標題（h2）、欄位標籤 | 14–15px | 1.5 |
+| 次要說明 | 13–14px | 1.5 |
+| 最小字（導覽列文字、提示） | 12px，不可更小 | 1.4 |
+
+#### 間距、圓角、尺寸
+
+| 項目 | 值 |
+|---|---|
+| 頁面左右邊距 | 16px |
+| 卡片內距 / 卡片間距 | 16px / 12px |
+| 圓角 | 卡片 20px、卡片內的圖塊 14px、輸入框與分類圖塊 10px、小圖塊 8px、按鈕與標籤 999px（膠囊） |
+| 觸控目標 | 最小 44×44px |
+| 輸入框高度 | 48px |
+| 按鈕高度 | 頂欄按鈕 44px、表單底部按鈕 50px |
+| 頂欄高度 / 底部導覽列高度 | 56px / 68px |
+| 清單列 | 最小 64px（圖塊 40px + 兩行文字），列與列之間 1px `--rule` |
+
+#### 元件
+
+- **頂欄（MainLayout）**：左邊是品牌標記（藍底白字「家」、圓角 10px）加「家庭ERP」；右邊是使用者頭像、名稱和「登出」文字按鈕（AC-1.5）。子頁的頂欄改成「返回箭頭 + 頁面標題」。
+- **底部導覽列**：4 個項目：首頁、購買記錄、商品、分類。每個項目是 22px 線條圖示加 12px 文字；目前所在的頁面用 `--accent` 顏色標示，其他用 `--muted`。手機與桌機都使用底部導覽列（家庭用、主要用手機）。
+- **卡片**：白底、圓角 20px、**沒有陰影也沒有外框**，靠和淺灰底色的差異區分出來。
+- **主要按鈕**：每個畫面**只有一個**主要按鈕，用 `--accent` 填色、白字、膠囊形。次要按鈕是白底加 1px `--control` 邊框。
+- **表單**：標籤放在輸入框**上方**（不用 placeholder 代替標籤），錯誤訊息放在該欄位正下方。
+  - 自訂欄位在標籤下方用 12px 小字標示「算數量」（數量組成欄位）或「只記錄」（一般資訊欄位）。
+  - 自動計算結果放在 `--accent-soft` 淡藍區塊，並附上算式，例如「100 × 12」「599 ÷ 1,200」。
+- **首頁（儀表板）**：
+  - 標題「補貨提醒」和主要按鈕「記一筆」放在同一列。
+  - 下方是兩格摘要（已耗盡 N 項 / 即將耗盡 N 項），接著是需要補貨的清單（分類圖塊 + 名稱 + 第二行說明 + 狀態標籤）。
+  - 最後是「庫存正常」的精簡清單，附「全部商品」連結。
+- **圖示**：線條風格，粗細 1.6px，大小 16–22px，全站同一套。不使用 emoji。
+
+#### 禁止事項（設計 skills 的共同規則）
+
+- 不用漸層、光暈、毛玻璃；靜止的元素不加陰影。只有浮在上層的對話框、選單可以有陰影。
+- 不在每張卡片或每個 KPI 上放「彩色圓底圖示」。
+- 不只靠顏色傳達狀態，一定要搭配文字。
+- 文字對比至少 4.5:1；最小字 12px。
+- 不用 `display_override: fullscreen`（會蓋掉手機狀態列）。
+
 
 ## Data Models
 
