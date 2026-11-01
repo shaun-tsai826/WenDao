@@ -116,7 +116,7 @@
     - 右上角顯示登入使用者名稱與登出按鈕（登出行為待 5.4 接上）
     - _對應：REQ-1, AC-1.5_
 
-  - [ ] 2.7 建立訊息常數檔（src/constants/messages.ts）
+  - [x] 2.7 建立訊息常數檔（src/constants/messages.ts）
     - 集中定義所有訊息常數（對照 design.md v2.1 訊息表）：
     - 成功訊息：MSG-001~010
     - 錯誤訊息：ERR-001~019
