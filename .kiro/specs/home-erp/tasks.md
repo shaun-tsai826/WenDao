@@ -20,7 +20,7 @@
 
 ## Tasks
 
-- [ ] 1. 環境建置：PocketBase 安裝與 migration 檔設定
+- [x] 1. 環境建置：PocketBase 安裝與 migration 檔設定
   - [x] 1.1 下載 PocketBase macOS ARM64 執行檔並初始化 superuser 帳號
     - 確認 PocketBase 最新穩定版（0.23 以上）與相容的 JS SDK 版本，將確切版本號寫回 design.md 外部依賴表
     - 下載該版本 PocketBase macOS ARM64 執行檔至 `WenDao/backend/`
@@ -78,7 +78,7 @@
     - 注意：空字串 `""` 代表公開，必須設為 Locked
     - _對應：REQ-1, AC-1.3_
 
-  - [ ] 1.8 建立種子資料（透過 migration 或 superuser UI 手動建立）
+  - [x] 1.8 建立種子資料（透過 migration 或 superuser UI 手動建立）
     - 建立 2 位使用者（Auth Collection）：密碼從環境變數 `SEED_USER1_PASSWORD`、`SEED_USER2_PASSWORD` 讀取，**不寫進 migration 檔**（repo 可能公開）；或由使用者在 superuser UI 手動建立
     - 建立 2 個範例分類（如「衛生紙」「蔬菜」）
     - 為「衛生紙」分類建立 3 個自訂欄位：抽數(單包)[數量組成]、包數[數量組成]、層數[一般資訊]

@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v1.8（2026-11-01）
-> 變更摘要：v1.8 完成 task 1.7（API Rules，公開註冊已關閉）。
+> 版本：v1.9（2026-11-01）
+> 變更摘要：v1.9 完成 task 1.8（種子資料），task 1（環境建置）全部完成。
+> v1.8 完成 task 1.7（API Rules，公開註冊已關閉）。
 > v1.7 完成 task 1.6（purchase_record_field_values），新增 K-7。
 > v1.6 完成 task 1.5（purchase_records），新增 K-6。
 > v1.5 完成 task 1.4（products）。新增「需回寫 Kiro 的變更」清單。
@@ -13,10 +14,10 @@
 
 ## 目前階段
 
-**實作中。** 已完成 task 1.1～1.7，下一步是 task 1.8。
+**實作中。** **task 1（環境建置）全部完成**，下一步是 task 2.1（建立 Quasar 前端專案）。
 
 ```
-規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（1.7 完成，下一步 1.8）
+規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（task 1 完成，下一步 2.1）
   (完成)       (完成)          (完成)            (完成)        ◄ 目前在這裡
 ```
 
@@ -48,10 +49,11 @@
 | 2026-11-01 | **task 1.5**：migration `1793539430_purchase_records.js`（product、user 關聯皆 Restrict；total_price 必填且 ≥ 0.01），已在臨時資料庫用 API 驗證 | — |
 | 2026-11-01 | **task 1.6**：migration `1793540171_purchase_record_field_values.js`（purchase_record Cascade、custom_field Restrict、(purchase_record, custom_field) 複合 UNIQUE INDEX），已在臨時資料庫用 API 驗證 | — |
 | 2026-11-01 | **task 1.7**：migration `1793543324_api_rules.js`（5 張資料表一律「已登入才可操作」；users 只能 List/View，Create/Update/Delete 為 Locked）。已用未登入 / 使用者 / superuser 三種身分驗證；正式環境公開註冊回 403 | — |
+| 2026-11-01 | **task 1.8**：使用者在 superuser UI 手動建立 2 位家庭使用者（email 不寫進 repo）；migration `1793544611_seed_data.js` 建立分類「衛生紙」「蔬菜」、衛生紙的 3 個自訂欄位、商品「春風 抽取式衛生紙」 | — |
 
 ## 待辦（依順序）
 
-1. **[Claude Code]** task 1.8：建立種子資料（2 位使用者、2 個分類、3 個自訂欄位、1 個商品）。
+1. **[Claude Code]** task 2.1：用 `npm init quasar` 在 `frontend/` 建立 Quasar 專案（Vue 3 + Vite + PWA）。
 2. 之後依 `tasks.md` 順序，一次做一個 task → 勾選 `[x]` → commit（message 帶 task 編號）。
 
 ## 重要決定紀錄
@@ -71,6 +73,7 @@
 | 自訂欄位名稱唯一 | 使用者決定**加上** `(category, field_name)` 複合 UNIQUE INDEX，前端仍會先查詢並顯示友善訊息 | task 1.3 |
 | 剩餘數量「未設定」 | PocketBase 的 number 存不了 null（沒填或送 null 都會存 0，已實測）。使用者決定：**`remaining_updated_at` 為空 = 未設定**，前端讀取商品時把 remaining_quantity 轉成 null；兩個欄位一起寫入、一起清空。consumption_rate 的 0 = 未設定 | task 1.4 |
 | 購買記錄的數量缺失 | quantity 沒填會存 0；**quantity = 0 視為缺失**（AC-6.5 原本就把 0 和缺失一樣處理）。前端讀取時把 quantity 0 與它的 unit_price 都轉成 null，算歷史均價時排除這些記錄 | task 1.5 |
+| 種子資料 | 使用者帳號由使用者在後台手動建立（**真實 email 不進 repo**）；BDD 的 Alice / Bob 只是測試用假資料。正式資料庫只建 tasks.md 列的 1 個商品（春風），BDD 的 Kleenex 只放在前端測試假資料。「層數」型別依 BDD 用 number | task 1.8 |
 | 欄位值唯一 | 沿用前兩次的決定：加上 `(purchase_record, custom_field)` 複合 UNIQUE INDEX | task 1.6 |
 | 商品唯一 | 使用者決定**加上** `(category, brand, name)` 複合 UNIQUE INDEX（只擋完全相同）；AC-3.6 的正規化比對由前端負責 | task 1.4 |
 | Kiro 不能 push | Kiro 改完的文件由 Claude Code 審查後 commit / push | — |
