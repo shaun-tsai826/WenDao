@@ -21,7 +21,7 @@
 ## Tasks
 
 - [ ] 1. 環境建置：PocketBase 安裝與 migration 檔設定
-  - [ ] 1.1 下載 PocketBase macOS ARM64 執行檔並初始化 superuser 帳號
+  - [x] 1.1 下載 PocketBase macOS ARM64 執行檔並初始化 superuser 帳號
     - 確認 PocketBase 最新穩定版（0.23 以上）與相容的 JS SDK 版本，將確切版本號寫回 design.md 外部依賴表
     - 下載該版本 PocketBase macOS ARM64 執行檔至 `WenDao/backend/`
     - 執行 `./pocketbase serve` 初次啟動

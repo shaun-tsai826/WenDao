@@ -1,7 +1,8 @@
 # Design Document
 
-> 版本：v2.2（2026-11-01）
-> 變更摘要：v2.2 依 review-notes v1.2 修正：JS SDK 版本改為與 PocketBase 0.23+ 相容的 0.22 以上，確切版本於 task 1.1 確認後鎖定（F-1）；剩餘數量對話框預設值改為目前的剩餘數量（F-4）。
+> 版本：v2.3（2026-11-01）
+> 變更摘要：v2.3 task 1.1 確認並鎖定版本：PocketBase 0.40.6、JS SDK 0.28.1。
+> v2.2 變更摘要：v2.2 依 review-notes v1.2 修正：JS SDK 版本改為與 PocketBase 0.23+ 相容的 0.22 以上，確切版本於 task 1.1 確認後鎖定（F-1）；剩餘數量對話框預設值改為目前的剩餘數量（F-4）。
 > v2.1 變更摘要：依 review-notes R-1~R-6、C-6~C-13、Q-1~Q-4 修正。主要變更：users API Rule 改為 Locked（R-1）、外網存取改用 tailscale serve + HTTPS（R-2）、登入後導向首頁（R-3）、PocketBase 版本鎖定 0.23.4 + SDK 0.21.5（R-4）、Chart.js 改 npm 安裝（R-5）、路徑改為 repo 內 + migrations 建表（R-6）、新增剩餘數量與消耗單位欄位及計算（C-6/C-8）、消耗狀態邊界修正（C-7）、購買記錄列表補新増者（C-9）、自訂欄位關聯改 Restrict + 編輯限制（C-10）、日期處理規則（C-11）、價格比較 null 處理（C-12）、新增訊息 ERR-015~019/MSG-008~010/STATUS-006~008。
 
 ## Overview
@@ -249,7 +250,7 @@ PocketBase schema 不支援 CHECK 約束（如「購入日期不可為未來」�
 
 #### 限制 4：JSVM 語法限制
 
-PocketBase 0.23 內建 JavaScript 虛擬機（JSVM，基於 goja），可撰寫伺服器端 hooks，支援大部分 **ES2020 語法**（含 `const`/`let`、箭頭函數、模板字串），但**不支援 top-level await**。
+PocketBase（0.23 起，含本專案的 0.40.6）內建 JavaScript 虛擬機（JSVM，基於 goja），可撰寫伺服器端 hooks，支援大部分 **ES2020 語法**（含 `const`/`let`、箭頭函數、模板字串），但**不支援 top-level await**。
 
 **影響：** 本系統的業務邏輯全部在前端以 Vue 3 + TypeScript 實作，不依賴 PocketBase JSVM。若未來需要伺服器端驗證，hooks 程式碼可使用 ES2020 語法撰寫（但需注意 goja 對部分 ES2020 特性的支援差異）。
 
@@ -1229,11 +1230,11 @@ try {
 
 | 依賴 | 用途 | 版本 | 失敗時處理方式 |
 |------|------|------|---------------|
-| PocketBase | 後端（API + DB + 靜態檔案服務） | 0.23 以上（task 1.1 開工時確認最新穩定版並鎖定確切版本） | 服務未啟動時前端顯示 ERR-014；SQLite 檔案損毀需從備份還原 |
+| PocketBase | 後端（API + DB + 靜態檔案服務） | **0.40.6**（2026-10-23 發布，task 1.1 鎖定） | 服務未啟動時前端顯示 ERR-014；SQLite 檔案損毀需從備份還原 |
 | Vue 3 | 前端框架 | 3.4+ | 編譯期錯誤，不會進入執行期 |
 | Quasar Framework | UI 元件 + PWA + 建置 | 2.15+ | CDN 不適用（Vite 建置打包），不會執行期失敗 |
 | Pinia | 前端 state 管理 | 2.1+ | 編譯期依賴 |
-| pocketbase (npm) | PocketBase JS SDK | 0.22 以上，須與 PocketBase 版本相容（PocketBase 0.23+ 需要 SDK 0.22+；0.21.x 不相容，且沒有 `pb.authStore.record`） | API 請求失敗時拋出 `ClientResponseError`，前端攔截處理 |
+| pocketbase (npm) | PocketBase JS SDK | **0.28.1**（task 1.1 鎖定；已支援 PocketBase 0.40。注意：PocketBase 0.23+ 需要 SDK 0.22+，0.21.x 不相容） | API 請求失敗時拋出 `ClientResponseError`，前端攔截處理 |
 | Chart.js | 價格趨勢圖（npm 安裝，Vite 打包） | 4.x | N/A（Vite 打包，無 CDN 依賴）；無資料時顯示 STATUS-005 |
 | Tailscale | 外網私人 VPN | latest | 通道中斷時外網無法存取，內網不受影響，需重新連接 Tailscale |
 | fast-check | 屬性測試框架 | 3.x | 僅用於測試，不影響正式環境 |
