@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v3.1（2026-11-02）
-> 變更摘要：v3.1 完成 task 2.7（訊息常數檔）；刪除範例元件 EssentialLink。
+> 版本：v3.2（2026-11-02）
+> 變更摘要：v3.2 完成 task 2.8（Vitest 測試環境，131 項測試），task 2 全部完成。
+> v3.1 完成 task 2.7（訊息常數檔）；刪除範例元件 EssentialLink。
 > v3.0 完成 task 2.6（MainLayout、Quasar 色彩、粉圓體、zh-TW）。
 > v2.9 設計稿確認（B 資訊卡片 + A 粉圓體），UI 設計規範寫入 design.md v2.8。
 > v2.8 K-13 已回寫 design.md v2.7；刪除範例 store。
@@ -26,13 +27,13 @@
 
 ## 目前階段
 
-**實作中。** task 1（環境建置）全部完成；task 2.1～2.7 完成，下一步是 task 2.8（Vitest + fast-check 測試環境）。
+**實作中。** task 1（環境建置）全部完成；**task 1、task 2 全部完成**，下一步是 task 3.1（核心商業邏輯 composables）。commit 前執行 `npm test`（目前 131 項）。
 
 > **2026-11-01 起短期內不使用 Kiro**：規格需要修改時，由 Claude Code 先問使用者、同意後直接改（含版本號與變更摘要）。
 > **task 2.6 之前**：先用已安裝的設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿（儀表板、新增購買記錄），使用者選定後整理成 UI 設計規範寫進規格。
 
 ```
-規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（2.7 完成，下一步 2.8）
+規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（task 2 完成，下一步 3.1）
   (完成)       (完成)          (完成)            (完成)        ◄ 目前在這裡
 ```
 
@@ -74,10 +75,11 @@
 | 2026-11-02 | **設計稿**：呼叫 ui-ux-pro-max、taste-skill 產出 A 溫暖居家 / B 資訊卡片 / C 家用帳本 3 種手機畫面稿（首頁、新增購買記錄）；使用者選 **B + A 的 Huninn 粉圓體**。整理成「UI 設計規範」（色彩、狀態標籤、分類圖塊、字體、間距、元件、禁止事項），14 組文字配色對比皆 ≥ 4.5:1 | design.md v2.8；設計稿 https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf |
 | 2026-11-02 | **task 2.6**：MainLayout（頂欄：品牌、頭像、名稱、登出按鈕；底部 4 項導覽列）、`AppIcon` 線條圖示、Quasar 色彩與 CSS 變數、Huninn 粉圓體（只用 400）、Quasar 語言包 zh-TW、manifest 顏色；登入佔位頁改為不依賴 q-layout。以無頭 Chrome 對正式 build 截圖驗證：導覽列目前頁、粉圓體載入、全站 400、Huninn 數字等寬（每個 9.81px） | — |
 | 2026-11-02 | **task 2.7**：`src/constants/messages.ts`（MSG 10、ERR 19、CONFIRM 2、STATUS 8，語意化名稱 + 註解標規格編號）。比對程式逐字核對 design.md 訊息表與 requirements.md：79 PASS；故意改錯一字可抓到。刪除範例元件 EssentialLink.vue（使用者同意） | — |
+| 2026-11-02 | **task 2.8**：Vitest 5.0.5 + fast-check + Vue Test Utils + jsdom，`npm test`。把 2.3～2.7 的一次性腳本改寫成正式測試，共 **131 項全過**（restoreAuth 9、authGuard 28、stores 13、MainLayout 6、messages 75）；故意改壞守衛會有 12 項失敗 | `docs/setup-frontend.md` v1.2 |
 
 ## 待辦（依順序）
 
-1. **[Claude Code]** task 2.8：Vitest + fast-check + Vue Test Utils 測試環境；把 2.3～2.7 用一次性腳本驗證過的項目（restoreAuth 6 情境、authGuard 26 項、stores 7 項、訊息 79 項）改寫成正式測試。
+1. **[Claude Code]** task 3.1：依 tasks.md 開始實作核心商業邏輯 composables（純函數 + 屬性測試）。
 3. 之後依 `tasks.md` 順序，一次做一個 task → 勾選 `[x]` → commit（message 帶 task 編號）。
 
 ## 重要決定紀錄

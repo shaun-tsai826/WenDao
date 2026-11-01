@@ -86,7 +86,7 @@
     - 建立 1 個範例商品：春風抽取式衛生紙（brand=春風、name=抽取式衛生紙、unit=抽、consumption_unit=包）
     - _對應：REQ-1, REQ-2, REQ-4, REQ-7_
 
-- [ ] 2. 前端專案初始化：Quasar + Pinia + PocketBase SDK + 路由
+- [x] 2. 前端專案初始化：Quasar + Pinia + PocketBase SDK + 路由
   - [x] 2.1 建立 Quasar 專案（Vue 3 + Vite + PWA 模式）與基礎設定
     - 使用 `npm init quasar` 建立 SPA 專案於 `frontend/` 目錄，啟用 Pinia、Vue Router
     - 執行 `quasar mode add pwa`；`quasar.config.ts` 設定 Workbox `GenerateSW`，PWA manifest 寫在 `src-pwa/manifest.json`
@@ -125,7 +125,7 @@
     - 供各頁面搭配 Quasar Notify plugin 統一使用
     - _對應：REQ-2, REQ-3, REQ-4, REQ-5, REQ-6, REQ-7, REQ-8_
 
-  - [ ] 2.8 設定 Vitest 與 fast-check 測試環境
+  - [x] 2.8 設定 Vitest 與 fast-check 測試環境
     - 設定 Vitest config、加入 fast-check、Vue Test Utils
     - 建立 `src/composables/__tests__/` 測試目錄
     - _對應：REQ-6, REQ-7, REQ-8_
