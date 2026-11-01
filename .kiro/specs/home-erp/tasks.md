@@ -86,7 +86,7 @@
     - _對應：REQ-1, REQ-2, REQ-4, REQ-7_
 
 - [ ] 2. 前端專案初始化：Quasar + Pinia + PocketBase SDK + 路由
-  - [ ] 2.1 建立 Quasar 專案（Vue 3 + Vite + PWA 模式）與基礎設定
+  - [x] 2.1 建立 Quasar 專案（Vue 3 + Vite + PWA 模式）與基礎設定
     - 使用 `npm init quasar` 建立 SPA 專案於 `frontend/` 目錄，啟用 Pinia、Vue Router
     - 設定 `quasar.config.js`（含 PWA manifest 與 Workbox `generateSW`）
     - _對應：REQ-9, AC-9.2_
