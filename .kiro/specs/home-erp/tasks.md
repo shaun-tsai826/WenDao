@@ -97,7 +97,7 @@
     - 設定 `quasar.config.ts` 的 `build.defineEnv` 變數 `VITE_POCKETBASE_URL`（正式環境：`/`，與 pb_public 同網址；開發環境：`http://localhost:8090`）
     - _對應：REQ-9_
 
-  - [ ] 2.3 建立 PocketBase client 初始化（src/lib/pocketbase.ts）與 boot 檔
+  - [x] 2.3 建立 PocketBase client 初始化（src/lib/pocketbase.ts）與 boot 檔
     - 初始化 PocketBase client，匯出 `pb` 實例
     - 建立 `src/boot/pocketbase.ts`：啟動時從 authStore 恢復登入狀態、監聽 token 變化
     - _對應：REQ-1, AC-1.7_

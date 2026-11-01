@@ -12,4 +12,7 @@
  *   readonly MY_OTHER_VAR: string;
  * }
  */
-interface ImportMetaEnv {}
+interface ImportMetaEnv {
+  // quasar.config.ts 的 build.defineEnv（task 2.2）
+  readonly VITE_POCKETBASE_URL: string;
+}
