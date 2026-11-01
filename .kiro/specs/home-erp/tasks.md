@@ -130,68 +130,68 @@
     - 建立 `src/composables/__tests__/` 測試目錄
     - _對應：REQ-6, REQ-7, REQ-8_
 
-- [ ] 3. 核心業務邏輯 composables 與屬性測試
-  - [ ] 3.1 實作 calculateUnitPrice composable
+- [x] 3. 核心業務邏輯 composables 與屬性測試
+  - [x] 3.1 實作 calculateUnitPrice composable
     - `useUnitPrice.ts`：總價 ÷ 數量，保留 4 位小數；quantity 為 0 或 null 回傳 null
     - _對應：REQ-6, AC-6.1, AC-6.5_
 
-  - [ ] 3.2 屬性測試 Property 1：單位均價計算正確性
+  - [x] 3.2 屬性測試 Property 1：單位均價計算正確性
     - **Property 1: Unit price calculation correctness**
     - **Validates: Requirements 6.1, 6.5**
     - 生成隨機 total_price > 0 與 quantity > 0，驗證 unit_price = total / qty（4 位小數）；生成 quantity = 0 / null，驗證回傳 null
     - _對應：REQ-6, AC-6.1, AC-6.5_
 
-  - [ ] 3.3 實作 calculateQuantityFromComponents composable
+  - [x] 3.3 實作 calculateQuantityFromComponents composable
     - `useQuantityFromComponents.ts`：將「數量組成欄位」值相乘為總數量；無數量組成欄位回傳 null；輸入 <= 0 時前端驗證回報錯誤
     - _對應：REQ-4, AC-4.3, AC-4.6_
 
-  - [ ] 3.4 屬性測試 Property 2,3：數量組成計算與非正值驗證
+  - [x] 3.4 屬性測試 Property 2,3：數量組成計算與非正值驗證
     - **Property 2: Quantity from component fields**
     - **Property 3: Quantity component field validation**
     - **Validates: Requirements 4.3, 4.6**
     - 生成隨機正整數集合，驗證乘積正確；生成空集合，驗證回傳 null；生成非正值，驗證被拒並顯示 ERR-008
     - _對應：REQ-4, AC-4.3, AC-4.6_
 
-  - [ ] 3.5 實作 calculateHistoricalAverage composable
+  - [x] 3.5 實作 calculateHistoricalAverage composable
     - `useHistoricalAverage.ts`：所有有效 unit_price 的算術平均，保留 4 位小數；全為 null 回傳 null
     - _對應：REQ-6, AC-6.3_
 
-  - [ ] 3.6 屬性測試 Property 4：歷史均價計算
+  - [x] 3.6 屬性測試 Property 4：歷史均價計算
     - **Property 4: Historical average calculation**
     - **Validates: Requirements 6.3**
     - 生成隨機 unit_price 集合，驗證平均值 = mean 且 min <= avg <= max
     - _對應：REQ-6, AC-6.3_
 
-  - [ ] 3.7 實作 calculateDepletionDate composable
+  - [x] 3.7 實作 calculateDepletionDate composable
     - `useDepletionEstimate.ts`：參數改為 `(remainingQty, remainingUpdatedAt, consumptionRate, period)`
     - 公式：耗盡日期 = remainingUpdatedAt + (remainingQty ÷ consumptionRate) × 週期天數（monthly=30, weekly=7）
     - 速率未設定或 <= 0 回傳 null；remainingQty 為 null 回傳 null
     - _對應：REQ-7, AC-7.2_
 
-  - [ ] 3.8 屬性測試 Property 5：消耗日期計算
+  - [x] 3.8 屬性測試 Property 5：消耗日期計算
     - **Property 5: Depletion date calculation**
     - **Validates: Requirements 7.2**
     - 生成隨機 remainingQty、remainingUpdatedAt、rate、period，驗證耗盡日期 = remainingUpdatedAt + (remainingQty/rate) * period_days；生成 null remainingQty，驗證回傳 null
     - _對應：REQ-7, AC-7.2_
 
-  - [ ] 3.9 實作 getDepletionStatus composable
+  - [x] 3.9 實作 getDepletionStatus composable
     - `useDepletionStatus.ts`：依耗盡日期分類為 unset / no_remaining / normal / soon / depleted
     - 邊界：`diffDays < 0` → depleted；`0 ≤ diffDays ≤ 7` → soon（含今天）；`diffDays > 7` → normal
     - 未設定速率回傳 unset；已設定速率但 remainingQty 為 null 回傳 no_remaining
     - _對應：REQ-7, AC-7.4, AC-7.5, AC-7.7, AC-7.12_
 
-  - [ ] 3.10 屬性測試 Property 6：消耗狀態分類
+  - [x] 3.10 屬性測試 Property 6：消耗狀態分類
     - **Property 6: Depletion status classification**
     - **Validates: Requirements 7.4, 7.5, 7.7, 7.12**
     - 生成涵蓋未設定速率、未設定剩餘數量、正常、即將耗盡（0 ≤ diffDays ≤ 7，含 diffDays=0 今天）、已耗盡的隨機日期，驗證狀態分類正確
     - _對應：REQ-7, AC-7.4, AC-7.5, AC-7.7, AC-7.12_
 
-  - [ ] 3.11 實作 compareWithHistoricalAverage composable
+  - [x] 3.11 實作 compareWithHistoricalAverage composable
     - `usePriceComparison.ts`：比較當次單位均價與歷史均價，回傳 'higher' / 'lower' / 'equal' / 'na'
     - 參數改為可接受 null，任一方為 null 時回傳 'na'
     - _對應：REQ-8, AC-8.9, AC-8.10_
 
-  - [ ] 3.12 屬性測試 Property 7：價格比較
+  - [x] 3.12 屬性測試 Property 7：價格比較
     - **Property 7: Price comparison with historical average**
     - **Validates: Requirements 8.9, 8.10**
     - 生成隨機 unit_price 與 historical_average，驗證比較結果正確；生成 null 輸入，驗證回傳 'na'

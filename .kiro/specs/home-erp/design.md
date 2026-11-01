@@ -1,7 +1,8 @@
 # Design Document
 
-> 版本：v2.8（2026-11-02）
-> 變更摘要：v2.8 新增「UI 設計規範」（使用者確認：設計稿 B 資訊卡片風格 + A 的 Huninn 粉圓體）；PWA manifest 的 theme_color / background_color 改為規範色。
+> 版本：v2.9（2026-11-02）
+> 變更摘要：v2.9 task 3（使用者同意）：日期改以 'YYYY-MM-DD' 日曆日期字串計算（src/composables/dates.ts），getDepletionStatus 新增可選參數 today；新增 validateQuantityComponent(s)（ERR-008）；修正歷史均價註解。
+> v2.8 變更摘要：v2.8 新增「UI 設計規範」（使用者確認：設計稿 B 資訊卡片風格 + A 的 Huninn 粉圓體）；PWA manifest 的 theme_color / background_color 改為規範色。
 > v2.7 變更摘要：v2.7 回寫 K-13（使用者同意）：useAuthStore 改由 syncFromPb() 從 SDK 複製登入狀態，boot 註冊 pb.authStore.onChange；新增 src/types/models.ts（6 張表的型別）。
 > v2.6 變更摘要：v2.6 回寫 K-12（使用者同意）：功能頁改為 MainLayout 子路由；守衛改為純函數 authGuard，登入狀態取自 pb.authStore.isValid；history 模式由 quasar.config.ts 設定；保留 404 頁。
 > v2.5 變更摘要：v2.5 回寫 K-10、K-11（使用者同意）：import 路徑改用 Quasar 3 內建的 `@/` 別名；boot 範例改為呼叫 `src/lib/restoreAuth.ts`（含 authRefresh），Pinia 同步改在 auth store 內處理。
@@ -633,7 +634,9 @@ PWA 模式重點：
 
 此段落是本設計與原方案（Spring Boot）最大的差異：**PocketBase 不執行任何業務邏輯，所有計算在前端完成後寫入資料庫**。
 
-以下計算函數以 Vue 3 composable / 純函數形式實作，放在 `src/composables/`，可獨立單元測試與屬性測試。
+以下計算函數以 Vue 3 composable / 純函數形式實作，放在 `src/composables/`，可獨立單元測試與屬性測試（`src/composables/__tests__/`）。
+
+**日期一律用 `'YYYY-MM-DD'` 字串計算**（`src/composables/dates.ts`）：資料庫的 `2026-10-02 00:00:00.000Z` 取前 10 碼就是那一天；加減天數時當成 UTC 日期，結果不受裝置時區影響。共用工具：`toDateOnly`（取日期部分，空值回傳 null）、`addDays`、`diffDays`、`localToday`（裝置本地今天）、`round4`（四捨五入到 4 位小數）。
 
 #### 1. 單位均價計算
 
@@ -658,7 +661,7 @@ export function calculateUnitPrice(
 // src/composables/useHistoricalAverage.ts
 /**
  * 計算歷史均價 = 所有單位均價的算術平均
- * 若陣列為空或含 null，回傳 null
+ * null（無法計算的記錄）會被略過；全部為 null 或陣列為空時回傳 null
  */
 export function calculateHistoricalAverage(
   unitPrices: (number | null)[]
@@ -697,6 +700,12 @@ export function calculateQuantityFromComponents(
   
   return product
 }
+
+/**
+ * 數量組成欄位必須大於 0（AC-4.6）：通過回傳 null，否則回傳 ERR-008「數量組成欄位必須大於 0」
+ * validateQuantityComponents(fieldValues, customFields) 回傳「欄位 id → 錯誤訊息」，只檢查數量組成欄位中有填的值
+ */
+export function validateQuantityComponent(value: number): string | null
 ```
 
 #### 4. 消耗預估計算
@@ -712,20 +721,20 @@ export function calculateQuantityFromComponents(
  */
 export function calculateDepletionDate(
   remainingQty: number | null,
-  remainingUpdatedAt: Date | null,
+  remainingUpdatedAt: string | null,   // 'YYYY-MM-DD' 或資料庫值 'YYYY-MM-DD 00:00:00.000Z'
   consumptionRate: number | null,
-  period: 'monthly' | 'weekly' | null
-): Date | null {
+  period: 'monthly' | 'weekly' | '' | null
+): string | null {                       // 'YYYY-MM-DD'
   if (!consumptionRate || consumptionRate <= 0 || !period) return null
-  if (remainingQty === null || remainingUpdatedAt === null) return null
-  
-  const periodDays = period === 'monthly' ? 30 : 7
-  const days = (remainingQty / consumptionRate) * periodDays
-  
-  const result = new Date(remainingUpdatedAt)
-  result.setDate(result.getDate() + Math.round(days))
-  return result
+  const updatedAt = toDateOnly(remainingUpdatedAt)   // '' → null（剩餘數量未設定）
+  if (remainingQty === null || updatedAt === null) return null
+
+  const days = (remainingQty / consumptionRate) * PERIOD_DAYS[period]   // monthly 30、weekly 7
+  return addDays(updatedAt, Math.round(days))   // 天數四捨五入到整天
 }
+
+// 例：calculateDepletionDate(1, '2026-10-02', 1, 'monthly') → '2026-11-01'
+//     calculateDepletionDate(4, '2026-11-01', 10, 'weekly') → 2.8 天 → '2026-11-04'
 ```
 
 #### 5. 消耗狀態分類
@@ -743,26 +752,20 @@ type DepletionStatus = 'unset' | 'no_remaining' | 'normal' | 'soon' | 'depleted'
  * - depleted: 耗盡日期已過（diffDays < 0，已耗盡）
  */
 export function getDepletionStatus(
-  depletionDate: Date | null,
+  depletionDate: string | null,     // calculateDepletionDate 的結果
   consumptionRate: number | null,
-  remainingQty: number | null
+  remainingQty: number | null,
+  today: string = localToday()      // 可選；不傳時用裝置本地日期，測試時可傳固定日期
 ): DepletionStatus {
   if (!consumptionRate || consumptionRate <= 0) return 'unset'
   if (remainingQty === null) return 'no_remaining'
-  if (!depletionDate) return 'unset'
-  
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const depletion = new Date(depletionDate)
-  depletion.setHours(0, 0, 0, 0)
-  
-  const diffDays = Math.floor(
-    (depletion.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-  )
-  
-  if (diffDays > 7) return 'normal'
-  if (diffDays >= 0) return 'soon'   // 0 ≤ diffDays ≤ 7（含今天）
-  return 'depleted'                   // diffDays < 0
+  const depletion = toDateOnly(depletionDate)
+  if (depletion === null) return 'unset'
+
+  const days = diffDays(today, depletion)
+  if (days > 7) return 'normal'
+  if (days >= 0) return 'soon'   // 0 ≤ days ≤ 7（含今天）
+  return 'depleted'              // days < 0
 }
 ```
 
