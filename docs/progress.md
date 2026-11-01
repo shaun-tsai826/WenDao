@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v2.6（2026-11-01）
-> 變更摘要：v2.6 K-12 已回寫 design.md v2.6。
+> 版本：v2.7（2026-11-01）
+> 變更摘要：v2.7 完成 task 2.5（Pinia stores 骨架、auth 同步），新增 K-13。
+> v2.6 K-12 已回寫 design.md v2.6。
 > v2.5 完成 task 2.4（路由與守衛），新增 K-12。
 > v2.4 K-10、K-11 已回寫 design.md v2.5。
 > v2.3 完成 task 2.3（PocketBase client、boot、restoreAuth），新增 K-10、K-11。
@@ -21,13 +22,13 @@
 
 ## 目前階段
 
-**實作中。** task 1（環境建置）全部完成；task 2.1～2.4 完成，下一步是 task 2.5（Pinia stores 骨架）。
+**實作中。** task 1（環境建置）全部完成；task 2.1～2.5 完成，下一步是 **設計稿（task 2.6 之前）**，之後才做 task 2.6。
 
 > **2026-11-01 起短期內不使用 Kiro**：規格需要修改時，由 Claude Code 先問使用者、同意後直接改（含版本號與變更摘要）。
 > **task 2.6 之前**：先用已安裝的設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿（儀表板、新增購買記錄），使用者選定後整理成 UI 設計規範寫進規格。
 
 ```
-規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（2.4 完成，下一步 2.5）
+規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（2.5 完成，下一步設計稿 → 2.6）
   (完成)       (完成)          (完成)            (完成)        ◄ 目前在這裡
 ```
 
@@ -65,11 +66,12 @@
 | 2026-11-01 | 規格回寫 K-1～K-9（使用者同意，不經 Kiro） | design.md v2.4、tasks.md v1.3 |
 | 2026-11-01 | **task 2.3**：`src/lib/pocketbase.ts`（pb 實例）、`src/lib/restoreAuth.ts`（啟動時恢復登入：過期清除、有效則 authRefresh、連不上保留）、`src/boot/pocketbase.ts`。對測試伺服器驗證 6 種情境全部通過 | — |
 | 2026-11-01 | **task 2.4**：12 條路由（/login 獨立，其餘 11 條為 MainLayout 子路由）、`src/router/authGuard.ts` 純函數守衛、history 模式、12 個佔位頁；刪除 Quasar 範例頁 IndexPage / SecondPage（使用者同意）。真實 vue-router 測試 26 項通過；PocketBase pb_public 的 history fallback 驗證通過 | — |
+| 2026-11-01 | **task 2.5**：`src/types/models.ts`（6 張表的型別）、auth / category / product / purchase 四個 store 骨架（未實作的 action 丟出「尚未實作（task X）」）；auth store 由 boot 透過 `pb.authStore.onChange` 自動同步。執行期測試 7 項通過 | — |
 
 ## 待辦（依順序）
 
-1. **[Claude Code]** task 2.5：Pinia stores 骨架（auth、category、product、purchase），auth store 接上 `pb.authStore.onChange`。
-2. **[Claude Code + 使用者]** task 2.6 前：用設計 skills 做畫面稿，使用者確認風格。
+1. **[Claude Code + 使用者]** task 2.6 前：用設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿，使用者確認風格。
+2. **[Claude Code]** task 2.6：MainLayout 導覽列與使用者資訊（依確認的設計）。
 3. 之後依 `tasks.md` 順序，一次做一個 task → 勾選 `[x]` → commit（message 帶 task 編號）。
 
 ## 重要決定紀錄
@@ -115,6 +117,7 @@
 | K-10 | task 2.3 | **（已回寫 v2.5）** design.md 的 import 路徑 `lib/…`、`stores/…`、`composables/…` 改為 `@/lib/…`、`@/stores/…`、`@/composables/…`（Quasar 3 只內建 `@/` 別名） |
 | K-11 | task 2.3 | **（已回寫 v2.5）** design.md boot 範例：恢復登入的邏輯抽到 `src/lib/restoreAuth.ts`（client 由參數傳入，方便測試），並加上 `authRefresh`（換新 token、確認帳號存在；連不上伺服器時保留登入）；`pb.authStore.onChange` 同步 Pinia 的部分移到 task 2.5 |
 | K-12 | task 2.4 | **（已回寫 v2.6）** design.md 路由範例：11 條功能頁改為 MainLayout 的子路由（`meta.requiresAuth` 寫在父路由）；守衛改為純函數 `authGuard(to, isAuthenticated)`，登入狀態取自 `pb.authStore.isValid`（不依賴 auth store）；路由模式由 quasar.config.ts 的 `vueRouterMode: 'history'` 設定；保留 Quasar 的 404 頁（ErrorNotFound） |
+| K-13 | task 2.5 | **（未回寫）** design.md 的 useAuthStore：state 初始值改為空（user: null、token: ''），由 `syncFromPb()` 從 SDK 複製（token 過期視為未登入）；boot 呼叫 `syncFromPb()` 並註冊 `pb.authStore.onChange`；新增 `src/types/models.ts` 存放 6 張表的型別（資料庫原始值） |
 | K-7 | task 1.6 | purchase_record_field_values 同 K-3，改為 `(purchase_record, custom_field)` UNIQUE INDEX + 前端保證 |
 
 ## 下次接手時

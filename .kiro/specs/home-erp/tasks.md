@@ -107,7 +107,7 @@
     - 實作 `beforeEach` 守衛：未登入存取受保護路由導向 /login；已登入存取 /login 導向 /
     - _對應：REQ-1, AC-1.3, AC-1.1_
 
-  - [ ] 2.5 建立 Pinia stores 骨架
+  - [x] 2.5 建立 Pinia stores 骨架
     - 建立 `auth.ts`、`category.ts`、`product.ts`、`purchase.ts` 的 state/getters/actions 骨架
     - _對應：REQ-1, REQ-2, REQ-3, REQ-5_
 
