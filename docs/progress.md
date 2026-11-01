@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v2.5（2026-11-01）
-> 變更摘要：v2.5 完成 task 2.4（路由與守衛），新增 K-12。
+> 版本：v2.6（2026-11-01）
+> 變更摘要：v2.6 K-12 已回寫 design.md v2.6。
+> v2.5 完成 task 2.4（路由與守衛），新增 K-12。
 > v2.4 K-10、K-11 已回寫 design.md v2.5。
 > v2.3 完成 task 2.3（PocketBase client、boot、restoreAuth），新增 K-10、K-11。
 > v2.2 K-1～K-9 已回寫 design.md v2.4、tasks.md v1.3。
@@ -35,7 +36,7 @@
 | 文件 | 版本 |
 |---|---|
 | requirements.md | v1.3 |
-| design.md | v2.5 |
+| design.md | v2.6 |
 | tasks.md | v1.3（勾選狀態持續更新） |
 | BDD.md | v1.1 |
 | review-notes.md | v1.2 |
@@ -113,7 +114,7 @@
 | K-9 | task 2.2 | tasks.md 2.2 與 design.md：`build.env` → `build.defineEnv`；正式環境 `VITE_POCKETBASE_URL` 由 `https://<mac-mini>.<tailnet>.ts.net` 改為 `/` |
 | K-10 | task 2.3 | **（已回寫 v2.5）** design.md 的 import 路徑 `lib/…`、`stores/…`、`composables/…` 改為 `@/lib/…`、`@/stores/…`、`@/composables/…`（Quasar 3 只內建 `@/` 別名） |
 | K-11 | task 2.3 | **（已回寫 v2.5）** design.md boot 範例：恢復登入的邏輯抽到 `src/lib/restoreAuth.ts`（client 由參數傳入，方便測試），並加上 `authRefresh`（換新 token、確認帳號存在；連不上伺服器時保留登入）；`pb.authStore.onChange` 同步 Pinia 的部分移到 task 2.5 |
-| K-12 | task 2.4 | **（未回寫）** design.md 路由範例：11 條功能頁改為 MainLayout 的子路由（`meta.requiresAuth` 寫在父路由）；守衛改為純函數 `authGuard(to, isAuthenticated)`，登入狀態取自 `pb.authStore.isValid`（不依賴 auth store）；路由模式由 quasar.config.ts 的 `vueRouterMode: 'history'` 設定；保留 Quasar 的 404 頁（ErrorNotFound） |
+| K-12 | task 2.4 | **（已回寫 v2.6）** design.md 路由範例：11 條功能頁改為 MainLayout 的子路由（`meta.requiresAuth` 寫在父路由）；守衛改為純函數 `authGuard(to, isAuthenticated)`，登入狀態取自 `pb.authStore.isValid`（不依賴 auth store）；路由模式由 quasar.config.ts 的 `vueRouterMode: 'history'` 設定；保留 Quasar 的 404 頁（ErrorNotFound） |
 | K-7 | task 1.6 | purchase_record_field_values 同 K-3，改為 `(purchase_record, custom_field)` UNIQUE INDEX + 前端保證 |
 
 ## 下次接手時

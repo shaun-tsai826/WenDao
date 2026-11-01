@@ -1,7 +1,8 @@
 # Design Document
 
-> 版本：v2.5（2026-11-01）
-> 變更摘要：v2.5 回寫 K-10、K-11（使用者同意）：import 路徑改用 Quasar 3 內建的 `@/` 別名；boot 範例改為呼叫 `src/lib/restoreAuth.ts`（含 authRefresh），Pinia 同步改在 auth store 內處理。
+> 版本：v2.6（2026-11-01）
+> 變更摘要：v2.6 回寫 K-12（使用者同意）：功能頁改為 MainLayout 子路由；守衛改為純函數 authGuard，登入狀態取自 pb.authStore.isValid；history 模式由 quasar.config.ts 設定；保留 404 頁。
+> v2.5 變更摘要：v2.5 回寫 K-10、K-11（使用者同意）：import 路徑改用 Quasar 3 內建的 `@/` 別名；boot 範例改為呼叫 `src/lib/restoreAuth.ts`（含 authRefresh），Pinia 同步改在 auth store 內處理。
 > v2.4 變更摘要：v2.4 依實作結果回寫 K-1～K-9（暫停使用 Kiro，經使用者同意由 Claude Code 修改）：users 改為修改系統預設 Collection（K-1）；PocketBase required / null 語意與讀取轉換規則（K-2、K-5、K-6）；三個複合唯一約束改用 UNIQUE INDEX（K-3、K-4、K-7）；前端結構對齊 @quasar/app-vite 3（K-8）；VITE_POCKETBASE_URL 改用 build.defineEnv，正式環境為 `/`（K-9）。
 > v2.3 變更摘要：v2.3 task 1.1 確認並鎖定版本：PocketBase 0.40.6、JS SDK 0.28.1。
 > v2.2 變更摘要：v2.2 依 review-notes v1.2 修正：JS SDK 版本改為與 PocketBase 0.23+ 相容的 0.22 以上，確切版本於 task 1.1 確認後鎖定（F-1）；剩餘數量對話框預設值改為目前的剩餘數量（F-4）。
@@ -390,41 +391,55 @@ frontend/
 
 #### 路由設計（vue-router）
 
-```typescript
-// src/router/index.ts
-import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+`/login` 獨立顯示（沒有導覽列）；其他 11 個功能頁都是 `MainLayout` 的子路由，導覽列只寫一次。`meta.requiresAuth` 寫在父路由，子路由會自動繼承（vue-router 合併 matched 的 meta）。
 
-const routes = [
+```typescript
+// src/router/routes.ts
+import type { RouteRecordRaw } from 'vue-router'
+
+const routes: RouteRecordRaw[] = [
   { path: '/login', component: () => import('@/pages/Login.vue'), meta: { public: true } },
-  { path: '/', component: () => import('@/pages/Dashboard.vue'), meta: { requiresAuth: true } },
-  { path: '/categories', component: () => import('@/pages/Categories.vue'), meta: { requiresAuth: true } },
-  { path: '/categories/:id/edit', component: () => import('@/pages/CategoryEdit.vue'), meta: { requiresAuth: true } },
-  { path: '/products', component: () => import('@/pages/Products.vue'), meta: { requiresAuth: true } },
-  { path: '/products/new', component: () => import('@/pages/ProductNew.vue'), meta: { requiresAuth: true } },
-  { path: '/products/:id', component: () => import('@/pages/ProductDetail.vue'), meta: { requiresAuth: true } },
-  { path: '/products/:id/edit', component: () => import('@/pages/ProductEdit.vue'), meta: { requiresAuth: true } },
-  { path: '/purchases', component: () => import('@/pages/Purchases.vue'), meta: { requiresAuth: true } },
-  { path: '/purchases/new', component: () => import('@/pages/PurchaseNew.vue'), meta: { requiresAuth: true } },
-  { path: '/purchases/:id', component: () => import('@/pages/PurchaseDetail.vue'), meta: { requiresAuth: true } },
-  { path: '/purchases/:id/edit', component: () => import('@/pages/PurchaseEdit.vue'), meta: { requiresAuth: true } },
+  {
+    path: '/',
+    component: () => import('@/layouts/MainLayout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      { path: '', component: () => import('@/pages/Dashboard.vue') },
+      { path: 'categories', component: () => import('@/pages/Categories.vue') },
+      { path: 'categories/:id/edit', component: () => import('@/pages/CategoryEdit.vue') },
+      { path: 'products', component: () => import('@/pages/Products.vue') },
+      { path: 'products/new', component: () => import('@/pages/ProductNew.vue') },
+      { path: 'products/:id', component: () => import('@/pages/ProductDetail.vue') },
+      { path: 'products/:id/edit', component: () => import('@/pages/ProductEdit.vue') },
+      { path: 'purchases', component: () => import('@/pages/Purchases.vue') },
+      { path: 'purchases/new', component: () => import('@/pages/PurchaseNew.vue') },
+      { path: 'purchases/:id', component: () => import('@/pages/PurchaseDetail.vue') },
+      { path: 'purchases/:id/edit', component: () => import('@/pages/PurchaseEdit.vue') },
+    ],
+  },
+  // 找不到頁面（Quasar 範本內建），必須放在最後
+  { path: '/:catchAll(.*)*', component: () => import('@/pages/ErrorNotFound.vue') },
 ]
 
-const router = createRouter({ history: createWebHistory(), routes })
-
-// 路由守衛：未登入導向 /login
-router.beforeEach((to) => {
-  const authStore = useAuthStore()
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return '/login'
-  }
-  if (to.path === '/login' && authStore.isAuthenticated) {
-    return '/'
-  }
-})
-
-export default router
+export default routes
 ```
+
+守衛寫成純函數（方便測試），登入狀態直接取自 PocketBase SDK：
+
+```typescript
+// src/router/authGuard.ts
+export function authGuard(to, isAuthenticated: boolean): '/login' | '/' | undefined {
+  if (to.meta.requiresAuth && !isAuthenticated) return '/login'   // AC-1.3
+  if (to.path === '/login' && isAuthenticated) return '/'
+  return undefined   // 放行
+}
+
+// src/router/index.ts（Quasar 的 defineRouter 內）
+Router.beforeEach((to) => authGuard(to, pb.authStore.isValid))
+```
+
+- 路由模式：`quasar.config.ts` 的 `build.vueRouterMode: 'history'`（網址不帶 `#`）。正式環境由 PocketBase 的 indexFallback（預設開啟）把任何前端路徑導回 `index.html`。
+- 頁面檔名維持單字（`Login.vue`、`Dashboard.vue`…），ESLint 只對 `src/pages/` 關閉 `vue/multi-word-component-names`。
 
 #### State 管理（Pinia）
 
