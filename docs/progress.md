@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v1.7（2026-11-01）
-> 變更摘要：v1.7 完成 task 1.6（purchase_record_field_values），新增 K-7。
+> 版本：v1.8（2026-11-01）
+> 變更摘要：v1.8 完成 task 1.7（API Rules，公開註冊已關閉）。
+> v1.7 完成 task 1.6（purchase_record_field_values），新增 K-7。
 > v1.6 完成 task 1.5（purchase_records），新增 K-6。
 > v1.5 完成 task 1.4（products）。新增「需回寫 Kiro 的變更」清單。
 > v1.4 完成 task 1.3（custom_fields）。
@@ -12,10 +13,10 @@
 
 ## 目前階段
 
-**實作中。** 已完成 task 1.1～1.6，下一步是 task 1.7。
+**實作中。** 已完成 task 1.1～1.7，下一步是 task 1.8。
 
 ```
-規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（1.6 完成，下一步 1.7）
+規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（1.7 完成，下一步 1.8）
   (完成)       (完成)          (完成)            (完成)        ◄ 目前在這裡
 ```
 
@@ -46,10 +47,11 @@
 | 2026-11-01 | **task 1.4**：migration `1793539175_products.js`（category 關聯 Restrict、(category, brand, name) 複合 UNIQUE INDEX、消耗與剩餘數量欄位），已在臨時資料庫用 API 驗證 | — |
 | 2026-11-01 | **task 1.5**：migration `1793539430_purchase_records.js`（product、user 關聯皆 Restrict；total_price 必填且 ≥ 0.01），已在臨時資料庫用 API 驗證 | — |
 | 2026-11-01 | **task 1.6**：migration `1793540171_purchase_record_field_values.js`（purchase_record Cascade、custom_field Restrict、(purchase_record, custom_field) 複合 UNIQUE INDEX），已在臨時資料庫用 API 驗證 | — |
+| 2026-11-01 | **task 1.7**：migration `1793543324_api_rules.js`（5 張資料表一律「已登入才可操作」；users 只能 List/View，Create/Update/Delete 為 Locked）。已用未登入 / 使用者 / superuser 三種身分驗證；正式環境公開註冊回 403 | — |
 
 ## 待辦（依順序）
 
-1. **[Claude Code]** task 1.7：設定所有 Collection 的 API Rules（users 的 Create/Update/Delete 設為 Locked）。
+1. **[Claude Code]** task 1.8：建立種子資料（2 位使用者、2 個分類、3 個自訂欄位、1 個商品）。
 2. 之後依 `tasks.md` 順序，一次做一個 task → 勾選 `[x]` → commit（message 帶 task 編號）。
 
 ## 重要決定紀錄
@@ -64,7 +66,7 @@
 | 版本鎖定 | **PocketBase 0.40.6、JS SDK 0.28.1**（task 1.1 鎖定） | review-notes F-1、design v2.3 |
 | 文件位置 | 正本留在 `.kiro/`（Kiro 只讀這裡），`docs/specs` 是捷徑 | — |
 | Repo 公開 | GitHub public repo。**密碼與 `.env` 一律不進 git** | — |
-| users 由系統預設建立 | PocketBase 0.23+ 會自動建立 users，migration 是「修改」它；預設的 `avatar` 欄位保留不用。**task 1.7 之前 users 的 createRule 仍是預設的公開註冊**（只綁 127.0.0.1，風險低） | task 1.2 |
+| users 由系統預設建立 | PocketBase 0.23+ 會自動建立 users，migration 是「修改」它；預設的 `avatar` 欄位保留不用。公開註冊已在 task 1.7 關閉 | task 1.2 |
 | PocketBase 的 required | bool 設 required 代表「必須是 true」，number 設 required 代表「不可為 0」（已實測）。所以「預設 false / 0」的欄位一律**不設 required**。PocketBase 沒有欄位預設值，沒填時會存 false / 0 | task 1.3 |
 | 自訂欄位名稱唯一 | 使用者決定**加上** `(category, field_name)` 複合 UNIQUE INDEX，前端仍會先查詢並顯示友善訊息 | task 1.3 |
 | 剩餘數量「未設定」 | PocketBase 的 number 存不了 null（沒填或送 null 都會存 0，已實測）。使用者決定：**`remaining_updated_at` 為空 = 未設定**，前端讀取商品時把 remaining_quantity 轉成 null；兩個欄位一起寫入、一起清空。consumption_rate 的 0 = 未設定 | task 1.4 |

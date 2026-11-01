@@ -72,7 +72,7 @@
     - `field_value`（text, required, max 255）
     - _對應：REQ-4, AC-4.1, AC-4.5, AC-4.8_
 
-  - [ ] 1.7 設定所有 Collection 的 API Rules
+  - [x] 1.7 設定所有 Collection 的 API Rules
     - 所有 Collection List/View/Create/Update/Delete 設為 `@request.auth.id != ""`（已登入使用者可操作）
     - users 的 Create/Update/Delete 設為 **Locked（null，僅 superuser 可透過 superuser UI 操作）**
     - 注意：空字串 `""` 代表公開，必須設為 Locked
