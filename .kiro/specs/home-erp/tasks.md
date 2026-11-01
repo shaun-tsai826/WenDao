@@ -66,7 +66,7 @@
     - `user`（relation → users, required）
     - _對應：REQ-5, AC-5.1, AC-5.6, REQ-6, AC-6.1_
 
-  - [ ] 1.6 撰寫 migration 檔建立 purchase_record_field_values Collection（EAV 值層）及其欄位
+  - [x] 1.6 撰寫 migration 檔建立 purchase_record_field_values Collection（EAV 值層）及其欄位
     - `purchase_record`（relation → purchase_records, required, Cascade）
     - `custom_field`（relation → custom_fields, required, **Restrict**）
     - `field_value`（text, required, max 255）
