@@ -1,7 +1,8 @@
 # Design Document
 
-> 版本：v2.4（2026-11-01）
-> 變更摘要：v2.4 依實作結果回寫 K-1～K-9（暫停使用 Kiro，經使用者同意由 Claude Code 修改）：users 改為修改系統預設 Collection（K-1）；PocketBase required / null 語意與讀取轉換規則（K-2、K-5、K-6）；三個複合唯一約束改用 UNIQUE INDEX（K-3、K-4、K-7）；前端結構對齊 @quasar/app-vite 3（K-8）；VITE_POCKETBASE_URL 改用 build.defineEnv，正式環境為 `/`（K-9）。
+> 版本：v2.5（2026-11-01）
+> 變更摘要：v2.5 回寫 K-10、K-11（使用者同意）：import 路徑改用 Quasar 3 內建的 `@/` 別名；boot 範例改為呼叫 `src/lib/restoreAuth.ts`（含 authRefresh），Pinia 同步改在 auth store 內處理。
+> v2.4 變更摘要：v2.4 依實作結果回寫 K-1～K-9（暫停使用 Kiro，經使用者同意由 Claude Code 修改）：users 改為修改系統預設 Collection（K-1）；PocketBase required / null 語意與讀取轉換規則（K-2、K-5、K-6）；三個複合唯一約束改用 UNIQUE INDEX（K-3、K-4、K-7）；前端結構對齊 @quasar/app-vite 3（K-8）；VITE_POCKETBASE_URL 改用 build.defineEnv，正式環境為 `/`（K-9）。
 > v2.3 變更摘要：v2.3 task 1.1 確認並鎖定版本：PocketBase 0.40.6、JS SDK 0.28.1。
 > v2.2 變更摘要：v2.2 依 review-notes v1.2 修正：JS SDK 版本改為與 PocketBase 0.23+ 相容的 0.22 以上，確切版本於 task 1.1 確認後鎖定（F-1）；剩餘數量對話框預設值改為目前的剩餘數量（F-4）。
 > v2.1 變更摘要：依 review-notes R-1~R-6、C-6~C-13、Q-1~Q-4 修正。主要變更：users API Rule 改為 Locked（R-1）、外網存取改用 tailscale serve + HTTPS（R-2）、登入後導向首頁（R-3）、PocketBase 版本鎖定 0.23.4 + SDK 0.21.5（R-4）、Chart.js 改 npm 安裝（R-5）、路徑改為 repo 內 + migrations 建表（R-6）、新增剩餘數量與消耗單位欄位及計算（C-6/C-8）、消耗狀態邊界修正（C-7）、購買記錄列表補新増者（C-9）、自訂欄位關聯改 Restrict + 編輯限制（C-10）、日期處理規則（C-11）、價格比較 null 處理（C-12）、新增訊息 ERR-015~019/MSG-008~010/STATUS-006~008。
@@ -392,21 +393,21 @@ frontend/
 ```typescript
 // src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from 'stores/auth'
+import { useAuthStore } from '@/stores/auth'
 
 const routes = [
-  { path: '/login', component: () => import('pages/Login.vue'), meta: { public: true } },
-  { path: '/', component: () => import('pages/Dashboard.vue'), meta: { requiresAuth: true } },
-  { path: '/categories', component: () => import('pages/Categories.vue'), meta: { requiresAuth: true } },
-  { path: '/categories/:id/edit', component: () => import('pages/CategoryEdit.vue'), meta: { requiresAuth: true } },
-  { path: '/products', component: () => import('pages/Products.vue'), meta: { requiresAuth: true } },
-  { path: '/products/new', component: () => import('pages/ProductNew.vue'), meta: { requiresAuth: true } },
-  { path: '/products/:id', component: () => import('pages/ProductDetail.vue'), meta: { requiresAuth: true } },
-  { path: '/products/:id/edit', component: () => import('pages/ProductEdit.vue'), meta: { requiresAuth: true } },
-  { path: '/purchases', component: () => import('pages/Purchases.vue'), meta: { requiresAuth: true } },
-  { path: '/purchases/new', component: () => import('pages/PurchaseNew.vue'), meta: { requiresAuth: true } },
-  { path: '/purchases/:id', component: () => import('pages/PurchaseDetail.vue'), meta: { requiresAuth: true } },
-  { path: '/purchases/:id/edit', component: () => import('pages/PurchaseEdit.vue'), meta: { requiresAuth: true } },
+  { path: '/login', component: () => import('@/pages/Login.vue'), meta: { public: true } },
+  { path: '/', component: () => import('@/pages/Dashboard.vue'), meta: { requiresAuth: true } },
+  { path: '/categories', component: () => import('@/pages/Categories.vue'), meta: { requiresAuth: true } },
+  { path: '/categories/:id/edit', component: () => import('@/pages/CategoryEdit.vue'), meta: { requiresAuth: true } },
+  { path: '/products', component: () => import('@/pages/Products.vue'), meta: { requiresAuth: true } },
+  { path: '/products/new', component: () => import('@/pages/ProductNew.vue'), meta: { requiresAuth: true } },
+  { path: '/products/:id', component: () => import('@/pages/ProductDetail.vue'), meta: { requiresAuth: true } },
+  { path: '/products/:id/edit', component: () => import('@/pages/ProductEdit.vue'), meta: { requiresAuth: true } },
+  { path: '/purchases', component: () => import('@/pages/Purchases.vue'), meta: { requiresAuth: true } },
+  { path: '/purchases/new', component: () => import('@/pages/PurchaseNew.vue'), meta: { requiresAuth: true } },
+  { path: '/purchases/:id', component: () => import('@/pages/PurchaseDetail.vue'), meta: { requiresAuth: true } },
+  { path: '/purchases/:id/edit', component: () => import('@/pages/PurchaseEdit.vue'), meta: { requiresAuth: true } },
 ]
 
 const router = createRouter({ history: createWebHistory(), routes })
@@ -432,7 +433,7 @@ export default router
 ```typescript
 // src/stores/auth.ts
 import { defineStore } from 'pinia'
-import pb from 'lib/pocketbase'
+import pb from '@/lib/pocketbase'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -463,8 +464,8 @@ export const useAuthStore = defineStore('auth', {
 ```typescript
 // src/stores/purchase.ts（摘要）
 import { defineStore } from 'pinia'
-import pb from 'lib/pocketbase'
-import { calculateUnitPrice, calculateQuantityFromComponents } from 'composables/useUnitPrice'
+import pb from '@/lib/pocketbase'
+import { calculateUnitPrice, calculateQuantityFromComponents } from '@/composables/useUnitPrice'
 
 export const usePurchaseStore = defineStore('purchase', {
   state: () => ({
@@ -518,27 +519,41 @@ export const usePurchaseStore = defineStore('purchase', {
 
 #### PocketBase SDK 整合
 
-在 `src/boot/pocketbase.ts` 中初始化 PocketBase client：
+App 啟動時（畫面出現之前）由 Quasar boot 恢復登入狀態。邏輯放在 `src/lib/restoreAuth.ts`，client 由參數傳入，方便用測試伺服器驗證：
 
 ```typescript
-// src/boot/pocketbase.ts
-import { defineBoot } from '#q-app'
-import pb from 'lib/pocketbase'
-import { useAuthStore } from 'stores/auth'
+// src/lib/restoreAuth.ts
+import { ClientResponseError } from 'pocketbase'
+import type PocketBase from 'pocketbase'
 
-export default defineBoot(() => {
-  // 啟動時從 localStorage 恢復 auth 狀態（PocketBase SDK 自動處理）
-  const authStore = useAuthStore()
-  authStore.user = pb.authStore.record
-  authStore.token = pb.authStore.token
-  
-  // 監聽 token 過期事件
-  pb.authStore.onChange(() => {
-    authStore.user = pb.authStore.record
-    authStore.token = pb.authStore.token
-  })
+export async function restoreAuth(client: PocketBase): Promise<void> {
+  // SDK 已自動從 localStorage 讀回上次的 token
+  if (!client.authStore.isValid) {   // token 已過期 → 清除
+    client.authStore.clear()
+    return
+  }
+  try {
+    await client.collection('users').authRefresh()   // 換新 token，並確認帳號仍存在
+  } catch (err) {
+    // status 0 = 連不上伺服器（如未開 Tailscale）→ 保留登入；其他錯誤（401、404）→ 登出
+    if (err instanceof ClientResponseError && err.status === 0) return
+    client.authStore.clear()
+  }
+}
+```
+
+```typescript
+// src/boot/pocketbase.ts（在 quasar.config.ts 的 boot: ['pocketbase'] 註冊）
+import { defineBoot } from '#q-app'
+import pb from '@/lib/pocketbase'
+import { restoreAuth } from '@/lib/restoreAuth'
+
+export default defineBoot(async () => {
+  await restoreAuth(pb)
 })
 ```
+
+> 與 Pinia 的同步（`pb.authStore.onChange` 更新 `useAuthStore` 的 user / token）在 auth store 內處理（task 2.5）。
 
 #### PWA 設定
 
