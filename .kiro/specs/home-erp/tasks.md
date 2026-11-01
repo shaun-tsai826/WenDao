@@ -102,7 +102,7 @@
     - 建立 `src/boot/pocketbase.ts`：啟動時從 authStore 恢復登入狀態、監聽 token 變化
     - _對應：REQ-1, AC-1.7_
 
-  - [ ] 2.4 建立 Vue Router 路由設定與路由守衛
+  - [x] 2.4 建立 Vue Router 路由設定與路由守衛
     - 定義 12 條路由（login、dashboard、categories、products、purchases 等含 :id 參數路由）
     - 實作 `beforeEach` 守衛：未登入存取受保護路由導向 /login；已登入存取 /login 導向 /
     - _對應：REQ-1, AC-1.3, AC-1.1_

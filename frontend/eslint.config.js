@@ -72,6 +72,15 @@ export default defineConfigWithVueTs(
     },
   },
 
+  // 頁面元件只由路由載入、不會寫成 <Login /> 標籤，不會和 HTML 標籤撞名，
+  // 所以保留 design.md 的單字檔名（Login.vue、Dashboard.vue…）（task 2.4）
+  {
+    files: ['src/pages/**/*.vue'],
+    rules: {
+      'vue/multi-word-component-names': 'off',
+    },
+  },
+
   {
     files: ['src-pwa/sw/**/*.ts'],
     languageOptions: {

@@ -45,7 +45,7 @@ export default defineConfig((ctx) => {
       // https://v2.quasar.dev/quasar-cli-vite/page-routing-with-vue-router#filename-based-routing
       // filenameBasedRouting: true,
 
-      vueRouterMode: 'hash', // available values: 'hash', 'history'
+      vueRouterMode: 'history', // 網址不帶 #（PocketBase 的 indexFallback 會把任何路徑導回 index.html）
       // vueRouterBase,
 
       // publicPath: '/',
