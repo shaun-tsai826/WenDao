@@ -43,7 +43,7 @@
     - `display_order`（number, required, default 0, min 0）
     - _對應：REQ-4, AC-4.1, AC-4.2_
 
-  - [ ] 1.4 撰寫 migration 檔建立 products Collection 及其欄位
+  - [x] 1.4 撰寫 migration 檔建立 products Collection 及其欄位
     - `category`（relation → categories, required, Restrict）
     - `brand`（text, required, max 100）
     - `name`（text, required, max 200）
