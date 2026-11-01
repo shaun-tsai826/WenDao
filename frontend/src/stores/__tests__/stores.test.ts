@@ -85,8 +85,6 @@ describe('資料 stores 骨架', () => {
   });
 
   it.each([
-    ['login', '5.1', () => useAuthStore().login('a', 'b')],
-    ['logout', '5.1', () => useAuthStore().logout()],
     ['fetchCategories', '6.1', () => useCategoryStore().fetchCategories()],
     ['deleteCategory', '6.1', () => useCategoryStore().deleteCategory('x')],
     ['createProduct', '7.1', () => useProductStore().createProduct({} as never)],

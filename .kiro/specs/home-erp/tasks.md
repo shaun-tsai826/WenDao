@@ -197,11 +197,11 @@
     - 生成隨機 unit_price 與 historical_average，驗證比較結果正確；生成 null 輸入，驗證回傳 'na'
     - _對應：REQ-8, AC-8.9, AC-8.10_
 
-- [ ] 4. Checkpoint — 確認核心邏輯測試通過
+- [x] 4. Checkpoint — 確認核心邏輯測試通過
   - 執行 `vitest --run` 確認所有 composables 單元測試與屬性測試通過，有問題時詢問使用者。
 
 - [ ] 5. 認證功能：登入頁面與 auth store
-  - [ ] 5.1 實作 useAuthStore
+  - [x] 5.1 實作 useAuthStore
     - login(email, password) 呼叫 `pb.collection('users').authWithPassword`，儲存 user/token
     - logout() 清除 authStore；getters: isAuthenticated, displayName
     - _對應：REQ-1, AC-1.1, AC-1.6, AC-1.7_
