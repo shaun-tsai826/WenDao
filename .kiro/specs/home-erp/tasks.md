@@ -91,7 +91,7 @@
     - 設定 `quasar.config.js`（含 PWA manifest 與 Workbox `generateSW`）
     - _對應：REQ-9, AC-9.2_
 
-  - [ ] 2.2 安裝依賴並設定建置工具
+  - [x] 2.2 安裝依賴並設定建置工具
     - 安裝 `pocketbase`（JS SDK，版本依 1.1 確認的相容版本，須 0.22 以上）、`chart.js`、`fast-check`
     - 設定 `quasar.config.js` 的 `build.env` 環境變數 `VITE_POCKETBASE_URL`（正式環境：`https://<mac-mini>.<tailnet>.ts.net`；開發環境：`http://localhost:8090`）
     - _對應：REQ-9_

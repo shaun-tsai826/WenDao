@@ -1,7 +1,8 @@
 # 前端環境建置教學（setup-frontend.md）
 
-> 版本：v1.0（2026-11-01）
-> 變更摘要：初次建立（task 2.1）。說明 Quasar 專案怎麼建立、怎麼啟動、怎麼建置 PWA，附疑難排解。
+> 版本：v1.1（2026-11-01）
+> 變更摘要：v1.1 新增第 6 節 PocketBase 網址設定與套件版本（task 2.2）、補充 npm audit 說明。
+> v1.0 初次建立（task 2.1）。說明 Quasar 專案怎麼建立、怎麼啟動、怎麼建置 PWA，附疑難排解。
 
 ## 這是什麼？
 
@@ -96,6 +97,33 @@ frontend/
 └── public/icons/         App 圖示
 ```
 
+## 6. PocketBase 網址設定（task 2.2）
+
+前端用 `import.meta.env.VITE_POCKETBASE_URL` 取得 PocketBase 的網址，設定寫在 `quasar.config.ts` 的 `build.defineEnv`：
+
+| 指令 | 值 | 原因 |
+|---|---|---|
+| `quasar dev`（開發） | `http://localhost:8090` | 前端在 9000 port、PocketBase 在 8090 port，兩個不同網址，要寫完整網址 |
+| `quasar build`（正式） | `/` | 前端會放進 PocketBase 的 `pb_public`，畫面和 API 是同一個網址，相對路徑就夠了 |
+
+> 正式環境用 `/` 的好處：不用把 Tailscale 主機名稱寫進 public repo，換網址也不用重新 build，也沒有跨網域（CORS）問題。
+
+> Quasar 3 沒有 `build.env`，對應的設定是 `build.defineEnv`。它會把值放進 `import.meta.env.XXX`。
+
+本專案使用的套件版本：
+
+| 套件 | 版本 | 用途 |
+|---|---|---|
+| `pocketbase` | **0.28.1**（鎖定版本，對應 PocketBase 0.40.6） | 連線 PocketBase 的 JS SDK |
+| `chart.js` | ^4.6.1 | 價格趨勢圖 |
+| `fast-check` | ^4.10.2（devDependencies） | 屬性測試 |
+
+```bash
+npm install --save-exact pocketbase@0.28.1
+npm install chart.js@4.6.1
+npm install -D fast-check@4.10.2
+```
+
 ## 疑難排解
 
 | 狀況 | 原因 | 處理方式 |
@@ -104,4 +132,6 @@ frontend/
 | 建置 PWA 時找不到 `workbox-build` | 沒有安裝 `src-pwa/` 的套件 | `cd src-pwa && npm install` |
 | `Port 9000 is already in use` | 已經有一個 dev server 在跑 | 關掉另一個，或加 `--port 9100` 換一個 port |
 | 手機上看不到「加到主畫面」 | service worker 只能在 HTTPS 或 localhost 下運作 | 正式環境要透過 `tailscale serve` 提供 HTTPS（task 13.1） |
+| `npm audit` 顯示十幾個 moderate 漏洞 | 都在 ESLint 相關的**開發工具**裡（minimatch），不會打包進 App | 用 `npm audit --omit=dev` 檢查正式會用到的套件（應為 0）。不要執行 `npm audit fix --force`，它會把 ESLint 降到很舊的版本 |
+| 安裝時出現 `npm warn install-scripts` | npm 11 預設不執行套件的安裝腳本（`@parcel/watcher`、`fsevents`） | 目前不影響開發與建置，不用處理 |
 | 改了 manifest，手機上卻沒變 | 舊的 service worker 還在快取舊檔案 | 瀏覽器開發者工具 → Application → Service Workers → Unregister，再重新整理 |

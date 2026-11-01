@@ -3,7 +3,7 @@
 
 import { defineConfig } from '#q-app';
 
-export default defineConfig((/* ctx */) => {
+export default defineConfig((ctx) => {
   return {
     // https://v2.quasar.dev/quasar-cli-vite/prefetch-feature
     // preFetch: true,
@@ -50,7 +50,14 @@ export default defineConfig((/* ctx */) => {
 
       // publicPath: '/',
       // define: {},
-      // defineEnv: {}
+
+      // 程式裡用 import.meta.env.VITE_POCKETBASE_URL 讀取（task 2.2）
+      // - 開發（quasar dev）：前端在 9000 port，PocketBase 在 8090 port，要寫完整網址
+      // - 正式（quasar build）：前端放在 PocketBase 的 pb_public，和 API 同一個網址，
+      //   用相對路徑 '/' 即可，不必把 Tailscale 主機名稱寫進 public repo
+      defineEnv: {
+        VITE_POCKETBASE_URL: ctx.dev ? 'http://localhost:8090' : '/',
+      },
       // ignorePublicFolder: true,
       // minify: false,
       // distDir
