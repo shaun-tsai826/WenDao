@@ -206,7 +206,7 @@
     - logout() 清除 authStore；getters: isAuthenticated, displayName
     - _對應：REQ-1, AC-1.1, AC-1.6, AC-1.7_
 
-  - [ ] 5.2 實作 Login 頁面
+  - [x] 5.2 實作 Login 頁面
     - email/密碼輸入欄位；登入成功導向首頁 `/`（儀表板）；登入失敗顯示 ERR-001「帳號或密碼錯誤，請重新輸入」
     - _對應：REQ-1, AC-1.1, AC-1.2_
 

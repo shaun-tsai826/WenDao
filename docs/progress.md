@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v3.4（2026-11-02）
-> 變更摘要：v3.4 task 4 Checkpoint 完成；task 5.1（auth store login / logout）完成。
+> 版本：v3.5（2026-11-02）
+> 變更摘要：v3.5 登入頁設計稿確認；task 5.2（登入頁）完成。
+> v3.4 task 4 Checkpoint 完成；task 5.1（auth store login / logout）完成。
 > v3.3 完成 task 3（6 個核心計算 composables + Property 1～7），design.md v2.9。
 > v3.2 完成 task 2.8（Vitest 測試環境，131 項測試），task 2 全部完成。
 > v3.1 完成 task 2.7（訊息常數檔）；刪除範例元件 EssentialLink。
@@ -29,13 +30,13 @@
 
 ## 目前階段
 
-**實作中。** task 1（環境建置）全部完成；**task 1～4、5.1 完成**，下一步是登入頁設計稿（先呼叫設計 skills，使用者確認後做 task 5.2）。commit 前執行 `npm test`（目前 187 項）。
+**實作中。** task 1（環境建置）全部完成；**task 1～4、5.1～5.2 完成**，下一步是 task 5.3（路由守衛與登入狀態保持）。commit 前執行 `npm test`（目前 195 項）。
 
 > **2026-11-01 起短期內不使用 Kiro**：規格需要修改時，由 Claude Code 先問使用者、同意後直接改（含版本號與變更摘要）。
 > **task 2.6 之前**：先用已安裝的設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿（儀表板、新增購買記錄），使用者選定後整理成 UI 設計規範寫進規格。
 
 ```
-規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（5.1 完成，下一步登入頁設計稿 → 5.2）
+規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（5.2 完成，下一步 5.3）
   (完成)       (完成)          (完成)            (完成)        ◄ 目前在這裡
 ```
 
@@ -81,10 +82,12 @@
 | 2026-11-02 | **task 3**：`src/composables/` 的 dates、useUnitPrice、useQuantityFromComponents（含 ERR-008 驗證）、useHistoricalAverage、useDepletionEstimate、useDepletionStatus、usePriceComparison。日期改用 'YYYY-MM-DD' 字串、today 可傳入（使用者同意）。新增 47 項測試（Property 1～7 屬性測試 + BDD 4 個邊界情境），全專案 178 項通過；6 種故意改壞皆被抓到 | design.md v2.9 |
 | 2026-11-02 | **task 4** Checkpoint：使用者確認核心邏輯（耗盡天數四捨五入、組成欄位未填算 0、價格相等以 4 位小數比較、今天用裝置日期） | — |
 | 2026-11-02 | **task 5.1**：`useAuthStore.login / logout`、`loginErrorMessage`（連不上 → ERR-014、5xx → ERR-013、其他 → ERR-001）。新增 `auth.test.ts` 11 項，全專案 187 項通過 | — |
+| 2026-11-02 | **登入頁設計稿**：呼叫 ui-ux-pro-max（自動填入、顯示密碼、role=alert、送出中狀態），在設計稿 B 排新增「一般 / 密碼錯誤」兩張，使用者確認 | 設計稿 Login、Login-Error |
+| 2026-11-02 | **task 5.2**：`pages/Login.vue`（依設計稿；空白欄位 ERR-009、登入失敗依原因 ERR-001/013/014、保留 email 清空密碼並聚焦、登入中停用）。`Login.test.ts` 8 項，全專案 195 項通過；無頭 Chrome 對正式 build 實際輸入驗證 6 個步驟（含重新整理仍登入） | — |
 
 ## 待辦（依順序）
 
-1. **[Claude Code + 使用者]** 登入頁設計稿：呼叫設計 skills，依 UI 設計規範做登入頁畫面，使用者確認後實作 task 5.2～5.5。
+1. **[Claude Code]** task 5.3～5.5：路由守衛驗證、登出按鈕、認證測試。完成後使用者可用自己的帳號登入。
 3. 之後依 `tasks.md` 順序，一次做一個 task → 勾選 `[x]` → commit（message 帶 task 編號）。
 
 ## 重要決定紀錄

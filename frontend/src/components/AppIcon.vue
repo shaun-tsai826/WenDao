@@ -23,7 +23,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 
-export type IconName = 'home' | 'receipt' | 'box' | 'tag' | 'back' | 'chevron' | 'plus';
+export type IconName =
+  'home' | 'receipt' | 'box' | 'tag' | 'back' | 'chevron' | 'plus' | 'eye' | 'eye-off' | 'alert';
 
 const ICONS: Record<IconName, string[]> = {
   home: ['M3.5 10 11 4l7.5 6v8a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1z'],
@@ -33,6 +34,15 @@ const ICONS: Record<IconName, string[]> = {
   back: ['m13.5 5-6 6 6 6'],
   chevron: ['m8.5 5 6 6-6 6'],
   plus: ['M11 4.5v13', 'M4.5 11h13'],
+  eye: [
+    'M2 11s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z',
+    'M13.6 11a2.6 2.6 0 1 1-5.2 0 2.6 2.6 0 0 1 5.2 0z',
+  ],
+  'eye-off': [
+    'M2 11s3.5-6 9-6c1.6 0 3 .5 4.2 1.2M20 11s-3.5 6-9 6c-1.6 0-3-.5-4.2-1.2',
+    'M3.5 18.5 18.5 3.5',
+  ],
+  alert: ['M19.5 11a8.5 8.5 0 1 1-17 0 8.5 8.5 0 0 1 17 0z', 'M11 6.5V12', 'M11 15.2v.01'],
 };
 
 const props = withDefaults(defineProps<{ name: IconName; size?: number }>(), { size: 22 });
