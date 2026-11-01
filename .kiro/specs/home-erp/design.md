@@ -1,7 +1,8 @@
 # Design Document
 
-> 版本：v2.6（2026-11-01）
-> 變更摘要：v2.6 回寫 K-12（使用者同意）：功能頁改為 MainLayout 子路由；守衛改為純函數 authGuard，登入狀態取自 pb.authStore.isValid；history 模式由 quasar.config.ts 設定；保留 404 頁。
+> 版本：v2.7（2026-11-01）
+> 變更摘要：v2.7 回寫 K-13（使用者同意）：useAuthStore 改由 syncFromPb() 從 SDK 複製登入狀態，boot 註冊 pb.authStore.onChange；新增 src/types/models.ts（6 張表的型別）。
+> v2.6 變更摘要：v2.6 回寫 K-12（使用者同意）：功能頁改為 MainLayout 子路由；守衛改為純函數 authGuard，登入狀態取自 pb.authStore.isValid；history 模式由 quasar.config.ts 設定；保留 404 頁。
 > v2.5 變更摘要：v2.5 回寫 K-10、K-11（使用者同意）：import 路徑改用 Quasar 3 內建的 `@/` 別名；boot 範例改為呼叫 `src/lib/restoreAuth.ts`（含 authRefresh），Pinia 同步改在 auth store 內處理。
 > v2.4 變更摘要：v2.4 依實作結果回寫 K-1～K-9（暫停使用 Kiro，經使用者同意由 Claude Code 修改）：users 改為修改系統預設 Collection（K-1）；PocketBase required / null 語意與讀取轉換規則（K-2、K-5、K-6）；三個複合唯一約束改用 UNIQUE INDEX（K-3、K-4、K-7）；前端結構對齊 @quasar/app-vite 3（K-8）；VITE_POCKETBASE_URL 改用 build.defineEnv，正式環境為 `/`（K-9）。
 > v2.3 變更摘要：v2.3 task 1.1 確認並鎖定版本：PocketBase 0.40.6、JS SDK 0.28.1。
@@ -443,34 +444,51 @@ Router.beforeEach((to) => authGuard(to, pb.authStore.isValid))
 
 #### State 管理（Pinia）
 
+**資料表型別**：`src/types/models.ts` 定義 6 張表的介面（`UserRecord`、`CategoryRecord`、`CustomFieldRecord`、`ProductRecord`、`PurchaseRecordRecord`、`FieldValueRecord`），欄位與 migration 一一對應，代表**資料庫原始值**（number 沒填為 0、date 沒填為 `''`）；轉成 null 的規則見「PocketBase 的 required 與 null 語意」。
+
 **useAuthStore — 認證狀態**
+
+登入狀態的正本在 PocketBase SDK 的 `pb.authStore`（自動存在 localStorage），store 只是畫面用的副本：
 
 ```typescript
 // src/stores/auth.ts
 import { defineStore } from 'pinia'
 import pb from '@/lib/pocketbase'
+import type { UserRecord } from '@/types/models'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: pb.authStore.record,
-    token: pb.authStore.token,
+    user: null as UserRecord | null,
+    token: '',
   }),
   getters: {
     isAuthenticated: (state) => state.user !== null,
     displayName: (state) => state.user?.name ?? '',
   },
   actions: {
+    // 從 SDK 複製目前的登入狀態（token 無效時視為未登入）
+    syncFromPb() {
+      const valid = pb.authStore.isValid
+      this.user = valid ? (pb.authStore.record as UserRecord | null) : null
+      this.token = valid ? pb.authStore.token : ''
+    },
     async login(email: string, password: string) {
-      const authData = await pb.collection('users').authWithPassword(email, password)
-      this.user = authData.record
-      this.token = authData.token
+      await pb.collection('users').authWithPassword(email, password)   // onChange 會自動 syncFromPb
     },
     logout() {
-      pb.authStore.clear()
-      this.user = null
-      this.token = null
+      pb.authStore.clear()   // onChange 會自動 syncFromPb
     },
   },
+})
+```
+
+```typescript
+// src/boot/pocketbase.ts（節錄）
+export default defineBoot(async ({ store }) => {
+  await restoreAuth(pb)
+  const auth = useAuthStore(store)
+  auth.syncFromPb()
+  pb.authStore.onChange(() => auth.syncFromPb())   // 登入、登出、token 換新時自動同步
 })
 ```
 
@@ -568,7 +586,7 @@ export default defineBoot(async () => {
 })
 ```
 
-> 與 Pinia 的同步（`pb.authStore.onChange` 更新 `useAuthStore` 的 user / token）在 auth store 內處理（task 2.5）。
+> 與 Pinia 的同步見上方「useAuthStore」：boot 呼叫 `auth.syncFromPb()` 並註冊 `pb.authStore.onChange`（task 2.5）。
 
 #### PWA 設定
 

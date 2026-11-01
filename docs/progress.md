@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v2.7（2026-11-01）
-> 變更摘要：v2.7 完成 task 2.5（Pinia stores 骨架、auth 同步），新增 K-13。
+> 版本：v2.8（2026-11-01）
+> 變更摘要：v2.8 K-13 已回寫 design.md v2.7；刪除範例 store。
+> v2.7 完成 task 2.5（Pinia stores 骨架、auth 同步），新增 K-13。
 > v2.6 K-12 已回寫 design.md v2.6。
 > v2.5 完成 task 2.4（路由與守衛），新增 K-12。
 > v2.4 K-10、K-11 已回寫 design.md v2.5。
@@ -37,7 +38,7 @@
 | 文件 | 版本 |
 |---|---|
 | requirements.md | v1.3 |
-| design.md | v2.6 |
+| design.md | v2.7 |
 | tasks.md | v1.3（勾選狀態持續更新） |
 | BDD.md | v1.1 |
 | review-notes.md | v1.2 |
@@ -94,6 +95,7 @@
 | 種子資料 | 使用者帳號由使用者在後台手動建立（**真實 email 不進 repo**）；BDD 的 Alice / Bob 只是測試用假資料。正式資料庫只建 tasks.md 列的 1 個商品（春風），BDD 的 Kleenex 只放在前端測試假資料。「層數」型別依 BDD 用 number | task 1.8 |
 | 正式環境 PocketBase 網址 | 使用者決定用相對路徑 `/`（前端放在 pb_public，與 API 同網址），不把 Tailscale 主機名稱寫進 repo | task 2.2 |
 | 路由 | 使用者決定：功能頁**嵌套在 MainLayout 下**、**history 模式**（不帶 #）、刪除範例頁。頁面檔名維持 design.md 的單字名稱，ESLint 只對 `src/pages/` 關閉 multi-word 規則 | task 2.4 |
+| 設計方向 | 使用者希望設計稿涵蓋：**溫暖居家**（米色、圓角、柔和）、**資訊清楚的卡片式**（明確標示即將用完 / 已用完），第三種由設計 skills 建議 | 設計稿 |
 | 前端工具 | Linter 用 **ESLint + Prettier**；App 圖示**先用 Quasar 預設**；刪除自動產生的 `.vscode/mcp.json`（未鎖版本的 MCP server）。以上皆為使用者選擇 | task 2.1 |
 | 欄位值唯一 | 沿用前兩次的決定：加上 `(purchase_record, custom_field)` 複合 UNIQUE INDEX | task 1.6 |
 | 商品唯一 | 使用者決定**加上** `(category, brand, name)` 複合 UNIQUE INDEX（只擋完全相同）；AC-3.6 的正規化比對由前端負責 | task 1.4 |
@@ -117,7 +119,7 @@
 | K-10 | task 2.3 | **（已回寫 v2.5）** design.md 的 import 路徑 `lib/…`、`stores/…`、`composables/…` 改為 `@/lib/…`、`@/stores/…`、`@/composables/…`（Quasar 3 只內建 `@/` 別名） |
 | K-11 | task 2.3 | **（已回寫 v2.5）** design.md boot 範例：恢復登入的邏輯抽到 `src/lib/restoreAuth.ts`（client 由參數傳入，方便測試），並加上 `authRefresh`（換新 token、確認帳號存在；連不上伺服器時保留登入）；`pb.authStore.onChange` 同步 Pinia 的部分移到 task 2.5 |
 | K-12 | task 2.4 | **（已回寫 v2.6）** design.md 路由範例：11 條功能頁改為 MainLayout 的子路由（`meta.requiresAuth` 寫在父路由）；守衛改為純函數 `authGuard(to, isAuthenticated)`，登入狀態取自 `pb.authStore.isValid`（不依賴 auth store）；路由模式由 quasar.config.ts 的 `vueRouterMode: 'history'` 設定；保留 Quasar 的 404 頁（ErrorNotFound） |
-| K-13 | task 2.5 | **（未回寫）** design.md 的 useAuthStore：state 初始值改為空（user: null、token: ''），由 `syncFromPb()` 從 SDK 複製（token 過期視為未登入）；boot 呼叫 `syncFromPb()` 並註冊 `pb.authStore.onChange`；新增 `src/types/models.ts` 存放 6 張表的型別（資料庫原始值） |
+| K-13 | task 2.5 | **（已回寫 v2.7）** design.md 的 useAuthStore：state 初始值改為空（user: null、token: ''），由 `syncFromPb()` 從 SDK 複製（token 過期視為未登入）；boot 呼叫 `syncFromPb()` 並註冊 `pb.authStore.onChange`；新增 `src/types/models.ts` 存放 6 張表的型別（資料庫原始值） |
 | K-7 | task 1.6 | purchase_record_field_values 同 K-3，改為 `(purchase_record, custom_field)` UNIQUE INDEX + 前端保證 |
 
 ## 下次接手時
