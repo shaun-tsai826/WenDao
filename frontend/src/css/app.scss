@@ -80,3 +80,14 @@ h6 {
 .num {
   font-variant-numeric: tabular-nums;
 }
+
+// 底部提示（Quasar Notify）：圓角 14、避開底部導覽列（task 6.2）
+.q-notifications__list--bottom {
+  margin-bottom: calc(var(--nav-height) + 8px);
+}
+
+.q-notification {
+  border-radius: var(--radius-inner);
+  font-family: var(--font);
+  font-size: 15px;
+}

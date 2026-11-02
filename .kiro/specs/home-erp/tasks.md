@@ -229,7 +229,7 @@
     - fetchCategories / createCategory / updateCategory / deleteCategory；建立前查詢重複名稱驗證
     - _對應：REQ-2, AC-2.1, AC-2.2, AC-2.7_
 
-  - [ ] 6.2 實作 Categories 列表頁面
+  - [x] 6.2 實作 Categories 列表頁面
     - 顯示所有分類清單；內含新增分類表單
     - _對應：REQ-2, AC-2.1_
 

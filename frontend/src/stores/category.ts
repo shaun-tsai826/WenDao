@@ -12,6 +12,13 @@ import { ERR } from '@/constants/messages';
 import { ValidationError, isRestrictedDelete, isUniqueViolation } from '@/lib/errors';
 import type { CategoryRecord } from '@/types/models';
 
+export interface CategoryStats {
+  products: number;
+  fields: number;
+}
+
+const emptyStats = (): Record<string, CategoryStats> => ({});
+
 /** 分類名稱的長度上限（與 migration 的 max 100 一致） */
 export const CATEGORY_NAME_MAX = 100;
 
@@ -35,10 +42,17 @@ export const useCategoryStore = defineStore('category', {
   state: () => ({
     categories: [] as CategoryRecord[],
     loading: false,
+    /** 每個分類有幾項商品、幾個自訂欄位（列表頁顯示用） */
+    stats: emptyStats(),
   }),
 
   getters: {
     getById: (state) => (id: string) => state.categories.find((c) => c.id === id),
+    /** 某分類的統計；還沒載入時回傳 0 */
+    statsOf:
+      (state) =>
+      (id: string): CategoryStats =>
+        state.stats[id] ?? { products: 0, fields: 0 },
   },
 
   actions: {
@@ -52,6 +66,22 @@ export const useCategoryStore = defineStore('category', {
       } finally {
         this.loading = false;
       }
+    },
+
+    /** 統計每個分類的商品數與自訂欄位數（只取 category 欄位，資料量小） */
+    async fetchStats(): Promise<void> {
+      const [products, fields] = await Promise.all([
+        pb.collection('products').getFullList<{ category: string }>({ fields: 'category' }),
+        pb.collection('custom_fields').getFullList<{ category: string }>({ fields: 'category' }),
+      ]);
+      const stats: Record<string, CategoryStats> = {};
+      const bump = (id: string, key: keyof CategoryStats) => {
+        stats[id] ??= { products: 0, fields: 0 };
+        stats[id][key] += 1;
+      };
+      products.forEach((p) => bump(p.category, 'products'));
+      fields.forEach((f) => bump(f.category, 'fields'));
+      this.stats = stats;
     },
 
     /** 新增分類（AC-2.2～2.4） */

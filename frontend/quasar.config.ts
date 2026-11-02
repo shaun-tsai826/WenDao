@@ -93,7 +93,10 @@ export default defineConfig((ctx) => {
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework
     framework: {
-      config: {},
+      // 底部提示（Notify）的預設樣式：深色、底部、2.5 秒（design.md UI 設計規範；task 6.2）
+      config: {
+        notify: { position: 'bottom', timeout: 2500, color: 'dark', textColor: 'white' },
+      },
 
       // iconSet: 'material-icons', // Quasar icon set
       lang: 'zh-TW', // Quasar 語言包：元件內建文字與 <html lang> 用繁體中文（task 2.6）
@@ -105,8 +108,8 @@ export default defineConfig((ctx) => {
       // components: [],
       // directives: [],
 
-      // Quasar plugins
-      plugins: [],
+      // Quasar plugins：Notify（底部提示）、Dialog（刪除前確認）（task 6.2）
+      plugins: ['Notify', 'Dialog'],
     },
 
     // animations: 'all', // --- includes all animations

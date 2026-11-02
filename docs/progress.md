@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v4.0（2026-11-02）
-> 變更摘要：v4.0 分類管理設計稿確認，design.md v3.0、tasks.md v1.4（CONFIRM-003/004）。
+> 版本：v4.1（2026-11-02）
+> 變更摘要：v4.1 task 6.2（分類列表）完成。
+> v4.0 分類管理設計稿確認，design.md v3.0、tasks.md v1.4（CONFIRM-003/004）。
 > v3.9 task 6.1（useCategoryStore）完成；新增共用錯誤處理與測試用假 PocketBase。
 > v3.8 task 5.5 完成，task 5（認證功能）全部完成。
 > v3.7 task 5.4（登出按鈕）完成。
@@ -35,13 +36,13 @@
 
 ## 目前階段
 
-**實作中。** task 1（環境建置）全部完成；**task 1～5、6.1 完成**，下一步是分類頁設計稿（設計 skills → 使用者確認）→ task 6.2。commit 前執行 `npm test`（目前 225 項）。
+**實作中。** task 1（環境建置）全部完成；**task 1～5、6.1～6.2 完成**，下一步是 task 6.3（新增分類）。commit 前執行 `npm test`（目前 236 項）。
 
 > **2026-11-01 起短期內不使用 Kiro**：規格需要修改時，由 Claude Code 先問使用者、同意後直接改（含版本號與變更摘要）。
 > **task 2.6 之前**：先用已安裝的設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿（儀表板、新增購買記錄），使用者選定後整理成 UI 設計規範寫進規格。
 
 ```
-規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（6.1 完成，下一步分類頁設計稿 → 6.2）
+規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（6.2 完成，下一步 6.3）
   (完成)       (完成)          (完成)            (完成)        ◄ 目前在這裡
 ```
 
@@ -94,10 +95,11 @@
 | 2026-11-02 | **task 5.5**：對照清單，登入成功 / 失敗、登出、攔截重定向已在 5.1～5.4 補齊；新增 `boot/__tests__/pocketbase.test.ts` 6 項（模擬重開 App：有效 token 仍登入並換新、過期 / 被拒變未登入、連不上伺服器保持登入、啟動後持續同步）。全專案 207 項；3 種故意改壞皆被抓到 | `docs/setup-frontend.md` v1.4 |
 | 2026-11-02 | **task 6.1**：`useCategoryStore` 的 fetch / create / update / delete；驗證集中在 store（去前後空白、空白 ERR-002、向伺服器查重複 ERR-003、有商品 ERR-004，資料庫 UNIQUE / Restrict 擋下也轉成相同訊息）。新增 `lib/errors.ts`（ValidationError、apiErrorMessage）與 `test-utils/fakePocketBase.ts`（記憶體假 PocketBase，模擬 UNIQUE / Restrict / 連線錯誤）。`category.test.ts` 20 項，全專案 225 項；4 種故意改壞皆被抓到 | — |
 | 2026-11-02 | **分類管理設計稿**：ui-ux-pro-max 查 UX 規則，設計稿新增「分類列表 / 編輯分類 / 編輯自訂欄位」3 張；使用者確認並同意 3 項提案。規格更新 design.md v3.0、tasks.md v1.4，messages.ts 新增 CONFIRM-003 / 004 | 設計稿 Cat-List / Cat-Edit / Cat-Field |
+| 2026-11-02 | **task 6.2**：`pages/Categories.vue` 分類列表（圖塊配色、商品數 / 自訂欄位數、載入中 / 失敗重試 / 空清單）；`category.fetchStats`；`lib/categoryTone.ts`；`lib/feedback.ts`（Notify / Dialog 包裝）並啟用 Quasar Notify、Dialog；`test-utils/mountPage.ts`。`Categories.test.ts` 8 項，全專案 236 項 | — |
 
 ## 待辦（依順序）
 
-1. **[Claude Code + 使用者]** 分類頁設計稿（分類列表、編輯分類與自訂欄位），使用者確認後做 task 6.2～6.6。
+1. **[Claude Code]** task 6.3～6.6：新增分類、刪除分類、編輯分類與自訂欄位、測試。
 3. 之後依 `tasks.md` 順序，一次做一個 task → 勾選 `[x]` → commit（message 帶 task 編號）。
 
 ## 重要決定紀錄
