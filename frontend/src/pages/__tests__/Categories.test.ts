@@ -1,10 +1,11 @@
-// 分類管理頁（task 6.2：列表，AC-2.1）
-import { describe, it, expect, beforeEach } from 'vitest';
+// 分類管理頁（task 6.2 列表 AC-2.1、task 6.3 新增 AC-2.2～2.4）
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { flushPromises } from '@vue/test-utils';
 import Categories from '@/pages/Categories.vue';
 import { installFakePocketBase } from '@/test-utils/fakePocketBase';
 import { mountPage, stubPage } from '@/test-utils/mountPage';
-import { ERR } from '@/constants/messages';
+import { ERR, MSG } from '@/constants/messages';
+import * as feedback from '@/lib/feedback';
 import { categoryLabel, categoryTone } from '@/lib/categoryTone';
 
 const routes = [
@@ -81,6 +82,70 @@ describe('分類列表（AC-2.1）', () => {
     await flushPromises();
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
     expect(wrapper.findAll('.list__name')).toHaveLength(2);
+  });
+});
+
+describe('新增分類（AC-2.2～2.4）', () => {
+  async function addCategory(name: string) {
+    const page = await mountPage('/categories', routes);
+    await page.wrapper.find('#category-new').setValue(name);
+    await page.wrapper.find('form.add').trigger('submit');
+    await flushPromises();
+    return page;
+  }
+
+  it('BDD：輸入「清潔用品」並新增 → 建立成功、顯示 MSG-001、清單多一筆、輸入框清空（AC-2.2）', async () => {
+    const fake = seed();
+    const notify = vi.spyOn(feedback, 'notifySuccess').mockImplementation(() => undefined);
+    const { wrapper } = await addCategory('清潔用品');
+    expect(notify).toHaveBeenCalledWith(MSG.categoryCreated);
+    expect(MSG.categoryCreated).toBe('分類建立成功');
+    expect(wrapper.findAll('.list__name').map((n) => n.text())).toEqual([
+      '衛生紙',
+      '蔬菜',
+      '清潔用品',
+    ]);
+    expect(wrapper.find('.page__meta').text()).toBe('共 3 個分類');
+    expect((wrapper.find('#category-new').element as HTMLInputElement).value).toBe('');
+    expect(fake.rows('categories')).toHaveLength(3);
+  });
+
+  it('BDD：空名稱送出 → 欄位下方顯示 ERR-002，不建立（AC-2.3）', async () => {
+    const fake = seed();
+    const notify = vi.spyOn(feedback, 'notifySuccess').mockImplementation(() => undefined);
+    const { wrapper } = await addCategory('   ');
+    expect(wrapper.find('#category-new-error').text()).toBe('分類名稱不可為空');
+    expect(wrapper.find('#category-new').attributes('aria-invalid')).toBe('true');
+    expect(notify).not.toHaveBeenCalled();
+    expect(fake.rows('categories')).toHaveLength(2);
+  });
+
+  it('BDD：輸入已存在的「衛生紙」→ 顯示 ERR-003，保留輸入內容（AC-2.4）', async () => {
+    const fake = seed();
+    const { wrapper } = await addCategory('衛生紙');
+    expect(wrapper.find('#category-new-error').text()).toBe('此分類名稱已存在，請使用其他名稱');
+    expect((wrapper.find('#category-new').element as HTMLInputElement).value).toBe('衛生紙');
+    expect(fake.rows('categories')).toHaveLength(2);
+  });
+
+  it('錯誤後重新輸入正確名稱：錯誤訊息消失', async () => {
+    seed();
+    vi.spyOn(feedback, 'notifySuccess').mockImplementation(() => undefined);
+    const { wrapper } = await addCategory('衛生紙');
+    await wrapper.find('#category-new').setValue('廚房用品');
+    await wrapper.find('form.add').trigger('submit');
+    await flushPromises();
+    expect(wrapper.find('#category-new-error').exists()).toBe(false);
+  });
+
+  it('連不上伺服器：顯示 ERR-014', async () => {
+    const fake = seed();
+    const page = await mountPage('/categories', routes);
+    fake.failNext(0, { collection: 'categories', method: 'getList' });
+    await page.wrapper.find('#category-new').setValue('廚房用品');
+    await page.wrapper.find('form.add').trigger('submit');
+    await flushPromises();
+    expect(page.wrapper.find('#category-new-error').text()).toBe(ERR.networkError);
   });
 });
 

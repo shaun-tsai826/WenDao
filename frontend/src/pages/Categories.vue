@@ -1,5 +1,5 @@
 <!--
-  分類管理（task 6.2，AC-2.1）
+  分類管理（task 6.2 列表 AC-2.1、task 6.3 新增 AC-2.2～2.4）
   設計：設計稿「分類管理 · 列表與新增」（使用者 2026-11-02 確認）
   - 每列：分類圖塊（依建立順序配色）、名稱、商品數與自訂欄位數，點選進入編輯分類
   - 載入中、載入失敗（可重試）、沒有分類時都有對應畫面
@@ -12,6 +12,30 @@
         共 {{ categoryStore.categories.length }} 個分類
       </span>
     </div>
+
+    <form class="card add" novalidate @submit.prevent="add">
+      <label for="category-new" class="add__label">新增分類</label>
+      <div class="add__row">
+        <input
+          id="category-new"
+          ref="nameInput"
+          v-model="newName"
+          type="text"
+          class="add__input"
+          placeholder="例如：清潔用品"
+          :maxlength="CATEGORY_NAME_MAX"
+          autocomplete="off"
+          :aria-invalid="addError ? 'true' : undefined"
+          :aria-describedby="addError ? 'category-new-error' : undefined"
+        />
+        <button type="submit" class="add__submit" :disabled="adding">
+          {{ adding ? '新增中…' : '新增' }}
+        </button>
+      </div>
+      <span v-if="addError" id="category-new-error" role="alert" class="add__error">
+        {{ addError }}
+      </span>
+    </form>
 
     <section aria-label="分類清單" class="card list">
       <p v-if="categoryStore.loading && !categoryStore.categories.length" class="list__state">
@@ -55,11 +79,35 @@
 import { onMounted, ref } from 'vue';
 import AppIcon from '@/components/AppIcon.vue';
 import { apiErrorMessage } from '@/lib/errors';
+import { notifySuccess } from '@/lib/feedback';
+import { MSG } from '@/constants/messages';
 import { categoryLabel, categoryTone } from '@/lib/categoryTone';
-import { useCategoryStore } from '@/stores/category';
+import { CATEGORY_NAME_MAX, useCategoryStore } from '@/stores/category';
 
 const categoryStore = useCategoryStore();
 const loadError = ref('');
+
+const newName = ref('');
+const adding = ref(false);
+const addError = ref('');
+const nameInput = ref<HTMLInputElement | null>(null);
+
+/** 新增分類：空白 ERR-002、重複 ERR-003（顯示在欄位下方）；成功顯示 MSG-001 */
+async function add() {
+  if (adding.value) return;
+  addError.value = '';
+  adding.value = true;
+  try {
+    await categoryStore.createCategory(newName.value);
+    newName.value = '';
+    notifySuccess(MSG.categoryCreated);
+  } catch (err) {
+    addError.value = apiErrorMessage(err);
+  } finally {
+    adding.value = false;
+    nameInput.value?.focus();
+  }
+}
 
 /** 「1 項商品 · 3 個自訂欄位」 */
 function summary(id: string): string {
@@ -107,6 +155,78 @@ onMounted(load);
 .card {
   background: var(--surface);
   border-radius: var(--radius-card);
+}
+
+.add {
+  padding: var(--card-pad);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.add__label {
+  font-size: 14px;
+}
+
+.add__row {
+  display: flex;
+  gap: 8px;
+}
+
+.add__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 48px;
+  box-sizing: border-box;
+  border: 1px solid var(--control);
+  border-radius: var(--radius-control);
+  padding: 0 12px;
+  font: inherit;
+  font-size: 16px;
+  color: var(--text);
+  background: var(--surface);
+  outline: none;
+
+  &:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+  }
+
+  &[aria-invalid='true'] {
+    border-color: var(--status-depleted-ink);
+  }
+}
+
+.add__submit {
+  flex: none;
+  height: 48px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #ffffff;
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--accent-ink);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: progress;
+  }
+}
+
+.add__error {
+  font-size: 13px;
+  color: var(--status-depleted-ink);
 }
 
 .list {
