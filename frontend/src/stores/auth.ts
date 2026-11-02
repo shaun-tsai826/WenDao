@@ -6,7 +6,7 @@
 import { defineStore, acceptHMRUpdate } from 'pinia';
 import pb from '@/lib/pocketbase';
 import type { UserRecord } from '@/types/models';
-import { ClientResponseError } from 'pocketbase';
+import { apiErrorMessage } from '@/lib/errors';
 import { ERR } from '@/constants/messages';
 
 export const useAuthStore = defineStore('auth', {
@@ -57,9 +57,5 @@ if (import.meta.hot) {
  * - 其他（帳號或密碼錯、欄位空白…）→ ERR-001「帳號或密碼錯誤，請重新輸入」（AC-1.2）
  */
 export function loginErrorMessage(err: unknown): string {
-  if (err instanceof ClientResponseError) {
-    if (err.status === 0) return ERR.networkError;
-    if (err.status >= 500) return ERR.serverError;
-  }
-  return ERR.loginFailed;
+  return apiErrorMessage(err, ERR.loginFailed);
 }

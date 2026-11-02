@@ -85,8 +85,6 @@ describe('資料 stores 骨架', () => {
   });
 
   it.each([
-    ['fetchCategories', '6.1', () => useCategoryStore().fetchCategories()],
-    ['deleteCategory', '6.1', () => useCategoryStore().deleteCategory('x')],
     ['createProduct', '7.1', () => useProductStore().createProduct({} as never)],
     ['fetchRecords', '8.1', () => usePurchaseStore().fetchRecords()],
     ['deleteRecord', '8.1', () => usePurchaseStore().deleteRecord('x')],

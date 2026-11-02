@@ -224,7 +224,7 @@
     - _對應：REQ-1, AC-1.1, AC-1.2, AC-1.3, AC-1.6, AC-1.7_
 
 - [ ] 6. 分類管理頁面
-  - [ ] 6.1 實作 useCategoryStore
+  - [x] 6.1 實作 useCategoryStore
     - fetchCategories / createCategory / updateCategory / deleteCategory；建立前查詢重複名稱驗證
     - _對應：REQ-2, AC-2.1, AC-2.2, AC-2.7_
 
