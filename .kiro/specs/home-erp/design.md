@@ -1,7 +1,8 @@
 # Design Document
 
-> 版本：v3.0（2026-11-02）
-> 變更摘要：v3.0 分類管理設計稿確認（使用者同意）：新增 CONFIRM-003 / 004（刪除分類、刪除自訂欄位前確認）；刪除分類移到編輯分類頁；已被購買記錄使用的欄位，型別與計算方式在編輯面板中提前鎖定並說明原因（store 仍保留 ERR-018 / 019 檢查）。
+> 版本：v3.1（2026-11-02）
+> 變更摘要：v3.1 回寫 K-14、K-15（使用者同意）：子頁頂欄維持品牌與使用者（AC-1.5），返回列放在內容區；整合測試改用記憶體假資料庫 fakePocketBase（不使用 MSW），關鍵流程以無頭 Chrome + 真實 PocketBase 做 e2e。
+> v3.0 變更摘要：v3.0 分類管理設計稿確認（使用者同意）：新增 CONFIRM-003 / 004（刪除分類、刪除自訂欄位前確認）；刪除分類移到編輯分類頁；已被購買記錄使用的欄位，型別與計算方式在編輯面板中提前鎖定並說明原因（store 仍保留 ERR-018 / 019 檢查）。
 > v2.9 變更摘要：v2.9 task 3（使用者同意）：日期改以 'YYYY-MM-DD' 日曆日期字串計算（src/composables/dates.ts），getDepletionStatus 新增可選參數 today；新增 validateQuantityComponent(s)（ERR-008）；修正歷史均價註解。
 > v2.8 變更摘要：v2.8 新增「UI 設計規範」（使用者確認：設計稿 B 資訊卡片風格 + A 的 Huninn 粉圓體）；PWA manifest 的 theme_color / background_color 改為規範色。
 > v2.7 變更摘要：v2.7 回寫 K-13（使用者同意）：useAuthStore 改由 syncFromPb() 從 SDK 複製登入狀態，boot 註冊 pb.authStore.onChange；新增 src/types/models.ts（6 張表的型別）。
@@ -925,7 +926,8 @@ graph LR
 
 #### 元件
 
-- **頂欄（MainLayout）**：左邊是品牌標記（藍底白字「家」、圓角 10px）加「家庭ERP」；右邊是使用者頭像、名稱和「登出」文字按鈕（AC-1.5）。子頁的頂欄改成「返回箭頭 + 頁面標題」。
+- **頂欄（MainLayout）**：左邊是品牌標記（藍底白字「家」、圓角 10px）加「家庭ERP」；右邊是使用者頭像、名稱和「登出」文字按鈕（AC-1.5）。**所有頁面（含子頁）頂欄都一樣**，不可拿掉使用者資訊。
+- **子頁返回列**：新增、編輯、詳情等子頁在內容區最上方放「返回箭頭（44×44）+ 頁面標題（20px h1）」。
 - **底部導覽列**：4 個項目：首頁、購買記錄、商品、分類。每個項目是 22px 線條圖示加 12px 文字；目前所在的頁面用 `--accent` 顏色標示，其他用 `--muted`。手機與桌機都使用底部導覽列（家庭用、主要用手機）。
 - **卡片**：白底、圓角 20px、**沒有陰影也沒有外框**，靠和淺灰底色的差異區分出來。
 - **主要按鈕**：每個畫面**只有一個**主要按鈕，用 `--accent` 填色、白字、膠囊形。次要按鈕是白底加 1px `--control` 邊框。
@@ -1451,7 +1453,7 @@ try {
 |----------|----------|------|------|
 | 單元測試（Unit Test） | 前端 composables（純函數）、元件、stores | Vitest + Vue Test Utils | 每個函數/元件 2-3 個範例 |
 | 屬性測試（Property Test） | 前端 composables 的通用屬性 | fast-check | 每個 Correctness Property 一個測試 |
-| 整合測試（Integration/E2E） | 完整使用者流程（前端 → PocketBase API） | Vitest + MSW 或 Playwright | 每個主要流程 1-2 個測試 |
+| 整合測試（Integration/E2E） | 完整使用者流程（前端 → PocketBase API） | Vitest + fakePocketBase；e2e 用無頭 Chrome + 真實 PocketBase | 每個主要流程 1-2 個測試 |
 
 ### 單元測試（Unit Test）
 
@@ -1644,7 +1646,8 @@ describe('Property 6: Depletion status classification', () => {
 | MSW（Mock Service Worker） | 攔截 HTTP 請求，模擬 PocketBase API 回應 | 速度快、不需真實 PocketBase，但模擬的 API 行為可能與真實不一致 |
 | Playwright（E2E） | 啟動真實瀏覽器 + 真實 PocketBase 實例 | 最真實，但需啟動 PocketBase 測試實例，速度較慢 |
 
-**推薦策略**：主要使用 MSW 模擬 API 回應做整合測試（速度快），另以 1-2 個 Playwright E2E 測試驗證關鍵流程（如登入 → 建立記錄 → 查看歷史）。
+**採用策略（v3.1，使用者同意）**：不使用 MSW，改用自製的記憶體假資料庫 `src/test-utils/fakePocketBase.ts`（替換 `pb.collection()`，模擬 CRUD、filter、sort、UNIQUE、Restrict、連線錯誤），速度快且不必另裝套件。關鍵流程另以**無頭 Chrome + 真實 PocketBase（臨時資料庫、正式 build）**做 e2e，並使用真實的滑鼠與鍵盤事件。
+> 假資料庫不會模擬 SDK 本身的行為（例如自動取消請求、Quasar 元件的點擊穿透），所以 e2e 不可省略。（上表的 MSW 為原本評估的選項，保留作為紀錄。）
 
 **整合測試清單：**
 
@@ -1652,16 +1655,16 @@ describe('Property 6: Depletion status classification', () => {
 |----------|----------|----------|
 | 未登入存取被攔截重定向 | REQ-1.3 | 渲染受保護路由但未設定 authStore，驗證重定向至 /login |
 | Session 持久性 | REQ-1.7 | 模擬頁面刷新，驗證 authStore 從 localStorage 恢復 |
-| 分類列表頁面顯示 | REQ-2.1 | MSW 回傳分類資料，渲染頁面，驗證清單正確 |
-| 刪除有商品的分類被拒 | REQ-2.5 | MSW 回傳 400 錯誤，驗證顯示 ERR-004 |
+| 分類列表頁面顯示 | REQ-2.1 | fakePocketBase 提供分類資料，渲染頁面，驗證清單正確 |
+| 刪除有商品的分類被拒 | REQ-2.5 | fakePocketBase 提供 400 錯誤，驗證顯示 ERR-004 |
 | 動態自訂欄位顯示 | REQ-4.5 | 建立有自訂欄位的分類商品，渲染新增記錄表單，驗證欄位出現 |
 | 購買記錄自動記錄使用者 | REQ-5.6 | 登入後建立記錄，驗證 user 欄位設為當前使用者 ID |
 | 購買記錄前端計算寫入 | REQ-6.1 | 填入總價與數量組成欄位值，驗證 API 請求包含計算後的 quantity 和 unit_price |
 | 購買記錄後提示更新剩餘數量 | REQ-7.13 | 建立記錄成功後，驗證 QDialog 彈出詢問是否更新剩餘數量 |
-| 購買記錄按日期排序 | REQ-8.1 | MSW 回傳多筆不同日期記錄，驗證列表按日期降序排列 |
-| 購買記錄列表含新增者 | REQ-8.3 | MSW 回傳記錄含 expand.user，驗證列表顯示新增者名稱 |
+| 購買記錄按日期排序 | REQ-8.1 | fakePocketBase 提供多筆不同日期記錄，驗證列表按日期降序排列 |
+| 購買記錄列表含新增者 | REQ-8.3 | fakePocketBase 提供記錄含 expand.user，驗證列表顯示新增者名稱 |
 | 分類篩選 | REQ-8.5 | 設定篩選條件，驗證 API 請求的 filter 參數正確 |
 | 日期區間篩選 | REQ-8.6 | 設定日期區間，驗證 API 請求的 filter 參數正確（含結束日當天） |
-| 首頁補貨提醒 | REQ-7.6 | MSW 回傳即將耗盡/已耗盡商品，渲染首頁，驗證提醒清單正確 |
-| 久未更新提醒 | REQ-7.14 | MSW 回傳 remaining_updated_at 超過 30 天的商品，驗證顯示 STATUS-008 |
+| 首頁補貨提醒 | REQ-7.6 | fakePocketBase 提供即將耗盡/已耗盡商品，渲染首頁，驗證提醒清單正確 |
+| 久未更新提醒 | REQ-7.14 | fakePocketBase 提供 remaining_updated_at 超過 30 天的商品，驗證顯示 STATUS-008 |
 | 響應式設計 | REQ-9.2 | 以手機 viewport 尺寸渲染頁面，驗證 Quasar RWD class 正確套用 |

@@ -1,7 +1,8 @@
 # Implementation Plan: home-erp 家庭用品管理 ERP
 
-> 版本：v1.4（2026-11-02）
-> 變更摘要：v1.4 分類管理設計稿確認（使用者同意）：6.4 刪除分類改在編輯分類頁並先確認（CONFIRM-003）；6.5 刪除欄位先確認（CONFIRM-004）、已使用欄位提前鎖定型別與計算方式。
+> 版本：v1.5（2026-11-02）
+> 變更摘要：v1.5 回寫 K-15（使用者同意）：整合測試以 fakePocketBase 取代 MSW，12.1 改為整理 fakePocketBase 與 e2e 腳本。
+> v1.4 分類管理設計稿確認（使用者同意）：6.4 刪除分類改在編輯分類頁並先確認（CONFIRM-003）；6.5 刪除欄位先確認（CONFIRM-004）、已使用欄位提前鎖定型別與計算方式。
 > v1.3 依實作結果回寫 K-1、K-2、K-8、K-9（經使用者同意）：1.2 users 改為修改系統預設 Collection；1.8 使用者改為手動建立；2.1 的 `quasar.config.js` 改為 `quasar.config.ts` 與 `src-pwa/manifest.json`；2.2 的 `build.env` 改為 `build.defineEnv`，正式環境網址改為 `/`；1.3 的 required 依 PocketBase 語意調整（K-2）。
 > v1.2 變更摘要：v1.2 依 review-notes v1.2 修正：PocketBase / JS SDK 版本改為開工時確認後鎖定，SDK 須 0.22 以上（F-1）；8.4 對話框預設值改為目前的剩餘數量（F-4）；7.7 補上 ERR-015、ERR-016、STATUS-008 測試（F-5）。
 > v1.1 變更摘要：依 review-notes R-1~R-6、C-6~C-13、Q-1~Q-4 修正。主要變更：Collection 改由 migration 檔建立（R-6）、路徑改為 repo 內（R-6）、PocketBase 版本鎖定 0.23.4 + SDK 0.21.5（R-4）、Chart.js 改 npm（R-5）、users API Rule 改 Locked（R-1）、新增 tailscale serve 步驟（R-2）、新增剩餘數量與消耗單位欄位及計算（C-6/C-8）、消耗狀態邊界修正（C-7）、購買記錄列表補新増者（C-9）、自訂欄位編輯/刪除限制（C-10）、價格比較 null 處理（C-12）、所有測試任務改為必做（C-13）、新增 task 7.8 久未更新提醒（Q-3）、新增 task 8.4 剩餘數量更新對話框（Q-1）。
@@ -15,7 +16,7 @@
 2. 前端專案初始化（Quasar + 路由 + Pinia + PocketBase SDK + 測試環境）
 3. 核心業務邏輯 composables（純函數 + 屬性測試）
 4. 功能頁面（認證 → 分類 → 商品 → 購買記錄 → 儀表板 → 價格趨勢）
-5. 整合測試（MSW 模擬 PocketBase API）
+5. 整合測試（fakePocketBase 記憶體假資料庫 + 無頭 Chrome e2e）
 6. 部署設定檔案（launchd plist + 部署腳本 + tailscale serve）
 
 實作語言為 TypeScript（Vue 3 + Quasar），測試使用 Vitest + fast-check。
@@ -252,7 +253,7 @@
 
   - [x] 6.6 撰寫分類管理測試
     - 建立分類成功（EXAMPLE）、空名稱被拒（EDGE_CASE）、重複名稱被拒（EDGE_CASE）
-    - 刪除空分類成功（EXAMPLE）、刪除有商品分類被拒（整合，MSW 回傳 400）
+    - 刪除空分類成功（EXAMPLE）、刪除有商品分類被拒（整合，fakePocketBase 回傳 400）
     - 分類名稱更新成功（EXAMPLE）、更新為空被拒（EDGE_CASE）、更新為重複被拒（EDGE_CASE）
     - 欄位名稱重複被拒（EDGE_CASE）、刪除有紀錄欄位被拒（EDGE_CASE）、修改有紀錄欄位型別被拒（EDGE_CASE）
     - _對應：REQ-2, AC-2.2, AC-2.3, AC-2.4, AC-2.5, AC-2.6, AC-2.7, AC-2.8, AC-2.9, REQ-4, AC-4.7, AC-4.8, AC-4.10_
@@ -331,7 +332,7 @@
 
   - [ ] 8.8 撰寫購買記錄測試
     - 總價 <= 0 被拒（EDGE_CASE）、未來日期被拒（EDGE_CASE）、必填缺失被拒（EDGE_CASE）、結束日期早於開始被拒（EDGE_CASE）
-    - 前端計算寫入驗證（整合，MSW 驗證 API 請求含計算後 quantity/unit_price）
+    - 前端計算寫入驗證（整合，fakePocketBase 驗證寫入的 quantity/unit_price）
     - 存檔後提示更新剩餘數量（整合，驗證 QDialog 彈出）
     - _對應：REQ-5, AC-5.3, AC-5.4, AC-5.5, AC-5.11, REQ-7, AC-7.13, REQ-8, AC-8.7_
 
@@ -341,7 +342,7 @@
     - _對應：REQ-7, AC-7.4, AC-7.5, AC-7.6_
 
   - [ ] 9.2 撰寫儀表板測試
-    - MSW 回傳即將耗盡/已耗盡商品，驗證提醒清單正確顯示
+    - fakePocketBase 回傳即將耗盡/已耗盡商品，驗證提醒清單正確顯示
     - _對應：REQ-7, AC-7.6_
 
 - [ ] 10. 價格趨勢圖
@@ -362,8 +363,8 @@
   - 執行 `vitest --run` 確認各功能頁面單元測試與屬性測試通過，有問題時詢問使用者。
 
 - [ ] 12. 整合測試
-  - [ ] 12.1 設定 MSW 模擬 PocketBase API 回應
-    - 建立 MSW handler 模擬各 Collection 的 CRUD 回應與認證流程
+  - [ ] 12.1 整理整合測試工具（fakePocketBase）與 e2e 腳本
+    - 以 `src/test-utils/fakePocketBase.ts` 模擬各 Collection 的 CRUD 與資料庫規則；e2e 以無頭 Chrome + 真實 PocketBase 執行
     - _對應：REQ-1 ~ REQ-8_
 
   - [ ] 12.2 撰寫認證流程整合測試
@@ -371,7 +372,7 @@
     - _對應：REQ-1, AC-1.3, AC-1.7_
 
   - [ ] 12.3 撰寫分類與商品 CRUD 整合測試
-    - 刪除有商品的分類被拒（MSW 回傳 400，驗證顯示 ERR-004）、建立商品流程
+    - 刪除有商品的分類被拒（fakePocketBase 回傳 400，驗證顯示 ERR-004）、建立商品流程
     - _對應：REQ-2, AC-2.5, REQ-3, AC-3.1_
 
   - [ ] 12.4 撰寫購買記錄建立整合測試
@@ -385,7 +386,7 @@
     - _對應：REQ-8, AC-8.1, AC-8.3, AC-8.5, AC-8.6_
 
   - [ ] 12.6 撰寫儀表板補貨提醒整合測試
-    - MSW 回傳即將耗盡/已耗盡商品，渲染首頁驗證提醒清單正確
+    - fakePocketBase 回傳即將耗盡/已耗盡商品，渲染首頁驗證提醒清單正確
     - _對應：REQ-7, AC-7.6_
 
   - [ ] 12.7 撰寫響應式設計測試
