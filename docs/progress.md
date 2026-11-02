@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v4.2（2026-11-02）
-> 變更摘要：v4.2 task 6.3（新增分類）完成。
+> 版本：v4.3（2026-11-02）
+> 變更摘要：v4.3 task 6.4（刪除分類）完成；新增 K-14。
+> v4.2 task 6.3（新增分類）完成。
 > v4.1 task 6.2（分類列表）完成。
 > v4.0 分類管理設計稿確認，design.md v3.0、tasks.md v1.4（CONFIRM-003/004）。
 > v3.9 task 6.1（useCategoryStore）完成；新增共用錯誤處理與測試用假 PocketBase。
@@ -37,13 +38,13 @@
 
 ## 目前階段
 
-**實作中。** task 1（環境建置）全部完成；**task 1～5、6.1～6.3 完成**，下一步是 task 6.4（刪除分類）。commit 前執行 `npm test`（目前 241 項）。
+**實作中。** task 1（環境建置）全部完成；**task 1～5、6.1～6.4 完成**，下一步是 task 6.5（編輯分類名稱與自訂欄位）。commit 前執行 `npm test`（目前 247 項）。
 
 > **2026-11-01 起短期內不使用 Kiro**：規格需要修改時，由 Claude Code 先問使用者、同意後直接改（含版本號與變更摘要）。
 > **task 2.6 之前**：先用已安裝的設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿（儀表板、新增購買記錄），使用者選定後整理成 UI 設計規範寫進規格。
 
 ```
-規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（6.3 完成，下一步 6.4）
+規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（6.4 完成，下一步 6.5）
   (完成)       (完成)          (完成)            (完成)        ◄ 目前在這裡
 ```
 
@@ -98,6 +99,7 @@
 | 2026-11-02 | **分類管理設計稿**：ui-ux-pro-max 查 UX 規則，設計稿新增「分類列表 / 編輯分類 / 編輯自訂欄位」3 張；使用者確認並同意 3 項提案。規格更新 design.md v3.0、tasks.md v1.4，messages.ts 新增 CONFIRM-003 / 004 | 設計稿 Cat-List / Cat-Edit / Cat-Field |
 | 2026-11-02 | **task 6.2**：`pages/Categories.vue` 分類列表（圖塊配色、商品數 / 自訂欄位數、載入中 / 失敗重試 / 空清單）；`category.fetchStats`；`lib/categoryTone.ts`；`lib/feedback.ts`（Notify / Dialog 包裝）並啟用 Quasar Notify、Dialog；`test-utils/mountPage.ts`。`Categories.test.ts` 8 項，全專案 236 項 | — |
 | 2026-11-02 | **task 6.3**：分類列表頁上方的新增表單；空白 ERR-002、重複 ERR-003、連線錯誤顯示在欄位下方（role=alert、aria-invalid）；成功顯示 MSG-001 並清空、聚焦輸入框。新增 5 項測試（BDD AC-2.2～2.4），全專案 241 項 | — |
+| 2026-11-02 | **task 6.4**：`pages/CategoryEdit.vue` 框架與「刪除這個分類」區塊（有商品時停用並寫出原因；CONFIRM-003 確認；成功 MSG-002 並回到列表；資料庫擋下顯示 ERR-004）。返回列放在內容區（K-14）。`CategoryEdit.test.ts` 6 項，全專案 247 項 | — |
 
 ## 待辦（依順序）
 
@@ -152,6 +154,7 @@
 | K-11 | task 2.3 | **（已回寫 v2.5）** design.md boot 範例：恢復登入的邏輯抽到 `src/lib/restoreAuth.ts`（client 由參數傳入，方便測試），並加上 `authRefresh`（換新 token、確認帳號存在；連不上伺服器時保留登入）；`pb.authStore.onChange` 同步 Pinia 的部分移到 task 2.5 |
 | K-12 | task 2.4 | **（已回寫 v2.6）** design.md 路由範例：11 條功能頁改為 MainLayout 的子路由（`meta.requiresAuth` 寫在父路由）；守衛改為純函數 `authGuard(to, isAuthenticated)`，登入狀態取自 `pb.authStore.isValid`（不依賴 auth store）；路由模式由 quasar.config.ts 的 `vueRouterMode: 'history'` 設定；保留 Quasar 的 404 頁（ErrorNotFound） |
 | K-13 | task 2.5 | **（已回寫 v2.7）** design.md 的 useAuthStore：state 初始值改為空（user: null、token: ''），由 `syncFromPb()` 從 SDK 複製（token 過期視為未登入）；boot 呼叫 `syncFromPb()` 並註冊 `pb.authStore.onChange`；新增 `src/types/models.ts` 存放 6 張表的型別（資料庫原始值） |
+| K-14 | task 6.4 | **（未回寫，待使用者確認）** design.md「UI 設計規範 › 元件 › 頂欄」寫「子頁的頂欄改成返回箭頭 + 頁面標題」，會拿掉右上角使用者名稱與登出，與 AC-1.5「已登入時右上角顯示使用者名稱與登出」衝突。實作改為：頂欄維持不變，子頁在內容區上方放「返回箭頭 + 頁面標題（20px h1）」 |
 | K-7 | task 1.6 | purchase_record_field_values 同 K-3，改為 `(purchase_record, custom_field)` UNIQUE INDEX + 前端保證 |
 
 ## 下次接手時
