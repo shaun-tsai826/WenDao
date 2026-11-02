@@ -1,7 +1,8 @@
 # 前端環境建置教學（setup-frontend.md）
 
-> 版本：v1.3（2026-11-02）
-> 變更摘要：v1.3 測試清單更新到 task 5.3（200 項）；vitest 加上 #q-app 別名。
+> 版本：v1.4（2026-11-02）
+> 變更摘要：v1.4 測試清單更新到 task 5.5（207 項）。
+> v1.3 測試清單更新到 task 5.3（200 項）；vitest 加上 #q-app 別名。
 > v1.2 新增第 7 節自動化測試（task 2.8）。
 > v1.1 新增第 6 節 PocketBase 網址設定與套件版本（task 2.2）、補充 npm audit 說明。
 > v1.0 初次建立（task 2.1）。說明 Quasar 專案怎麼建立、怎麼啟動、怎麼建置 PWA，附疑難排解。
@@ -152,17 +153,18 @@ npm run test:watch    # 改檔案時自動重跑（開發時開著）
 
 | 測試檔（`src/` 底下） | 驗證什麼 | 項目數 |
 |---|---|---|
+| `boot/__tests__/pocketbase.test.ts` | App 啟動流程（AC-1.7）：重開 App 仍登入並換新 token、過期 / 被拒變未登入、連不上伺服器保持登入、啟動後持續同步 | 6 |
 | `lib/__tests__/restoreAuth.test.ts` | 啟動時恢復登入（AC-1.7）：沒 token、過期、有效、401/403/404/500、連不上伺服器、其他錯誤 | 9 |
 | `router/__tests__/authGuard.test.ts` | 守衛邏輯：12 條路由、未登入導向登入頁（AC-1.3）、已登入可進入、屬性測試（任意 id） | 28 |
 | `router/__tests__/router.test.ts` | 真正的 router 串接：守衛讀 SDK 登入狀態、token 過期或登出後下一次換頁被擋 | 5 |
 | `stores/__tests__/stores.test.ts` | auth 與 SDK 同步、各 store 初始狀態與 getters、未實作 action 的錯誤訊息 | 11 |
 | `stores/__tests__/auth.test.ts` | login / logout（AC-1.1、1.2、1.6、1.7）、登入錯誤訊息對應 | 11 |
 | `pages/__tests__/Login.test.ts` | 登入頁：成功導向首頁、ERR-001、ERR-014、空白 ERR-009、登入中停用、顯示密碼 | 8 |
-| `layouts/__tests__/MainLayout.test.ts` | 使用者名稱、頭像、登出按鈕（AC-1.5）、導覽列 4 項與目前頁 | 6 |
+| `layouts/__tests__/MainLayout.test.ts` | 使用者名稱、頭像、登出按鈕（AC-1.5）、導覽列 4 項與目前頁 | 7 |
 | `constants/__tests__/messages.test.ts` | 39 則訊息與 design.md 一字不差、出現在 requirements.md、數量、不重複 | 75 |
 | `composables/__tests__/calculations.test.ts` | 單位均價、數量組成、歷史均價、價格比較（Property 1～4、7） | 20 |
 | `composables/__tests__/depletion.test.ts` | 日期工具、耗盡日期、消耗狀態（Property 5、6 與 BDD 4 個邊界） | 27 |
-| **合計** | | **200** |
+| **合計** | | **207** |
 
 > `messages.test.ts` 會讀規格文件：之後改了 design.md 的訊息文字卻沒同步改 `messages.ts`，測試就會失敗提醒你。
 

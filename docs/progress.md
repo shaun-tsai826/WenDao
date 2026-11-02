@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v3.7（2026-11-02）
-> 變更摘要：v3.7 task 5.4（登出按鈕）完成。
+> 版本：v3.8（2026-11-02）
+> 變更摘要：v3.8 task 5.5 完成，task 5（認證功能）全部完成。
+> v3.7 task 5.4（登出按鈕）完成。
 > v3.6 task 5.3（router 串接測試）完成。
 > v3.5 登入頁設計稿確認；task 5.2（登入頁）完成。
 > v3.4 task 4 Checkpoint 完成；task 5.1（auth store login / logout）完成。
@@ -32,13 +33,13 @@
 
 ## 目前階段
 
-**實作中。** task 1（環境建置）全部完成；**task 1～4、5.1～5.4 完成**，下一步是 task 5.5（認證測試）。commit 前執行 `npm test`（目前 201 項）。
+**實作中。** task 1（環境建置）全部完成；**task 1～5 全部完成**（使用者已可用自己的帳號登入 / 登出），下一步是 task 6（分類管理頁面）。commit 前執行 `npm test`（目前 207 項）。
 
 > **2026-11-01 起短期內不使用 Kiro**：規格需要修改時，由 Claude Code 先問使用者、同意後直接改（含版本號與變更摘要）。
 > **task 2.6 之前**：先用已安裝的設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿（儀表板、新增購買記錄），使用者選定後整理成 UI 設計規範寫進規格。
 
 ```
-規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（5.4 完成，下一步 5.5）
+規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（task 5 完成，下一步 task 6）
   (完成)       (完成)          (完成)            (完成)        ◄ 目前在這裡
 ```
 
@@ -88,10 +89,11 @@
 | 2026-11-02 | **task 5.2**：`pages/Login.vue`（依設計稿；空白欄位 ERR-009、登入失敗依原因 ERR-001/013/014、保留 email 清空密碼並聚焦、登入中停用）。`Login.test.ts` 8 項，全專案 195 項通過；無頭 Chrome 對正式 build 實際輸入驗證 6 個步驟（含重新整理仍登入） | — |
 | 2026-11-02 | **task 5.3**：守衛與登入保持已在 2.3 / 2.4 實作；補上真正的 `router/index.ts` 串接測試 5 項（未登入被擋、有效 token 可進入、使用中 token 過期或登出後下一次換頁被擋、已登入開 /login 導回首頁）。vitest 的 `#q-app` 指向 Quasar 官方實作。全專案 200 項通過；拿掉守衛那一行會有 4 項失敗 | `docs/setup-frontend.md` v1.3 |
 | 2026-11-02 | **task 5.4**：MainLayout「登出」按鈕接上 `auth.logout()` 並 `router.replace('/login')`（AC-1.6），不另加確認對話框（規格未要求）。MainLayout 測試新增 1 項，全專案 201 項；無頭 Chrome 驗證登出後按上一頁、直接輸入網址、重新整理都停在 /login | — |
+| 2026-11-02 | **task 5.5**：對照清單，登入成功 / 失敗、登出、攔截重定向已在 5.1～5.4 補齊；新增 `boot/__tests__/pocketbase.test.ts` 6 項（模擬重開 App：有效 token 仍登入並換新、過期 / 被拒變未登入、連不上伺服器保持登入、啟動後持續同步）。全專案 207 項；3 種故意改壞皆被抓到 | `docs/setup-frontend.md` v1.4 |
 
 ## 待辦（依順序）
 
-1. **[Claude Code]** task 5.5：認證單元與整合測試（補齊 tasks.md 列的項目，含 boot 的 session 持久性）。
+1. **[Claude Code]** task 6：分類管理頁面（6.1 useCategoryStore 起）。畫面依 UI 設計規範；新畫面先呼叫設計 skills 做稿給使用者確認。
 3. 之後依 `tasks.md` 順序，一次做一個 task → 勾選 `[x]` → commit（message 帶 task 編號）。
 
 ## 重要決定紀錄

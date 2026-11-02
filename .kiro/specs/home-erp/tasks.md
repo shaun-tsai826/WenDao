@@ -200,7 +200,7 @@
 - [x] 4. Checkpoint — 確認核心邏輯測試通過
   - 執行 `vitest --run` 確認所有 composables 單元測試與屬性測試通過，有問題時詢問使用者。
 
-- [ ] 5. 認證功能：登入頁面與 auth store
+- [x] 5. 認證功能：登入頁面與 auth store
   - [x] 5.1 實作 useAuthStore
     - login(email, password) 呼叫 `pb.collection('users').authWithPassword`，儲存 user/token
     - logout() 清除 authStore；getters: isAuthenticated, displayName
@@ -218,7 +218,7 @@
     - MainLayout 右上角顯示 displayName 與登出按鈕；點擊登出結束登入並導向 /login
     - _對應：REQ-1, AC-1.5, AC-1.6_
 
-  - [ ] 5.5 撰寫認證單元與整合測試
+  - [x] 5.5 撰寫認證單元與整合測試
     - 正確帳密登入成功（EXAMPLE）、錯誤密碼失敗（EXAMPLE）、登出清除 authStore（EXAMPLE）
     - 未登入存取被攔截重定向、session 持久性（mock PocketBase SDK）
     - _對應：REQ-1, AC-1.1, AC-1.2, AC-1.3, AC-1.6, AC-1.7_
