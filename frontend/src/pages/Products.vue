@@ -3,7 +3,7 @@
   設計：設計稿 Prod-List（使用者 2026-11-02 確認）、design.md v3.2「商品管理」
   - 依急迫程度排序：已耗盡 → 即將耗盡 → 未設定剩餘數量 → 正常 → 未設定消耗速率
   - 每列：分類圖塊、品牌＋品名、第二行（剩餘數量與預計用完日）、狀態標籤（DepletionBadge）
-  - 上方依分類篩選，放不下時換行
+  - 上方依分類篩選，放不下時換行；選擇記在網址 ?category=<id>（從商品詳情按上一頁會回到原本的篩選）
   - 久未更新提醒（STATUS-008）在 task 7.8 加入
 -->
 <template>
@@ -31,7 +31,7 @@
         role="radio"
         class="filter__chip"
         :aria-checked="selected === option.id ? 'true' : 'false'"
-        @click="selected = option.id"
+        @click="select(option.id)"
       >
         {{ option.label }}
       </button>
@@ -73,6 +73,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import AppIcon from '@/components/AppIcon.vue';
 import DepletionBadge from '@/components/DepletionBadge.vue';
 import { apiErrorMessage } from '@/lib/errors';
@@ -90,8 +91,19 @@ const productStore = useProductStore();
 const loading = ref(true);
 const loadError = ref('');
 const ready = computed(() => !loading.value && !loadError.value);
-/** 目前選的分類 id；'' = 全部 */
-const selected = ref(ALL);
+const route = useRoute();
+const router = useRouter();
+
+/** 目前選的分類 id（取自網址 ?category=）；'' = 全部。網址上的分類不存在時當成全部 */
+const selected = computed(() => {
+  const id = typeof route.query.category === 'string' ? route.query.category : ALL;
+  return categoryStore.categories.some((c) => c.id === id) ? id : ALL;
+});
+
+/** 換篩選：用 replace 改網址，不多一筆瀏覽紀錄（上一頁不會一格一格退回篩選） */
+function select(id: string) {
+  void router.replace({ query: id === ALL ? {} : { category: id } });
+}
 /** 載入時的「今天」，整頁用同一天計算 */
 const today = ref(localToday());
 

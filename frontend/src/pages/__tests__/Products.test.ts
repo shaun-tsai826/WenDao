@@ -194,12 +194,14 @@ describe('依分類篩選（AC-7.3）', () => {
       wrapper.findAll('[role="radio"]').find((c) => c.text() === text)!;
 
     await chip('清潔用品').trigger('click');
+    await flushPromises();
     expect(names(wrapper)).toEqual(['白蘭 洗衣精補充包', '泡舒 洗碗精', '3M 菜瓜布']);
     expect(wrapper.find('.page__meta').text()).toBe('共 3 項 · 最需要補的排在前面');
     expect(chip('清潔用品').attributes('aria-checked')).toBe('true');
     expect(chip('全部').attributes('aria-checked')).toBe('false');
 
     await chip('全部').trigger('click');
+    await flushPromises();
     expect(names(wrapper)).toHaveLength(5);
   });
 
@@ -210,8 +212,60 @@ describe('依分類篩選（AC-7.3）', () => {
       .findAll('[role="radio"]')
       .find((c) => c.text() === '蔬菜')!
       .trigger('click');
+    await flushPromises();
     expect(names(wrapper)).toEqual([]);
     expect(wrapper.find('.list__state').text()).toBe('「蔬菜」還沒有商品');
+  });
+});
+
+describe('記住篩選（網址 ?category=）', () => {
+  const chip = (w: Awaited<ReturnType<typeof mountPage>>['wrapper'], text: string) =>
+    w.findAll('[role="radio"]').find((c) => c.text() === text)!;
+
+  it('選分類時寫進網址（replace，不多一筆瀏覽紀錄）；選「全部」時拿掉', async () => {
+    seed();
+    const { wrapper, router } = await mountPage('/products', routes);
+    const push = vi.spyOn(router, 'push');
+
+    await chip(wrapper, '清潔用品').trigger('click');
+    await flushPromises();
+    expect(router.currentRoute.value.fullPath).toBe('/products?category=c-clean');
+    expect(push).not.toHaveBeenCalled();
+
+    await chip(wrapper, '全部').trigger('click');
+    await flushPromises();
+    expect(router.currentRoute.value.fullPath).toBe('/products');
+  });
+
+  it('直接開啟帶分類的網址：套用篩選', async () => {
+    seed();
+    const { wrapper } = await mountPage('/products?category=c-clean', routes);
+    expect(chip(wrapper, '清潔用品').attributes('aria-checked')).toBe('true');
+    expect(names(wrapper)).toEqual(['白蘭 洗衣精補充包', '泡舒 洗碗精', '3M 菜瓜布']);
+  });
+
+  it('從商品詳情按上一頁：回到原本的篩選', async () => {
+    seed();
+    const { wrapper, router } = await mountPage('/products', routes);
+    await chip(wrapper, '清潔用品').trigger('click');
+    await flushPromises();
+    await wrapper.findAll('.list__row')[0]!.trigger('click');
+    await flushPromises();
+    expect(router.currentRoute.value.path).toBe('/products/p-depleted');
+
+    router.back();
+    await new Promise((r) => setTimeout(r, 0)); // memory history 的 back 是非同步
+    await flushPromises();
+    expect(router.currentRoute.value.fullPath).toBe('/products?category=c-clean');
+    expect(chip(wrapper, '清潔用品').attributes('aria-checked')).toBe('true');
+    expect(names(wrapper)).toEqual(['白蘭 洗衣精補充包', '泡舒 洗碗精', '3M 菜瓜布']);
+  });
+
+  it('網址上的分類不存在（例如已被刪除）：當成「全部」', async () => {
+    seed();
+    const { wrapper } = await mountPage('/products?category=c-gone', routes);
+    expect(chip(wrapper, '全部').attributes('aria-checked')).toBe('true');
+    expect(names(wrapper)).toHaveLength(5);
   });
 });
 

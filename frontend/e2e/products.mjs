@@ -1,4 +1,4 @@
-// 商品列表（task 7.3）：用真正的滑鼠事件操作，檢查排序、狀態標籤、分類篩選、導頁與版面
+// 商品列表（task 7.3）：用真正的滑鼠事件操作，檢查排序、狀態標籤、分類篩選（含記在網址上）、導頁與版面
 // 測試資料由本腳本用 API 建立（以今天為基準推算日期），不依賴其他腳本的執行順序。
 import { spawn } from 'node:child_process';
 import { writeFileSync, mkdtempSync } from 'node:fs';
@@ -67,13 +67,18 @@ await shot('prod-2-filter');
 await clickText('[role=radio]', '零食');
 console.log('3 篩選零食（空）:', await js(`document.querySelector('.list__state')?.textContent.trim()`));
 
+await clickText('[role=radio]', '清潔劑');
+await clickText('.list__row', '泡舒');
+console.log('4 篩選清潔劑後點泡舒 → 商品詳情:', await js('location.pathname'));
+await send('Runtime.evaluate', { expression: 'history.back()' }); await sleep(1500);
+console.log('5 上一頁 → 篩選保留:', await js('location.pathname + location.search'), '| 篩選:', await checked(), '|', (await rows()).length, '項');
+await send('Page.reload'); await sleep(2500);
+console.log('6 重新整理 → 篩選保留:', await js('location.pathname + location.search'), '| 篩選:', await checked(), '|', (await rows()).length, '項');
 await clickText('[role=radio]', '全部');
-console.log('4 回到全部:', await meta());
-
-await clickText('.list__row', '春風');
-console.log('5 點春風 → 商品詳情:', await js('location.pathname'));
-await send('Runtime.evaluate', { expression: 'history.back()' }); await sleep(1200);
-console.log('6 上一頁回到列表:', await js('location.pathname'), '|', (await rows()).length, '項');
+console.log('7 回到全部:', await js('location.pathname + location.search'), '|', await meta());
+await send('Runtime.evaluate', { expression: 'history.back()' }); await sleep(1500);
+console.log('8 再按上一頁 → 離開商品頁（篩選切換沒有留下瀏覽紀錄）:', await js('location.pathname + location.search'));
+await click('a[href="/products"]'); await sleep(1500);
 
 const layout = await js(`(() => {
   const badges = [...document.querySelectorAll('.depletion-badge')];
@@ -85,8 +90,8 @@ const layout = await js(`(() => {
     標籤配色: badges.map(b => getComputedStyle(b).backgroundColor).join(' / '),
   };
 })()`);
-console.log('7 版面:', JSON.stringify(layout));
+console.log('9 版面:', JSON.stringify(layout));
 
 await click('a.add-link');
-console.log('8 新增商品按鈕:', await js('location.pathname'));
+console.log('10 新增商品按鈕:', await js('location.pathname'));
 sock.close(); chrome.kill();
