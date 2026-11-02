@@ -49,6 +49,8 @@ export const ERR = {
 export const CONFIRM = {
   deleteRecord: '確定要刪除此筆記錄嗎？', // CONFIRM-001 · REQ-5.8
   updateRemaining: '是否更新此商品的剩餘數量？', // CONFIRM-002 · REQ-7.13
+  deleteCategory: '確定要刪除分類「{name}」嗎？', // CONFIRM-003 · REQ-2.6（設計補充）
+  deleteField: '確定要刪除欄位「{name}」嗎？', // CONFIRM-004 · REQ-4.9（設計補充）
 } as const;
 
 /** 系統狀態訊息（畫面上的狀態文字、標籤） */
@@ -62,6 +64,11 @@ export const STATUS = {
   remainingNotSet: '未設定剩餘數量', // STATUS-007 · REQ-7.12
   remainingStale: '剩餘數量已久未更新', // STATUS-008 · REQ-7.14（超過 30 天）
 } as const;
+
+/** 把訊息裡的 {name} 換成實際名稱，例如 withName(CONFIRM.deleteCategory, '蔬菜') */
+export function withName(message: string, name: string): string {
+  return message.replace('{name}', name);
+}
 
 export type MessageText =
   | (typeof MSG)[keyof typeof MSG]

@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { MSG, ERR, CONFIRM, STATUS } from '@/constants/messages';
+import { MSG, ERR, CONFIRM, STATUS, withName } from '@/constants/messages';
 
 const read = (rel: string) => readFileSync(fileURLToPath(new URL(rel, import.meta.url)), 'utf8');
 const design = read('../../../../.kiro/specs/home-erp/design.md');
@@ -24,12 +24,12 @@ const codeById = new Map(
 );
 
 describe('訊息常數', () => {
-  it('數量與規格一致：MSG 10、ERR 19、CONFIRM 2、STATUS 8', () => {
+  it('數量與規格一致：MSG 10、ERR 19、CONFIRM 4、STATUS 8', () => {
     expect(Object.keys(MSG)).toHaveLength(10);
     expect(Object.keys(ERR)).toHaveLength(19);
-    expect(Object.keys(CONFIRM)).toHaveLength(2);
+    expect(Object.keys(CONFIRM)).toHaveLength(4);
     expect(Object.keys(STATUS)).toHaveLength(8);
-    expect(specRows).toHaveLength(39);
+    expect(specRows).toHaveLength(41);
   });
 
   it.each(specRows)('$id 與 design.md 一字不差：「$text」', ({ id, text }) => {
@@ -46,5 +46,12 @@ describe('訊息常數', () => {
   it('沒有重複的文字', () => {
     const all = [MSG, ERR, CONFIRM, STATUS].flatMap((o) => Object.values(o));
     expect(new Set(all).size).toBe(all.length);
+  });
+});
+
+describe('withName', () => {
+  it('把 {name} 換成實際名稱', () => {
+    expect(withName(CONFIRM.deleteCategory, '蔬菜')).toBe('確定要刪除分類「蔬菜」嗎？');
+    expect(withName(CONFIRM.deleteField, '層數')).toBe('確定要刪除欄位「層數」嗎？');
   });
 });
