@@ -14,6 +14,8 @@ export default defineConfig({
       { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
       // Quasar 預設會載入伺服器端版本；測試是模擬瀏覽器，要改用 client 版本（Quasar 錯誤訊息的建議做法）
       { find: /^quasar$/, replacement: 'quasar/dist/quasar.client.js' },
+      // #q-app 的 defineRouter / defineBoot 只是「原樣回傳函式」，測試直接用 Quasar 官方的實作（@quasar/app-vite 主入口）
+      { find: /^#q-app$/, replacement: '@quasar/app-vite' },
     ],
   },
   define: {
