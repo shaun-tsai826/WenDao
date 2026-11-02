@@ -263,7 +263,7 @@
     - fetchProducts / createProduct / updateProduct；建立前查詢同分類 brand+name（忽略大小寫/前後空白/全半角）重複驗證
     - _對應：REQ-3, AC-3.1, AC-3.6_
 
-  - [ ] 7.2 實作 DepletionBadge 元件
+  - [x] 7.2 實作 DepletionBadge 元件
     - 依 getDepletionStatus 顯示狀態標籤：unset 顯示 STATUS-002「未設定消耗速率」、no_remaining 顯示 STATUS-007「未設定剩餘數量」、soon 顯示 STATUS-003「即將耗盡」、depleted 顯示 STATUS-004「已耗盡」
     - _對應：REQ-7, AC-7.4, AC-7.5, AC-7.7, AC-7.12_
 
