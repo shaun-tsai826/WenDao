@@ -124,6 +124,7 @@ describe('createProduct（AC-3.1～3.6）', () => {
   it.each([
     ['品牌空白', { brand: '  ' }],
     ['品名空白', { name: '' }],
+    ['品牌只有全形空白「　」', { brand: '　' }], // task 7.7：注音鍵盤常打出全形空白
   ])('BDD：%s → ERR-005（AC-3.3）', async (_label, change) => {
     const fake = seed();
     expect(await errorOf(useProductStore().createProduct({ ...NEW, ...change }))).toBe(
@@ -207,6 +208,60 @@ describe('updateProduct：消耗設定與剩餘數量（AC-7.1、7.8～7.11）',
       consumption_period: 'monthly',
       consumption_unit: '包',
     });
+  });
+
+  // ---- task 7.7 補充：日期與數字的邊界 ----
+  it('數字沒變也更新日期：按儲存代表確認目前數量（task 7.1 使用者同意），久未更新提醒跟著消失', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 2, 9, 0));
+    const fake = installFakePocketBase({
+      products: [
+        {
+          id: 'p',
+          category: 'c',
+          brand: '春風',
+          name: '抽取式衛生紙',
+          unit: '抽',
+          remaining_quantity: 2,
+          remaining_updated_at: '2026-09-01 00:00:00.000Z',
+        },
+      ],
+    });
+    await useProductStore().updateProduct('p', { ...CONSUMPTION, remaining_quantity: 2 });
+    expect(fake.rows('products')[0]).toMatchObject({
+      remaining_quantity: 2,
+      remaining_updated_at: '2026-11-02 00:00:00.000Z',
+    });
+  });
+
+  it.each([
+    ['清晨 00:30', new Date(2026, 10, 2, 0, 30)], // UTC 還是 11/1 16:30
+    ['深夜 23:59', new Date(2026, 10, 2, 23, 59)],
+  ])('%s 儲存 → 記成本地的當天 2026-11-02（不是 UTC 日期）', async (_label, now) => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(now);
+    const fake = seed();
+    await useProductStore().updateProduct('p-spring', CONSUMPTION);
+    expect(fake.rows('products').find((p) => p.id === 'p-spring')!.remaining_updated_at).toBe(
+      '2026-11-02 00:00:00.000Z',
+    );
+  });
+
+  it.each([
+    ['極小的負數 -0.01', -0.01],
+    ['不是數字（NaN）', Number.NaN],
+    ['無限大', Number.POSITIVE_INFINITY],
+  ])('剩餘數量為%s → ERR-015，不儲存', async (_label, remaining) => {
+    const fake = seed();
+    expect(
+      await errorOf(
+        useProductStore().updateProduct('p-spring', {
+          ...CONSUMPTION,
+          remaining_quantity: remaining,
+        }),
+      ),
+    ).toBe(ERR.remainingNegative);
+    expect(fake.calls.some((c) => c.method === 'update')).toBe(false);
   });
 
   it('剩 0 也是有效值（會記錄更新日）', async () => {

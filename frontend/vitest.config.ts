@@ -8,6 +8,10 @@ import vue from '@vitejs/plugin-vue';
 import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
 import { defineConfig } from 'vitest/config';
 
+// 固定時區為家裡實際使用的 Asia/Taipei（task 7.7）：日期相關測試（例如清晨 00:30 儲存要記成當天，
+// 而不是 UTC 的前一天）在任何電腦上都得到同樣結果。測試程序（worker）會繼承這個環境變數。
+process.env.TZ = 'Asia/Taipei';
+
 export default defineConfig({
   // quasar()：和正式 build 一樣自動載入 <q-dialog>、<q-page> 等 Quasar 元件。
   // 少了它，測試裡的 Quasar 元件只是沒有功能的普通標籤（task 6.5 面板問題沒被測到的原因）

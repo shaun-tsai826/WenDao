@@ -288,7 +288,7 @@
     - 更新成功顯示 MSG-007
     - _對應：REQ-7, AC-7.1, AC-7.8, AC-7.9, AC-7.10, AC-7.11_
 
-  - [ ] 7.7 撰寫商品管理測試
+  - [x] 7.7 撰寫商品管理測試
     - 建立商品成功（EXAMPLE）、空品牌品名被拒（EDGE_CASE）、未設定單位被拒（EDGE_CASE）、重複品牌品名被拒（EDGE_CASE）
     - 剩餘數量輸入負數被拒 ERR-015（EDGE_CASE）、設定消耗速率但未填消耗單位被拒 ERR-016（EDGE_CASE）、儲存剩餘數量自動填入當天日期（EXAMPLE）
     - remaining_updated_at 超過 30 天顯示 STATUS-008、剛好 30 天不顯示（EDGE_CASE，對應 7.8）

@@ -176,6 +176,17 @@ describe('儲存（AC-7.1、7.8、7.9）', () => {
     expect(page.router.currentRoute.value.path).toBe('/products/p-spring');
   });
 
+  it('久未更新的商品（9/1）不改數字直接儲存 → 更新日變成今天（task 7.7）', async () => {
+    const fake = seed(product({ remaining_updated_at: '2026-09-01 00:00:00.000Z' }));
+    const page = await mountPage('/products/p-spring/edit', routes);
+    expect(page.wrapper.find('#e-remain-hint').text()).toContain('上次更新 9/1');
+    await save(page);
+    expect(saved(fake)).toMatchObject({
+      remaining_quantity: 2,
+      remaining_updated_at: '2026-11-02 00:00:00.000Z',
+    });
+  });
+
   it('設定每週消耗量、消耗單位與備註（AC-7.1、7.8）', async () => {
     const fake = seed();
     const page = await mountPage('/products/p-spring/edit', routes);

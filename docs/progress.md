@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v5.7（2026-11-03）
-> 變更摘要：v5.7 新增商品頁分類改為預設留空（使用者決定，design.md v3.5）。
+> 版本：v5.8（2026-11-03）
+> 變更摘要：v5.8 task 7.7（商品管理測試）完成：對照清單、補 9 項邊界測試、vitest 固定時區 Asia/Taipei。
+> v5.7 新增商品頁分類改為預設留空（使用者決定，design.md v3.5）。
 > v5.6 task 7.6（更新消耗設定頁）完成；新增 e2e product-edit。
 > v5.5 task 7.5（商品詳情頁）完成；購買記錄讀取提前實作（design.md v3.4、tasks.md v1.6）；新增 e2e product-detail。
 > v5.4 task 7.4（新增商品頁）完成；新增 e2e product-new。
@@ -52,13 +53,13 @@
 
 ## 目前階段
 
-**實作中。** task 1（環境建置）全部完成；**task 1～6、7.1～7.6 完成**，下一步是 task 7.7（商品管理測試）。commit 前執行 `npm test`（目前 468 項）。
+**實作中。** task 1（環境建置）全部完成；**task 1～6、7.1～7.7 完成**，下一步是 task 7.8（久未更新提醒）。commit 前執行 `npm test`（目前 476 項）。
 
 > **2026-11-01 起短期內不使用 Kiro**：規格需要修改時，由 Claude Code 先問使用者、同意後直接改（含版本號與變更摘要）。
 > **task 2.6 之前**：先用已安裝的設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿（儀表板、新增購買記錄），使用者選定後整理成 UI 設計規範寫進規格。
 
 ```
-規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（7.6 完成，下一步 7.7）
+規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（7.7 完成，下一步 7.8）
   (完成)       (完成)          (完成)            (完成)        ◄ 目前在這裡
 ```
 
@@ -126,10 +127,24 @@
 | 2026-11-02 | **task 7.5**：`pages/ProductDetail.vue`（依設計稿 Prod-Detail：商品卡與狀態標籤、剩餘數量 / 預計用完（依狀態上色）/ 歷史均價（N 筆）三個資訊塊、備註、「更新剩餘數量與消耗設定」入口、購買記錄新到舊附新增者頭像；返回箭頭回到原本的列表篩選；找不到商品、載入失敗重試）。**使用者同意**在 7.5 先做購買記錄讀取：`usePurchaseStore.fetchByProduct`、`fetchUsers`；新增 `lib/purchaseView.ts`、`lib/personTone.ts`。新增 36 項測試，全專案 420 項；4 種故意改壞皆被抓到。e2e `product-detail.mjs` 9 步驟通過；**e2e 發現**購買記錄標題被 Quasar 預設 h2 行高撐開 → 已修正 | design.md v3.4、tasks.md v1.6 |
 | 2026-11-02 | **task 7.6**：`pages/ProductEdit.vue`（依設計稿 Prod-Edit：剩餘數量框內附消耗單位、每月 / 每週、用掉多少、消耗單位、備註；表單下方即時預估用完日與算式（`lib/productView.ts` 的 `depletionPreview`，以今天為起點）；ERR-015 / 016 標紅框並聚焦；MSG-007 後從詳情進來的回上一頁、否則 replace 到詳情；取消、找不到商品、載入失敗重試）。新增 `lib/numberInput.ts`：數字欄位輸入時整理（去文字、全形轉半形、剩餘數量保留開頭負號讓 ERR-015 可觸發），不需新增「格式錯誤」訊息。新增 47 項測試，全專案 467 項；5 種故意改壞皆被抓到。e2e `product-edit.mjs` 10 步驟通過。**e2e 發現並修正**：正式 build 的 ESLint 擋下多餘型別斷言；負數時預估區與錯誤框文字重複；聚焦時紅框被藍色外框蓋掉 | — |
 | 2026-11-03 | **task 7.4 追加（使用者決定）**：新增商品頁分類預設留空「請選擇分類」（灰色提示字），沒選送出顯示 ERR-009 並加一行「請在上方選擇分類」、標紅框並聚焦分類選單；從篩選過的列表進來仍預先選好；建立後進入詳情頁維持不變。另修正：連線錯誤時焦點不再跳到分類選單。全專案 468 項；e2e product-new 12 步驟通過。發現 `lint:check` 的檔案範圍不含 `.mjs`（e2e 腳本不受排版檢查，維持原狀） | design.md v3.5 |
+| 2026-11-03 | **task 7.7**：對照清單逐項確認（見下方「task 7.7 測試對照」），7 個情境在 store 與頁面兩層都已涵蓋；STATUS-008 的判斷（30 / 31 / 32 天）已在 `productView.test.ts`，畫面顯示的測試隨 task 7.8 撰寫。補 9 項邊界測試：數字沒變也更新日期（store + 頁面）、清晨 00:30 / 深夜 23:59 儲存記成本地當天、剩餘數量 -0.01 / NaN / 無限大 → ERR-015、品牌只有全形空白 → ERR-005。`vitest.config.ts` 固定 `TZ=Asia/Taipei`（外部設 TZ=UTC 也得到相同結果）。全專案 476 項；4 種故意改壞皆被抓到 | — |
+
+## task 7.7 測試對照
+
+| tasks.md 7.7 項目 | store（`stores/__tests__/product.test.ts`） | 頁面 | e2e |
+|---|---|---|---|
+| 建立商品成功（AC-3.1） | BDD 春風 平版衛生紙 | `ProductNew.test.ts` BDD 建立 → MSG-003 → 詳情 | `product-new` 步驟 8 |
+| 空品牌品名被拒（AC-3.3） | 品牌空白 / 品名空白 / 全形空白 | ERR-005 三種組合、標示欄位 | 步驟 2 |
+| 未設定單位被拒（AC-3.4） | 空白單位 | ERR-006 | 步驟 6 |
+| 重複品牌品名被拒（AC-3.6） | 前後空白 / 全形大寫 / 小寫 / 全形空白、資料庫 UNIQUE | ERR-007 + 已存在商品名稱 | 步驟 4、5 |
+| 剩餘數量負數被拒（AC-7.10） | -5 / -0.01 / NaN / 無限大 | ERR-015、標示並聚焦 | `product-edit` 步驟 2 |
+| 有速率沒消耗單位被拒（AC-7.11） | 空白單位 | ERR-016、標示並聚焦 | 步驟 5 |
+| 儲存自動填入當天（AC-7.9） | BDD 11/1、數字沒變也更新、00:30 / 23:59 | BDD 11/2、久未更新直接儲存 | 步驟 6（查資料庫） |
+| 超過 30 天顯示 STATUS-008（AC-7.14） | — | `productView.test.ts`：32 天提醒、30 天不提醒、31 天提醒（畫面於 7.8） | 7.8 |
 
 ## 待辦（依順序）
 
-1. **[Claude Code]** task 7.7～7.8：商品管理測試、久未更新提醒。
+1. **[Claude Code]** task 7.8：久未更新提醒。
 3. 之後依 `tasks.md` 順序，一次做一個 task → 勾選 `[x]` → commit（message 帶 task 編號）。
 
 ## 重要決定紀錄
@@ -209,7 +224,7 @@ git pull
 
 ### 目前位置（2026-11-02）
 
-- 已完成：task 1～6、7.1～7.6。**下一步：task 7.7 商品管理測試**（對照清單補齊，多數已在 7.1～7.6 寫好），接著 7.8 久未更新提醒（STATUS-008，列表與詳情）。
+- 已完成：task 1～6、7.1～7.7。**下一步：task 7.8 久未更新提醒**（STATUS-008，商品列表與商品詳情；設計稿 Prod-List 有「泡舒 洗碗精」的樣式；先寫「超過 30 天顯示、剛好 30 天不顯示」的畫面測試）。
 - 商品頁設計稿已確認：設計稿最下面一排 Prod-List / Prod-New / Prod-Detail / Prod-Edit（https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf ；本機原始檔在 `.design-canvas/`，不進 git）。
 - 沒有待使用者決定的事項。
 
@@ -219,7 +234,7 @@ git pull
 2. **新畫面先做設計稿**：先呼叫設計 skills（ui-ux-pro-max、taste-skill），依 design.md「UI 設計規範」做稿放到設計稿，使用者確認後才實作。
 3. **規格有落差**：先停下來列「問題＋建議（含推薦選項）」問使用者（選擇題），同意後才改 design.md / tasks.md，並升版號、寫變更摘要。暫停使用 Kiro。
 4. **驗證三層**：
-   - `cd frontend && npm test`（Vitest，目前 468 項）、`npm run lint:check`、`npm run typecheck`
+   - `cd frontend && npm test`（Vitest，目前 476 項）、`npm run lint:check`、`npm run typecheck`
    - 故意改壞關鍵程式確認測試抓得到（**先備份檔案**，不要用 `git checkout` 還原未 commit 的修改）
    - `./e2e/run.sh`（正式 build + 臨時 PocketBase + 無頭 Chrome，**真實滑鼠鍵盤事件**；手機寬 390）。新頁面要在 `frontend/e2e/` 加腳本
 5. **修 bug**：先寫會失敗的回歸測試，再修正。
