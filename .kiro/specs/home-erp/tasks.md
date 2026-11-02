@@ -224,7 +224,7 @@
     - 未登入存取被攔截重定向、session 持久性（mock PocketBase SDK）
     - _對應：REQ-1, AC-1.1, AC-1.2, AC-1.3, AC-1.6, AC-1.7_
 
-- [ ] 6. 分類管理頁面
+- [x] 6. 分類管理頁面
   - [x] 6.1 實作 useCategoryStore
     - fetchCategories / createCategory / updateCategory / deleteCategory；建立前查詢重複名稱驗證
     - _對應：REQ-2, AC-2.1, AC-2.2, AC-2.7_
@@ -250,7 +250,7 @@
     - 修改欄位名稱或顯示順序允許儲存，顯示 MSG-010「欄位更新成功」
     - _對應：REQ-2, AC-2.7, AC-2.8, AC-2.9, REQ-4, AC-4.1, AC-4.2, AC-4.7, AC-4.8, AC-4.9, AC-4.10, AC-4.11_
 
-  - [ ] 6.6 撰寫分類管理測試
+  - [x] 6.6 撰寫分類管理測試
     - 建立分類成功（EXAMPLE）、空名稱被拒（EDGE_CASE）、重複名稱被拒（EDGE_CASE）
     - 刪除空分類成功（EXAMPLE）、刪除有商品分類被拒（整合，MSW 回傳 400）
     - 分類名稱更新成功（EXAMPLE）、更新為空被拒（EDGE_CASE）、更新為重複被拒（EDGE_CASE）

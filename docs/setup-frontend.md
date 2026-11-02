@@ -1,7 +1,8 @@
 # 前端環境建置教學（setup-frontend.md）
 
-> 版本：v1.4（2026-11-02）
-> 變更摘要：v1.4 測試清單更新到 task 5.5（207 項）。
+> 版本：v1.5（2026-11-02）
+> 變更摘要：v1.5 測試清單更新到 task 6.6（287 項）；說明測試工具 fakePocketBase / mountPage。
+> v1.4 測試清單更新到 task 5.5（207 項）。
 > v1.3 測試清單更新到 task 5.3（200 項）；vitest 加上 #q-app 別名。
 > v1.2 新增第 7 節自動化測試（task 2.8）。
 > v1.1 新增第 6 節 PocketBase 網址設定與套件版本（task 2.2）、補充 npm audit 說明。
@@ -147,7 +148,9 @@ npm run test:watch    # 改檔案時自動重跑（開發時開著）
 
 - 設定檔：`vitest.config.ts`（`@/` 別名、`.vue` 編譯、測試用的 PocketBase 網址、Quasar 改用 client 版本、`#q-app` 指向 Quasar 官方實作）。
 - 測試檔放在被測程式旁邊的 `__tests__/` 資料夾，檔名 `*.test.ts`。商業邏輯（task 3）放 `src/composables/__tests__/`。
-- 測試**不連真正的 PocketBase**：需要 client 的地方傳入假的 client（例如 `src/lib/__tests__/restoreAuth.test.ts`）。
+- 測試**不連真正的 PocketBase**：需要 client 的地方傳入假的 client（例如 `src/lib/__tests__/restoreAuth.test.ts`）；store 與頁面測試用 `src/test-utils/fakePocketBase.ts`（記憶體假資料庫，模擬 UNIQUE、Restrict、連線錯誤）。
+- 頁面測試用 `src/test-utils/mountPage.ts` 掛載（Pinia、路由、Quasar 與 Notify / Dialog）。
+- 假資料庫**不會模擬 SDK 本身的行為**（例如自動取消請求），所以重要流程仍要用無頭 Chrome 對正式 build 做 e2e 驗證。
 
 目前的測試：
 
@@ -155,16 +158,22 @@ npm run test:watch    # 改檔案時自動重跑（開發時開著）
 |---|---|---|
 | `boot/__tests__/pocketbase.test.ts` | App 啟動流程（AC-1.7）：重開 App 仍登入並換新 token、過期 / 被拒變未登入、連不上伺服器保持登入、啟動後持續同步 | 6 |
 | `lib/__tests__/restoreAuth.test.ts` | 啟動時恢復登入（AC-1.7）：沒 token、過期、有效、401/403/404/500、連不上伺服器、其他錯誤 | 9 |
+| `lib/__tests__/pocketbase.test.ts` | 回歸測試：同一 collection 並行查詢不會被 SDK 自動取消（task 6.5 e2e 發現） | 1 |
+| `lib/__tests__/feedback.test.ts` | 真正的 Quasar 確認對話框（刪除 → true、取消 → false）與底部提示 | 4 |
 | `router/__tests__/authGuard.test.ts` | 守衛邏輯：12 條路由、未登入導向登入頁（AC-1.3）、已登入可進入、屬性測試（任意 id） | 28 |
 | `router/__tests__/router.test.ts` | 真正的 router 串接：守衛讀 SDK 登入狀態、token 過期或登出後下一次換頁被擋 | 5 |
-| `stores/__tests__/stores.test.ts` | auth 與 SDK 同步、各 store 初始狀態與 getters、未實作 action 的錯誤訊息 | 11 |
+| `stores/__tests__/stores.test.ts` | auth 與 SDK 同步、各 store 初始狀態與 getters、未實作 action 的錯誤訊息 | 9 |
 | `stores/__tests__/auth.test.ts` | login / logout（AC-1.1、1.2、1.6、1.7）、登入錯誤訊息對應 | 11 |
+| `stores/__tests__/category.test.ts` | 分類 CRUD（AC-2.1～2.9）：空白 / 重複 / 有商品不能刪、資料庫 UNIQUE / Restrict 擋下、連線錯誤 | 20 |
+| `stores/__tests__/customField.test.ts` | 自訂欄位（AC-4.1、4.2、4.7～4.11）：新增、改名、排序、已使用不能刪 / 改型別、另一人同時操作 | 19 |
 | `pages/__tests__/Login.test.ts` | 登入頁：成功導向首頁、ERR-001、ERR-014、空白 ERR-009、登入中停用、顯示密碼 | 8 |
-| `layouts/__tests__/MainLayout.test.ts` | 使用者名稱、頭像、登出按鈕（AC-1.5）、導覽列 4 項與目前頁 | 7 |
-| `constants/__tests__/messages.test.ts` | 39 則訊息與 design.md 一字不差、出現在 requirements.md、數量、不重複 | 75 |
+| `pages/__tests__/Categories.test.ts` | 分類列表與新增（AC-2.1～2.4）：統計、圖塊、空清單、載入失敗重試、BDD 情境 | 13 |
+| `pages/__tests__/CategoryEdit.test.ts` | 編輯分類（AC-2.5～2.9、4.7～4.11）：刪除確認、名稱編輯、欄位清單、下方面板鎖定與錯誤 | 22 |
+| `layouts/__tests__/MainLayout.test.ts` | 使用者名稱、頭像、登出（AC-1.5、1.6）、導覽列 4 項與目前頁 | 7 |
+| `constants/__tests__/messages.test.ts` | 41 則訊息與 design.md 一字不差、出現在 requirements.md、數量、不重複、withName | 78 |
 | `composables/__tests__/calculations.test.ts` | 單位均價、數量組成、歷史均價、價格比較（Property 1～4、7） | 20 |
 | `composables/__tests__/depletion.test.ts` | 日期工具、耗盡日期、消耗狀態（Property 5、6 與 BDD 4 個邊界） | 27 |
-| **合計** | | **207** |
+| **合計** | | **287** |
 
 > `messages.test.ts` 會讀規格文件：之後改了 design.md 的訊息文字卻沒同步改 `messages.ts`，測試就會失敗提醒你。
 
