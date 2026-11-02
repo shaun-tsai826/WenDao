@@ -1,7 +1,8 @@
 # Implementation Plan: home-erp 家庭用品管理 ERP
 
-> 版本：v1.5（2026-11-02）
-> 變更摘要：v1.5 回寫 K-15（使用者同意）：整合測試以 fakePocketBase 取代 MSW，12.1 改為整理 fakePocketBase 與 e2e 腳本。
+> 版本：v1.6（2026-11-02）
+> 變更摘要：v1.6 7.5 需要依商品讀取購買記錄，usePurchaseStore 的讀取（fetchByProduct、fetchUsers）提前在 7.5 實作，8.1 只剩其餘 actions（使用者同意）。
+> v1.5 變更摘要：v1.5 回寫 K-15（使用者同意）：整合測試以 fakePocketBase 取代 MSW，12.1 改為整理 fakePocketBase 與 e2e 腳本。
 > v1.4 分類管理設計稿確認（使用者同意）：6.4 刪除分類改在編輯分類頁並先確認（CONFIRM-003）；6.5 刪除欄位先確認（CONFIRM-004）、已使用欄位提前鎖定型別與計算方式。
 > v1.3 依實作結果回寫 K-1、K-2、K-8、K-9（經使用者同意）：1.2 users 改為修改系統預設 Collection；1.8 使用者改為手動建立；2.1 的 `quasar.config.js` 改為 `quasar.config.ts` 與 `src-pwa/manifest.json`；2.2 的 `build.env` 改為 `build.defineEnv`，正式環境網址改為 `/`；1.3 的 required 依 PocketBase 語意調整（K-2）。
 > v1.2 變更摘要：v1.2 依 review-notes v1.2 修正：PocketBase / JS SDK 版本改為開工時確認後鎖定，SDK 須 0.22 以上（F-1）；8.4 對話框預設值改為目前的剩餘數量（F-4）；7.7 補上 ERR-015、ERR-016、STATUS-008 測試（F-5）。
@@ -275,8 +276,9 @@
     - 品牌、品名、計價單位、消耗單位輸入；空品牌/品名顯示 ERR-005、未設定計價單位顯示 ERR-006、重複品牌品名顯示 ERR-007；成功顯示 MSG-003
     - _對應：REQ-3, AC-3.1, AC-3.2, AC-3.3, AC-3.4, AC-3.6_
 
-  - [ ] 7.5 實作 ProductDetail 頁面
+  - [x] 7.5 實作 ProductDetail 頁面
     - 顯示歷史均價、購買歷史（按日期新→舊）、消耗速率設定入口、剩餘數量；價格趨勢圖於 10.2 整合
+    - 先實作 usePurchaseStore 的讀取：`fetchByProduct(productId)`（新→舊，數量 0 轉為缺失）、`fetchUsers()`（購買記錄的新增者頭像）
     - _對應：REQ-6, AC-6.4, REQ-8, AC-8.2, AC-8.4_
 
   - [ ] 7.6 實作 ProductEdit 頁面
@@ -299,7 +301,7 @@
 
 - [ ] 8. 購買記錄頁面
   - [ ] 8.1 實作 usePurchaseStore
-    - fetchRecords（支援分類/日期區間篩選、按日期降序）、createRecord（前端計算 quantity 與 unit_price 後寫入，含 EAV 值寫入）、updateRecord、deleteRecord
+    - （fetchByProduct、fetchUsers 已於 7.5 完成）fetchRecords（支援分類/日期區間篩選、按日期降序）、createRecord（前端計算 quantity 與 unit_price 後寫入，含 EAV 值寫入）、updateRecord、deleteRecord
     - 日期區間篩選使用 `pb.filter()` 安全組字串，包含結束日當天
     - _對應：REQ-5, AC-5.1, AC-5.6, AC-5.7, REQ-6, AC-6.1, REQ-8, AC-8.1_
 

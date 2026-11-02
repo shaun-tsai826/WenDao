@@ -1,7 +1,8 @@
 # Design Document
 
-> 版本：v3.3（2026-11-02）
-> 變更摘要：v3.3 商品列表的分類篩選記在網址 `?category=<id>`（使用者同意，task 7.3）；已耗盡列的第二行依設計稿只寫「M/D 已用完」。
+> 版本：v3.4（2026-11-02）
+> 變更摘要：v3.4 usePurchaseStore 新增 fetchByProduct（商品詳情的購買記錄）與 fetchUsers / users（新增者頭像），於 task 7.5 先實作（使用者同意）；新增 lib/purchaseView.ts、lib/personTone.ts。
+> v3.3 變更摘要：v3.3 商品列表的分類篩選記在網址 `?category=<id>`（使用者同意，task 7.3）；已耗盡列的第二行依設計稿只寫「M/D 已用完」。
 > v3.2 變更摘要：v3.2 商品管理設計稿確認（使用者同意）：商品列表依急迫程度排序；更新消耗設定頁即時顯示預估用完日；商品基本資料（品牌、品名、計價單位）建立後的修改列為未來版本。
 > v3.1 變更摘要：v3.1 回寫 K-14、K-15（使用者同意）：子頁頂欄維持品牌與使用者（AC-1.5），返回列放在內容區；整合測試改用記憶體假資料庫 fakePocketBase（不使用 MSW），關鍵流程以無頭 Chrome + 真實 PocketBase 做 e2e。
 > v3.0 變更摘要：v3.0 分類管理設計稿確認（使用者同意）：新增 CONFIRM-003 / 004（刪除分類、刪除自訂欄位前確認）；刪除分類移到編輯分類頁；已被購買記錄使用的欄位，型別與計算方式在編輯面板中提前鎖定並說明原因（store 仍保留 ERR-018 / 019 檢查）。
@@ -499,6 +500,10 @@ export default defineBoot(async ({ store }) => {
 ```
 
 **usePurchaseStore — 購買記錄狀態**
+
+> v3.4（task 7.5 先實作的讀取）：
+> - `fetchByProduct(productId): Promise<PurchaseView[]>`：只取該商品的記錄，`sort: '-purchase_date,-created'`（同一天後建立的在前），經 `lib/purchaseView.ts` 的 `toPurchaseView` 轉換（quantity 0 → null、unit_price 跟著 null）。回傳給頁面使用，不寫入 `records`（`records` 留給 8.x 的購買記錄列表）。
+> - `users` 與 `fetchUsers()`：家庭成員 id 與名稱，依建立順序（決定頭像顏色，`lib/personTone.ts`）；getter `userIndex(id)`、`userName(id)`。不使用 `expand: 'user'`，因為頭像顏色需要全部使用者的順序。
 
 ```typescript
 // src/stores/purchase.ts（摘要）
