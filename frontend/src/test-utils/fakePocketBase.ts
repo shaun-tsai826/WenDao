@@ -9,7 +9,7 @@
 // - getFullList / getList（filter 支援 `欄位 = "值"`、`欄位 != "值"`，用 && 串接；sort 支援逗號分隔欄位，- 表示反向）
 // - create / update / delete
 // - 資料庫規則：unique 欄位重複 → 400 validation_not_unique；被 Restrict 關聯的資料不能刪 → 400
-// - fake.failNext(status, where?)：下一次（符合條件的）呼叫丟出錯誤
+// - fake.failNext(status, where?)：下一次（符合條件的）呼叫丟出錯誤；where.data 可指定欄位錯誤（例如 UNIQUE）
 //   status 0 = 連不上伺服器、500 = 伺服器錯誤、400 = 被資料庫拒絕
 import { vi } from 'vitest';
 import { ClientResponseError, type RecordService } from 'pocketbase';
@@ -75,7 +75,12 @@ export function installFakePocketBase(initial: Partial<Tables> = {}) {
   const tables: Tables = {};
   let seq = 0;
   let clock = 0;
-  const failures: { status: number; collection?: string; method?: Method }[] = [];
+  const failures: {
+    status: number;
+    collection?: string;
+    method?: Method;
+    data?: Record<string, unknown>;
+  }[] = [];
   const calls: { collection: string; method: Method; args: unknown[] }[] = [];
 
   const table = (name: string) => (tables[name] ??= []);
@@ -106,7 +111,7 @@ export function installFakePocketBase(initial: Partial<Tables> = {}) {
     );
     if (i >= 0) {
       const [failure] = failures.splice(i, 1);
-      return Promise.reject(httpError(failure!.status));
+      return Promise.reject(httpError(failure!.status, failure!.data));
     }
     try {
       return Promise.resolve(run());
@@ -181,8 +186,10 @@ export function installFakePocketBase(initial: Partial<Tables> = {}) {
     /** 直接放入資料（模擬另一個人在別的手機上操作） */
     insert: (name: string, row: Row) => table(name).push({ created: stamp(), ...row }),
     /** 下一次（符合條件的）呼叫丟出錯誤 */
-    failNext: (status: number, where: { collection?: string; method?: Method } = {}) =>
-      failures.push({ status, ...where }),
+    failNext: (
+      status: number,
+      where: { collection?: string; method?: Method; data?: Record<string, unknown> } = {},
+    ) => failures.push({ status, ...where }),
     /** 所有呼叫紀錄 */
     calls,
   };

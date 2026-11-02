@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v4.8（2026-11-02）
-> 變更摘要：v4.8 商品管理設計稿確認（design.md v3.2）；新增「未來版本」清單。
+> 版本：v4.9（2026-11-02）
+> 變更摘要：v4.9 task 7.1（useProductStore、商品畫面用資料）完成。
+> v4.8 商品管理設計稿確認（design.md v3.2）；新增「未來版本」清單。
 > v4.7 K-14、K-15 回寫 design.md v3.1、tasks.md v1.5。
 > v4.6 修正使用者回報：自訂欄位面板一點就關閉；測試環境改為載入真正的 Quasar 元件。
 > v4.5 task 6.6 完成，task 6（分類管理）全部完成；新增 K-15。
@@ -43,13 +44,13 @@
 
 ## 目前階段
 
-**實作中。** task 1（環境建置）全部完成；**task 1～6 全部完成**（登入、分類管理可實際使用），下一步是 task 7（商品管理）。commit 前執行 `npm test`（目前 288 項）。
+**實作中。** task 1（環境建置）全部完成；**task 1～6、7.1 完成**，下一步是 task 7.2（DepletionBadge 元件）。commit 前執行 `npm test`（目前 324 項）。
 
 > **2026-11-01 起短期內不使用 Kiro**：規格需要修改時，由 Claude Code 先問使用者、同意後直接改（含版本號與變更摘要）。
 > **task 2.6 之前**：先用已安裝的設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿（儀表板、新增購買記錄），使用者選定後整理成 UI 設計規範寫進規格。
 
 ```
-規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（task 6 完成，下一步 task 7）
+規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（7.1 完成，下一步 7.2）
   (完成)       (完成)          (完成)            (完成)        ◄ 目前在這裡
 ```
 
@@ -108,10 +109,12 @@
 | 2026-11-02 | **task 6.5**：`stores/customField.ts`（fetch / create / update / move / delete，ERR-009 / 017 / 018 / 019，使用狀況每次重查）；`components/CustomFieldSheet.vue` 下方面板（已使用欄位提前鎖定並說明、CONFIRM-004）；編輯分類頁加入名稱編輯（MSG-008、ERR-002 / 003）與欄位清單（上下箭頭排序、MSG-009 / 010）。新增 store 測試 19 項、頁面測試 16 項；5 種故意改壞皆被抓到。**e2e 發現並修正**：SDK 預設自動取消同 collection 的並行查詢，編輯分類頁誤報 ERR-014 → `pb.autoCancellation(false)`，先寫回歸測試（失敗）再修正（通過）。另修正底部提示左側空白、確認對話框圓角。全專案 283 項；e2e 8 步驟全數符合 | — |
 | 2026-11-02 | **task 6.6**：對照清單逐項確認已涵蓋（store + 頁面）；補上 `lib/__tests__/feedback.test.ts`（真正的 Quasar 確認對話框與底部提示，連跑 5 次穩定）。「刪除有商品分類（MSW 回傳 400）」改用 fakePocketBase 模擬 Restrict 400（K-15）。全專案 287 項 | `docs/setup-frontend.md` v1.5 |
 | 2026-11-02 | **修正（使用者回報）**：自訂欄位面板一點就關閉。原因：面板最外層用 `<section>`，Quasar 只讓 `.q-dialog__inner` 底下直接的 `<div>` 可點，點擊穿透到背景而關閉。改為 `<div>`；先寫回歸測試（失敗）再修正。**測試沒抓到的根本原因**：vitest 沒載入 Quasar 元件（`<q-dialog>` 在測試裡只是普通標籤）→ 加入 `@quasar/vite-plugin`、`mountPage` 包 QLayout、`setup.ts` 補 ResizeObserver；e2e 改用真實滑鼠鍵盤事件，手機與桌機寬度各 9 步驟通過。全專案 288 項 | `docs/setup-frontend.md` v1.6 |
+| 2026-11-02 | **商品管理設計稿**：設計稿新增「商品列表 / 新增商品 / 商品詳情 / 更新消耗設定」4 張，使用者確認並同意 3 項（急迫程度排序、即時預估、修改基本資料列未來版本）；design.md v3.2 | 設計稿 Prod-* |
+| 2026-11-02 | **task 7.1**：`stores/product.ts`（fetchProducts / createProduct / updateProduct；ERR-005 / 006 / 007 / 009 / 015 / 016；剩餘數量更新日自動為當天、清空時一併清空）；`lib/productView.ts`（讀取轉換、耗盡日期與狀態、久未更新 > 30 天、急迫程度排序、AC-3.6 NFKC 正規化）。fakePocketBase 的 failNext 可指定欄位錯誤。新增 36 項測試（含屬性測試），全專案 324 項；6 種故意改壞皆被抓到 | — |
 
 ## 待辦（依順序）
 
-1. **[Claude Code]** task 7：商品管理（新畫面先做設計稿給使用者確認）。
+1. **[Claude Code]** task 7.2～7.8：狀態標籤、商品列表、新增、詳情、編輯、測試、久未更新提醒。
 3. 之後依 `tasks.md` 順序，一次做一個 task → 勾選 `[x]` → commit（message 帶 task 編號）。
 
 ## 重要決定紀錄

@@ -85,7 +85,6 @@ describe('資料 stores 骨架', () => {
   });
 
   it.each([
-    ['createProduct', '7.1', () => useProductStore().createProduct({} as never)],
     ['fetchRecords', '8.1', () => usePurchaseStore().fetchRecords()],
     ['deleteRecord', '8.1', () => usePurchaseStore().deleteRecord('x')],
   ])('尚未實作的 %s 會丟出指向 task %s 的錯誤', (action, task, call) => {

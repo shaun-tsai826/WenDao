@@ -259,7 +259,7 @@
     - _對應：REQ-2, AC-2.2, AC-2.3, AC-2.4, AC-2.5, AC-2.6, AC-2.7, AC-2.8, AC-2.9, REQ-4, AC-4.7, AC-4.8, AC-4.10_
 
 - [ ] 7. 商品管理頁面
-  - [ ] 7.1 實作 useProductStore
+  - [x] 7.1 實作 useProductStore
     - fetchProducts / createProduct / updateProduct；建立前查詢同分類 brand+name（忽略大小寫/前後空白/全半角）重複驗證
     - _對應：REQ-3, AC-3.1, AC-3.6_
 
