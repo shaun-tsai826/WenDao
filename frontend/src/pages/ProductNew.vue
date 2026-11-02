@@ -5,7 +5,7 @@
   - 驗證在 useProductStore.createProduct：品牌或品名空白 ERR-005、計價單位空白 ERR-006、重複 ERR-007
   - 錯誤顯示在送出按鈕上方（role=alert），並標示有問題的欄位、把焦點移過去
   - 成功顯示 MSG-003，進入新商品的詳情頁（replace，上一頁回到商品列表）
-  - 從篩選過的列表進來（?category=）時預先選好該分類
+  - 從篩選過的列表進來（?category=）時預先選好該分類；否則留空「請選擇分類」，沒選送出顯示 ERR-009（使用者決定：自己選比較不會建錯）
 -->
 <template>
   <q-page class="page">
@@ -33,11 +33,14 @@
         <label for="p-cat" class="field__label">分類</label>
         <select
           id="p-cat"
+          ref="categorySelect"
           v-model="form.category"
           class="control"
+          :class="{ 'control--placeholder': !form.category }"
           :aria-invalid="ariaInvalid('p-cat')"
           @change="clearInvalid('p-cat')"
         >
+          <option value="" disabled>請選擇分類</option>
           <option v-for="c in categoryStore.categories" :key="c.id" :value="c.id">
             {{ c.name }}
           </option>
@@ -168,6 +171,7 @@ const invalid = ref(new Set<FieldId>());
 const brandInput = ref<HTMLInputElement | null>(null);
 const nameInput = ref<HTMLInputElement | null>(null);
 const unitInput = ref<HTMLInputElement | null>(null);
+const categorySelect = ref<HTMLSelectElement | null>(null);
 
 /** 網址上帶的分類（從篩選過的商品列表進來） */
 const queryCategory = computed(() =>
@@ -210,13 +214,15 @@ function invalidFieldsFor(err: unknown, message: string): FieldId[] {
   return [];
 }
 
+/** 把焦點移到有問題的欄位；沒有指定欄位（例如連線錯誤）就不動 */
 function focusField(id: FieldId | undefined) {
+  if (!id) return;
   const el = {
     'p-brand': brandInput.value,
     'p-name': nameInput.value,
     'p-unit': unitInput.value,
-    'p-cat': null,
-  }[id ?? 'p-cat'];
+    'p-cat': categorySelect.value,
+  }[id];
   el?.focus();
 }
 
@@ -237,7 +243,9 @@ async function submit() {
             title,
             detail: `已有「${err.existing.brand} ${err.existing.name}」（大小寫、全半形不同也算同一個）`,
           }
-        : { title };
+        : title === ERR.required
+          ? { title, detail: '請在上方選擇分類' }
+          : { title };
     const fields = invalidFieldsFor(err, title);
     invalid.value = new Set(fields);
     await nextTick();
@@ -253,7 +261,7 @@ async function load() {
   try {
     await categoryStore.fetchCategories();
     const ids = categoryStore.categories.map((c) => c.id);
-    form.category = ids.includes(queryCategory.value) ? queryCategory.value : (ids[0] ?? '');
+    form.category = ids.includes(queryCategory.value) ? queryCategory.value : '';
   } catch (err) {
     loadError.value = apiErrorMessage(err);
   } finally {
@@ -379,6 +387,15 @@ onMounted(load);
 
   &[aria-invalid='true'] {
     border-color: var(--status-depleted-ink);
+  }
+}
+
+// 還沒選分類時，「請選擇分類」用提示字的灰色，不像已經選了值
+.control--placeholder {
+  color: var(--muted);
+
+  option {
+    color: var(--text);
   }
 }
 

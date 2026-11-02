@@ -54,14 +54,15 @@ beforeEach(() => {
 });
 
 describe('畫面', () => {
-  it('返回列與標題；分類選單依建立順序，預設第一個分類', async () => {
+  it('返回列與標題；分類選單依建立順序，預設留空「請選擇分類」（使用者決定：自己選比較不會建錯）', async () => {
     seed();
     const page = await mountPage('/products/new', routes);
     expect(page.wrapper.find('h1').text()).toBe('新增商品');
     expect(page.wrapper.find('a[aria-label="返回商品"]').attributes('href')).toBe('/products');
     const options = page.wrapper.findAll('#p-cat option');
-    expect(options.map((o) => o.text())).toEqual(['衛生紙', '蔬菜']);
-    expect((page.wrapper.find('#p-cat').element as HTMLSelectElement).value).toBe('c-tissue');
+    expect(options.map((o) => o.text())).toEqual(['請選擇分類', '衛生紙', '蔬菜']);
+    expect(options[0]!.attributes('disabled')).toBeDefined(); // 選了分類後不能再選回空白
+    expect((page.wrapper.find('#p-cat').element as HTMLSelectElement).value).toBe('');
   });
 
   it('從篩選過的商品列表進來（?category=）：預先選好該分類，返回時回到同一個篩選', async () => {
@@ -73,10 +74,10 @@ describe('畫面', () => {
     );
   });
 
-  it('網址上的分類不存在：改選第一個分類', async () => {
+  it('網址上的分類不存在：留空，要自己選', async () => {
     seed();
     const page = await mountPage('/products/new?category=c-gone', routes);
-    expect((page.wrapper.find('#p-cat').element as HTMLSelectElement).value).toBe('c-tissue');
+    expect((page.wrapper.find('#p-cat').element as HTMLSelectElement).value).toBe('');
   });
 
   it('常用單位按鈕：點了填入計價單位並標示目前選的；自己輸入相同單位也會標示', async () => {
@@ -119,7 +120,13 @@ describe('建立商品（AC-3.1、3.2、3.5）', () => {
     const fake = seed();
     const notify = vi.spyOn(feedback, 'notifySuccess').mockImplementation(() => undefined);
     const page = await mountPage('/products/new', routes);
-    await fill(page, { brand: ' 春風 ', name: '平版衛生紙', unit: '抽', cunit: '包' });
+    await fill(page, {
+      category: 'c-tissue',
+      brand: ' 春風 ',
+      name: '平版衛生紙',
+      unit: '抽',
+      cunit: '包',
+    });
     await submit(page);
 
     const created = fake.rows('products').find((p) => p.name === '平版衛生紙');
@@ -152,7 +159,7 @@ describe('建立商品（AC-3.1、3.2、3.5）', () => {
     const page = await mountPage('/products/new', routes);
     const replace = vi.spyOn(page.router, 'replace');
     const push = vi.spyOn(page.router, 'push');
-    await fill(page, { brand: '春風', name: '平版衛生紙', unit: '抽' });
+    await fill(page, { category: 'c-tissue', brand: '春風', name: '平版衛生紙', unit: '抽' });
     await submit(page);
     expect(replace).toHaveBeenCalled();
     expect(push).not.toHaveBeenCalled();
@@ -161,9 +168,17 @@ describe('建立商品（AC-3.1、3.2、3.5）', () => {
 
 describe('輸入錯誤（AC-3.3、3.4、3.6）', () => {
   it.each([
-    ['品牌空白', { brand: '  ', name: '平版衛生紙', unit: '抽' }, ['p-brand']],
-    ['品名空白', { brand: '春風', name: '', unit: '抽' }, ['p-name']],
-    ['兩個都空白', { brand: '', name: '', unit: '抽' }, ['p-brand', 'p-name']],
+    [
+      '品牌空白',
+      { category: 'c-tissue', brand: '  ', name: '平版衛生紙', unit: '抽' },
+      ['p-brand'],
+    ],
+    ['品名空白', { category: 'c-tissue', brand: '春風', name: '', unit: '抽' }, ['p-name']],
+    [
+      '兩個都空白',
+      { category: 'c-tissue', brand: '', name: '', unit: '抽' },
+      ['p-brand', 'p-name'],
+    ],
   ])('BDD：%s → ERR-005，標示該欄位', async (_label, values, invalid) => {
     const fake = seed();
     const page = await mountPage('/products/new', routes);
@@ -182,7 +197,7 @@ describe('輸入錯誤（AC-3.3、3.4、3.6）', () => {
   it('BDD：未輸入計價單位 → ERR-006，標示計價單位', async () => {
     const fake = seed();
     const page = await mountPage('/products/new', routes);
-    await fill(page, { brand: '春風', name: '平版衛生紙', unit: ' ' });
+    await fill(page, { category: 'c-tissue', brand: '春風', name: '平版衛生紙', unit: ' ' });
     await submit(page);
     expect(alertText(page)).toBe(ERR.unitRequired);
     expect(page.wrapper.find('#p-unit').attributes('aria-invalid')).toBe('true');
@@ -192,7 +207,7 @@ describe('輸入錯誤（AC-3.3、3.4、3.6）', () => {
   it('BDD：「 春風 」（前後空白）＋抽取式衛生紙 → ERR-007，寫出已存在的商品', async () => {
     seed();
     const page = await mountPage('/products/new', routes);
-    await fill(page, { brand: ' 春風 ', name: '抽取式衛生紙', unit: '抽' });
+    await fill(page, { category: 'c-tissue', brand: ' 春風 ', name: '抽取式衛生紙', unit: '抽' });
     await submit(page);
     expect(page.wrapper.find('.form-alert__title').text()).toBe(ERR.productDuplicate);
     expect(page.wrapper.find('.form-alert__detail').text()).toBe(
@@ -205,20 +220,42 @@ describe('輸入錯誤（AC-3.3、3.4、3.6）', () => {
   it('BDD：「ＫＬＥＥＮＥＸ」（全形大寫）＋舒潔衛生紙 → ERR-007，寫出原本的 Kleenex', async () => {
     seed();
     const page = await mountPage('/products/new', routes);
-    await fill(page, { brand: 'ＫＬＥＥＮＥＸ', name: '舒潔衛生紙', unit: '抽' });
+    await fill(page, {
+      category: 'c-tissue',
+      brand: 'ＫＬＥＥＮＥＸ',
+      name: '舒潔衛生紙',
+      unit: '抽',
+    });
     await submit(page);
     expect(page.wrapper.find('.form-alert__title').text()).toBe(ERR.productDuplicate);
     expect(page.wrapper.find('.form-alert__detail').text()).toContain('「Kleenex 舒潔衛生紙」');
   });
 
+  it('沒選分類就送出 → ERR-009，標示並聚焦分類選單，不建立；選了分類就拿掉紅框', async () => {
+    const fake = seed();
+    const page = await mountPage('/products/new', routes);
+    await fill(page, { brand: '春風', name: '平版衛生紙', unit: '抽' });
+    await submit(page);
+    expect(page.wrapper.find('.form-alert__title').text()).toBe(ERR.required);
+    expect(page.wrapper.find('.form-alert__detail').text()).toBe('請在上方選擇分類');
+    expect(page.wrapper.find('#p-cat').attributes('aria-invalid')).toBe('true');
+    expect(page.wrapper.find('#p-cat').classes()).toContain('control--placeholder'); // 灰色提示字
+    expect(document.activeElement?.id).toBe('p-cat');
+    expect(fake.rows('products')).toHaveLength(2);
+
+    await fill(page, { category: 'c-veg' });
+    expect(page.wrapper.find('#p-cat').attributes('aria-invalid')).toBeUndefined();
+    expect(page.wrapper.find('#p-cat').classes()).not.toContain('control--placeholder');
+  });
+
   it('出錯時焦點移到第一個有問題的欄位；改了那一欄就拿掉紅框', async () => {
     seed();
     const page = await mountPage('/products/new', routes);
-    await fill(page, { brand: '春風', name: '', unit: '' });
+    await fill(page, { category: 'c-tissue', brand: '春風', name: '', unit: '' });
     await submit(page);
     expect(document.activeElement?.id).toBe('p-name');
 
-    await fill(page, { brand: '春風', name: '', unit: '' });
+    await fill(page, { category: 'c-tissue', brand: '春風', name: '', unit: '' });
     await page.wrapper.find('.unit-chip').trigger('click');
     await submit(page); // 品名仍空白
     expect(document.activeElement?.id).toBe('p-name');
@@ -240,9 +277,10 @@ describe('輸入錯誤（AC-3.3、3.4、3.6）', () => {
     vi.spyOn(feedback, 'notifySuccess').mockImplementation(() => undefined);
     fake.failNext(0, { collection: 'products', method: 'create' });
     const page = await mountPage('/products/new', routes);
-    await fill(page, { brand: '春風', name: '平版衛生紙', unit: '抽' });
+    await fill(page, { category: 'c-tissue', brand: '春風', name: '平版衛生紙', unit: '抽' });
     await submit(page);
     expect(alertText(page)).toBe(ERR.networkError);
+    expect(document.activeElement?.id).not.toBe('p-cat'); // 連線錯誤不是欄位的問題，焦點不亂跳
     expect(page.wrapper.find('button[type="submit"]').attributes('disabled')).toBeUndefined();
 
     await submit(page);
@@ -253,7 +291,7 @@ describe('輸入錯誤（AC-3.3、3.4、3.6）', () => {
     seed();
     vi.spyOn(feedback, 'notifySuccess').mockImplementation(() => undefined);
     const page = await mountPage('/products/new', routes);
-    await fill(page, { brand: '春風', name: '平版衛生紙', unit: '抽' });
+    await fill(page, { category: 'c-tissue', brand: '春風', name: '平版衛生紙', unit: '抽' });
     void page.wrapper.find('form').trigger('submit');
     await page.wrapper.vm.$nextTick();
     const button = page.wrapper.find('button[type="submit"]');

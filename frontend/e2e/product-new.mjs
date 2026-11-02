@@ -83,5 +83,10 @@ await send('Runtime.evaluate', { expression: 'history.back()' }); await sleep(15
 console.log('9 上一頁 → 回到列表（不是表單）:', await js('location.pathname + location.search'), '| 有平版衛生紙:', await js(`[...document.querySelectorAll('.list__name')].some(n => n.textContent.includes('平版衛生紙'))`));
 
 await send('Page.navigate', { url: base + '/products/new' }); await sleep(1500);
-console.log('10 版面:', JSON.stringify(await js(`({ 沒有橫向捲動: document.documentElement.scrollWidth <= window.innerWidth, 輸入框字級: getComputedStyle(document.querySelector('#p-brand')).fontSize, 預設分類: document.querySelector('#p-cat').selectedOptions[0].textContent.trim() })`)));
+console.log('10 從「全部」直接開新增頁 → 預設分類:', await js(`document.querySelector('#p-cat').selectedOptions[0].textContent.trim()`), '| 提示字顏色:', await js(`getComputedStyle(document.querySelector('#p-cat')).color`));
+await click('#p-brand'); await typeText('白蘭'); await click('#p-name'); await typeText('洗衣粉'); await clickText('.unit-chip', 'g');
+await click('button[type=submit]'); await sleep(1000);
+console.log('11 沒選分類就送出:', await alert(), '| 紅框:', await invalid(), '| 焦點:', await focused(), '| 網址:', await js('location.pathname'));
+console.log('12 版面:', JSON.stringify(await js(`({ 沒有橫向捲動: document.documentElement.scrollWidth <= window.innerWidth, 輸入框字級: getComputedStyle(document.querySelector('#p-brand')).fontSize })`)));
+await shot('pnew-3-no-category');
 sock.close(); chrome.kill();
