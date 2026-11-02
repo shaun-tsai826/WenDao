@@ -27,3 +27,6 @@ yarn-error.log*
 
 # Vitest 報告輸出
 .vitest
+
+# e2e 截圖
+/e2e/.shots

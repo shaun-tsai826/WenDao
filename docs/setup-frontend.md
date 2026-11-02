@@ -1,7 +1,8 @@
 # 前端環境建置教學（setup-frontend.md）
 
-> 版本：v1.6（2026-11-02）
-> 變更摘要：v1.6 測試改用 @quasar/vite-plugin 載入真正的 Quasar 元件、新增 setup 檔；e2e 要用真實滑鼠鍵盤事件。
+> 版本：v1.7（2026-11-02）
+> 變更摘要：v1.7 新增 e2e 驗證（frontend/e2e/run.sh）。
+> v1.6 測試改用 @quasar/vite-plugin 載入真正的 Quasar 元件、新增 setup 檔；e2e 要用真實滑鼠鍵盤事件。
 > v1.5 測試清單更新到 task 6.6（287 項）；說明測試工具 fakePocketBase / mountPage。
 > v1.4 測試清單更新到 task 5.5（207 項）。
 > v1.3 測試清單更新到 task 5.3（200 項）；vitest 加上 #q-app 別名。
@@ -180,6 +181,18 @@ npm run test:watch    # 改檔案時自動重跑（開發時開著）
 | **合計** | | **287** |
 
 > `messages.test.ts` 會讀規格文件：之後改了 design.md 的訊息文字卻沒同步改 `messages.ts`，測試就會失敗提醒你。
+
+## 8. e2e 驗證（正式 build + 臨時 PocketBase + 無頭 Chrome）
+
+```bash
+cd ~/Projects/WenDao/frontend
+./e2e/run.sh                       # 全部（login、categories、custom-field-sheet、logout）
+./e2e/run.sh custom-field-sheet    # 只跑一支
+```
+
+- 會先 `quasar build -m pwa`，再開一個**臨時** PocketBase（port 8099，跑完自動刪除，不碰正式資料），用 migrations 建好種子資料，加測試帳號 `alice@family.home`。
+- 腳本用 Chrome DevTools Protocol 送出**真實的滑鼠與鍵盤事件**，輸出每個步驟的結果；截圖在 `e2e/.shots/`（不進 git）。
+- 需要：已下載 `backend/pocketbase`、已安裝 Google Chrome、Node 22 以上。
 
 ## 疑難排解
 

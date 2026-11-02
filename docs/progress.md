@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v4.9（2026-11-02）
-> 變更摘要：v4.9 task 7.1（useProductStore、商品畫面用資料）完成。
+> 版本：v5.0（2026-11-02）
+> 變更摘要：v5.0 補齊交接（工作慣例、e2e 指令、待確認事項）；e2e 腳本移入 repo；記錄商業規則「儲存剩餘數量即更新日期」。
+> v4.9 task 7.1（useProductStore、商品畫面用資料）完成。
 > v4.8 商品管理設計稿確認（design.md v3.2）；新增「未來版本」清單。
 > v4.7 K-14、K-15 回寫 design.md v3.1、tasks.md v1.5。
 > v4.6 修正使用者回報：自訂欄位面板一點就關閉；測試環境改為載入真正的 Quasar 元件。
@@ -138,6 +139,7 @@
 | 日期計算 | 使用者決定：composables 一律用 'YYYY-MM-DD' 字串計算（不受時區影響），`getDepletionStatus` 的 today 可傳入（預設裝置本地日期）；耗盡天數四捨五入到整天 | task 3 |
 | 正式環境 PocketBase 網址 | 使用者決定用相對路徑 `/`（前端放在 pb_public，與 API 同網址），不把 Tailscale 主機名稱寫進 repo | task 2.2 |
 | 路由 | 使用者決定：功能頁**嵌套在 MainLayout 下**、**history 模式**（不帶 #）、刪除範例頁。頁面檔名維持 design.md 的單字名稱，ESLint 只對 `src/pages/` 關閉 multi-word 規則 | task 2.4 |
+| 剩餘數量更新日 | 使用者同意：只要儲存時剩餘數量有值（即使數字沒變），更新日就設為當天——按儲存即代表確認目前數量，「久未更新」提醒跟著消失 | task 7.1 |
 | 商品管理設計 | 使用者同意：列表依急迫程度排序、更新消耗設定時即時顯示預估用完日、修改商品基本資料列為未來版本 | 商品設計稿 |
 | 分類管理設計 | 使用者同意 3 項：刪除分類 / 欄位前先確認（新增 CONFIRM-003 / 004）、刪除分類放在編輯分類頁最下方、已使用欄位提前鎖定型別與計算方式 | 分類設計稿 |
 | 設計定案 | **B 資訊卡片 + A 的 Huninn 粉圓體**（只有 400 一種粗細，層級靠字級與顏色）；狀態標籤文字用訊息表 STATUS-003/004，天數放第二行 | 設計稿 |
@@ -185,4 +187,23 @@ git pull
 
 然後跟 Claude Code 說：「讀 docs/progress.md，接著做」。
 
-> 新電腦的 `backend/pocketbase` 與 `pb_data/` 不在 git 裡：執行檔請照 `docs/setup-pocketbase.md` 重新下載；資料庫要另外搬移或備份還原。
+> 新電腦的 `backend/pocketbase` 與 `pb_data/` 不在 git 裡：執行檔請照 `docs/setup-pocketbase.md` 重新下載；資料庫要另外搬移或備份還原。前端套件：`cd frontend && npm install && (cd src-pwa && npm install)`。
+
+### 目前位置（2026-11-02）
+
+- 已完成：task 1～6、7.1。**下一步：task 7.2 DepletionBadge 元件**，接著 7.3～7.8（商品列表、新增、詳情、編輯、測試、久未更新提醒）。
+- 商品頁設計稿已確認：設計稿最下面一排 Prod-List / Prod-New / Prod-Detail / Prod-Edit（https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf ；本機原始檔在 `.design-canvas/`，不進 git）。
+- 沒有待使用者決定的事項。
+
+### 工作慣例（Claude Code 接手時照做）
+
+1. **一次一個 task**：做完 → `tasks.md` 勾選 → 更新本檔 → commit（訊息帶 task 編號）→ push → 回報（繁體中文）。
+2. **新畫面先做設計稿**：先呼叫設計 skills（ui-ux-pro-max、taste-skill），依 design.md「UI 設計規範」做稿放到設計稿，使用者確認後才實作。
+3. **規格有落差**：先停下來列「問題＋建議（含推薦選項）」問使用者（選擇題），同意後才改 design.md / tasks.md，並升版號、寫變更摘要。暫停使用 Kiro。
+4. **驗證三層**：
+   - `cd frontend && npm test`（Vitest，目前 324 項）、`npm run lint:check`、`npm run typecheck`
+   - 故意改壞關鍵程式確認測試抓得到（**先備份檔案**，不要用 `git checkout` 還原未 commit 的修改）
+   - `./e2e/run.sh`（正式 build + 臨時 PocketBase + 無頭 Chrome，**真實滑鼠鍵盤事件**；手機寬 390）。新頁面要在 `frontend/e2e/` 加腳本
+5. **修 bug**：先寫會失敗的回歸測試，再修正。
+6. 測試工具：`src/test-utils/fakePocketBase.ts`（記憶體假資料庫）、`mountPage.ts`（頁面掛載，含 QLayout）、`setup.ts`。
+7. Repo 是 public：真實 email、密碼、token 不可寫進任何檔案。

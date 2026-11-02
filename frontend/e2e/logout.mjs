@@ -1,0 +1,30 @@
+import { spawn } from 'node:child_process';
+import { writeFileSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+const [,, base, outDir] = process.argv;
+const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  ['--headless=new', '--remote-debugging-port=9335', '--user-data-dir=' + mkdtempSync(tmpdir() + '/chr-'), '--no-first-run', 'about:blank'], { stdio: 'ignore' });
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+let ws; for (let i = 0; i < 40; i++) { try { const l = await (await fetch('http://127.0.0.1:9335/json/list')).json(); const p = l.find((x) => x.type === 'page'); if (p) { ws = p.webSocketDebuggerUrl; break; } } catch {} await sleep(250); }
+const sock = new WebSocket(ws); await new Promise((r) => (sock.onopen = r));
+let id = 0; const pending = new Map();
+sock.onmessage = (m) => { const d = JSON.parse(m.data); if (d.id && pending.has(d.id)) { pending.get(d.id)(d); pending.delete(d.id); } };
+const send = (method, params = {}) => new Promise((r) => { const i = ++id; pending.set(i, r); sock.send(JSON.stringify({ id: i, method, params })); });
+const js = async (expr) => (await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true })).result?.result?.value;
+const type = (sel, v) => js(`(() => { const el = document.querySelector('${sel}'); el.value = ${JSON.stringify(v)}; el.dispatchEvent(new Event('input', { bubbles: true })); return true; })()`);
+await send('Page.enable'); await send('Runtime.enable');
+await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+await send('Page.navigate', { url: base + '/login' }); await sleep(2500);
+await type('#login-email', 'alice@family.home'); await type('#login-password', 'correct-password1');
+await js(`document.querySelector('button[type=submit]').click(); true`); await sleep(2000);
+await js(`document.querySelector('a[href="/products"]').click(); true`); await sleep(1000);
+console.log('1 登入後到商品頁 →', await js('location.pathname'), '| 右上角:', await js(`document.querySelector('.user__name')?.textContent`));
+await js(`document.querySelector('button.user__logout').click(); true`); await sleep(1500);
+console.log('2 按登出 →', await js('location.pathname'), '| localStorage token:', await js(`localStorage.getItem('pocketbase_auth')`));
+await js('history.back(); true'); await sleep(1500);
+console.log('3 按瀏覽器上一頁 →', await js('location.pathname'));
+await send('Page.navigate', { url: base + '/products' }); await sleep(2000);
+console.log('4 直接輸入網址 /products →', await js('location.pathname'));
+await send('Page.reload'); await sleep(2000);
+console.log('5 重新整理 →', await js('location.pathname'));
+sock.close(); chrome.kill();
