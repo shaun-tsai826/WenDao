@@ -5,10 +5,13 @@
 // 所以這裡要自己補上：@/ 路徑別名、.vue 檔的編譯、VITE_POCKETBASE_URL。
 import { fileURLToPath } from 'node:url';
 import vue from '@vitejs/plugin-vue';
+import { quasar, transformAssetUrls } from '@quasar/vite-plugin';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  plugins: [vue()],
+  // quasar()：和正式 build 一樣自動載入 <q-dialog>、<q-page> 等 Quasar 元件。
+  // 少了它，測試裡的 Quasar 元件只是沒有功能的普通標籤（task 6.5 面板問題沒被測到的原因）
+  plugins: [vue({ template: { transformAssetUrls } }), quasar({ sassVariables: false })],
   resolve: {
     alias: [
       { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
@@ -26,5 +29,6 @@ export default defineConfig({
     environment: 'jsdom', // 模擬瀏覽器（localStorage、DOM），元件測試需要
     include: ['src/**/__tests__/**/*.test.ts'],
     restoreMocks: true,
+    setupFiles: ['src/test-utils/setup.ts'], // jsdom 缺少的瀏覽器 API 替身
   },
 });

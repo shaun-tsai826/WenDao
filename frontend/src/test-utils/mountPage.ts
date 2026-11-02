@@ -1,7 +1,7 @@
 // 測試用：掛載一個頁面（含 Pinia、記憶體路由、Quasar 與 Notify / Dialog 外掛）（task 6.2 起共用）
 import { h, type Component } from 'vue';
 import { mount, flushPromises } from '@vue/test-utils';
-import { Quasar, Notify, Dialog } from 'quasar';
+import { Quasar, Notify, Dialog, QLayout, QPageContainer } from 'quasar';
 import { createPinia, setActivePinia } from 'pinia';
 import { createRouter, createMemoryHistory, RouterView, type RouteRecordRaw } from 'vue-router';
 
@@ -12,7 +12,14 @@ import { createRouter, createMemoryHistory, RouterView, type RouteRecordRaw } fr
 export async function mountPage(path: string, routes: RouteRecordRaw[]) {
   const pinia = createPinia();
   setActivePinia(pinia);
-  const router = createRouter({ history: createMemoryHistory(), routes });
+  // 和真正的 App 一樣，頁面放在 QLayout > QPageContainer 裡（QPage 必須在 QLayout 底下）
+  const TestLayout = {
+    render: () => h(QLayout, { view: 'hHh lpR fFf' }, () => h(QPageContainer, () => h(RouterView))),
+  };
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: '/', component: TestLayout, children: routes }],
+  });
   await router.push(path);
   const wrapper = mount(
     { render: () => h(RouterView) },

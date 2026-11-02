@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v4.5（2026-11-02）
-> 變更摘要：v4.5 task 6.6 完成，task 6（分類管理）全部完成；新增 K-15。
+> 版本：v4.6（2026-11-02）
+> 變更摘要：v4.6 修正使用者回報：自訂欄位面板一點就關閉；測試環境改為載入真正的 Quasar 元件。
+> v4.5 task 6.6 完成，task 6（分類管理）全部完成；新增 K-15。
 > v4.4 task 6.5（編輯分類名稱與自訂欄位）完成；修正 SDK 自動取消造成的誤報（回歸測試）。
 > v4.3 task 6.4（刪除分類）完成；新增 K-14。
 > v4.2 task 6.3（新增分類）完成。
@@ -40,7 +41,7 @@
 
 ## 目前階段
 
-**實作中。** task 1（環境建置）全部完成；**task 1～6 全部完成**（登入、分類管理可實際使用），下一步是 task 7（商品管理）。commit 前執行 `npm test`（目前 287 項）。
+**實作中。** task 1（環境建置）全部完成；**task 1～6 全部完成**（登入、分類管理可實際使用），下一步是 task 7（商品管理）。commit 前執行 `npm test`（目前 288 項）。
 
 > **2026-11-01 起短期內不使用 Kiro**：規格需要修改時，由 Claude Code 先問使用者、同意後直接改（含版本號與變更摘要）。
 > **task 2.6 之前**：先用已安裝的設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿（儀表板、新增購買記錄），使用者選定後整理成 UI 設計規範寫進規格。
@@ -104,6 +105,7 @@
 | 2026-11-02 | **task 6.4**：`pages/CategoryEdit.vue` 框架與「刪除這個分類」區塊（有商品時停用並寫出原因；CONFIRM-003 確認；成功 MSG-002 並回到列表；資料庫擋下顯示 ERR-004）。返回列放在內容區（K-14）。`CategoryEdit.test.ts` 6 項，全專案 247 項 | — |
 | 2026-11-02 | **task 6.5**：`stores/customField.ts`（fetch / create / update / move / delete，ERR-009 / 017 / 018 / 019，使用狀況每次重查）；`components/CustomFieldSheet.vue` 下方面板（已使用欄位提前鎖定並說明、CONFIRM-004）；編輯分類頁加入名稱編輯（MSG-008、ERR-002 / 003）與欄位清單（上下箭頭排序、MSG-009 / 010）。新增 store 測試 19 項、頁面測試 16 項；5 種故意改壞皆被抓到。**e2e 發現並修正**：SDK 預設自動取消同 collection 的並行查詢，編輯分類頁誤報 ERR-014 → `pb.autoCancellation(false)`，先寫回歸測試（失敗）再修正（通過）。另修正底部提示左側空白、確認對話框圓角。全專案 283 項；e2e 8 步驟全數符合 | — |
 | 2026-11-02 | **task 6.6**：對照清單逐項確認已涵蓋（store + 頁面）；補上 `lib/__tests__/feedback.test.ts`（真正的 Quasar 確認對話框與底部提示，連跑 5 次穩定）。「刪除有商品分類（MSW 回傳 400）」改用 fakePocketBase 模擬 Restrict 400（K-15）。全專案 287 項 | `docs/setup-frontend.md` v1.5 |
+| 2026-11-02 | **修正（使用者回報）**：自訂欄位面板一點就關閉。原因：面板最外層用 `<section>`，Quasar 只讓 `.q-dialog__inner` 底下直接的 `<div>` 可點，點擊穿透到背景而關閉。改為 `<div>`；先寫回歸測試（失敗）再修正。**測試沒抓到的根本原因**：vitest 沒載入 Quasar 元件（`<q-dialog>` 在測試裡只是普通標籤）→ 加入 `@quasar/vite-plugin`、`mountPage` 包 QLayout、`setup.ts` 補 ResizeObserver；e2e 改用真實滑鼠鍵盤事件，手機與桌機寬度各 9 步驟通過。全專案 288 項 | `docs/setup-frontend.md` v1.6 |
 
 ## 待辦（依順序）
 

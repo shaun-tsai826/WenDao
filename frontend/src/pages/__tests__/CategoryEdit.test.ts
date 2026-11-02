@@ -232,6 +232,17 @@ describe('自訂欄位清單', () => {
 });
 
 describe('自訂欄位面板', () => {
+  // 回歸測試（使用者回報：點面板裡任何地方，面板就關閉）
+  // Quasar 只讓「.q-dialog__inner 底下直接的 <div>」可以點（pointer-events: all），
+  // 其他標籤的點擊會穿透到背景，被當成「點背景關閉」。所以面板最外層必須是 <div>。
+  it('面板最外層是 .q-dialog__inner 底下的 <div>，點面板內容不會關閉', async () => {
+    seedTissue();
+    const { wrapper } = await mountPage('/categories/c-tissue/edit', routes);
+    await wrapper.find('.fields__add').trigger('click');
+    await flushPromises();
+    expect(document.querySelector('.q-dialog__inner > div.sheet')).not.toBeNull();
+  });
+
   it('已被使用的欄位：型別與計算方式鎖定、刪除停用，並寫出原因', async () => {
     seedTissue();
     const { wrapper } = await mountPage('/categories/c-tissue/edit', routes);

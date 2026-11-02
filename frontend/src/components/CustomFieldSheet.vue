@@ -6,7 +6,9 @@
 -->
 <template>
   <q-dialog v-model="open" position="bottom" @hide="emit('closed')">
-    <section class="sheet" aria-labelledby="field-sheet-title">
+    <!-- 最外層必須是 <div>：Quasar 只讓 .q-dialog__inner 底下直接的 div 可以點，
+         用其他標籤的話，點面板內容會被當成點背景而關閉（使用者回報的問題） -->
+    <div class="sheet" role="group" aria-labelledby="field-sheet-title">
       <span class="sheet__handle" aria-hidden="true" />
       <h2 id="field-sheet-title" class="sheet__title">{{ field ? '編輯欄位' : '新增欄位' }}</h2>
 
@@ -79,7 +81,7 @@
           </button>
         </div>
       </form>
-    </section>
+    </div>
   </q-dialog>
 </template>
 

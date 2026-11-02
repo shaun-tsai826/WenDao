@@ -1,7 +1,8 @@
 # 前端環境建置教學（setup-frontend.md）
 
-> 版本：v1.5（2026-11-02）
-> 變更摘要：v1.5 測試清單更新到 task 6.6（287 項）；說明測試工具 fakePocketBase / mountPage。
+> 版本：v1.6（2026-11-02）
+> 變更摘要：v1.6 測試改用 @quasar/vite-plugin 載入真正的 Quasar 元件、新增 setup 檔；e2e 要用真實滑鼠鍵盤事件。
+> v1.5 測試清單更新到 task 6.6（287 項）；說明測試工具 fakePocketBase / mountPage。
 > v1.4 測試清單更新到 task 5.5（207 項）。
 > v1.3 測試清單更新到 task 5.3（200 項）；vitest 加上 #q-app 別名。
 > v1.2 新增第 7 節自動化測試（task 2.8）。
@@ -149,8 +150,11 @@ npm run test:watch    # 改檔案時自動重跑（開發時開著）
 - 設定檔：`vitest.config.ts`（`@/` 別名、`.vue` 編譯、測試用的 PocketBase 網址、Quasar 改用 client 版本、`#q-app` 指向 Quasar 官方實作）。
 - 測試檔放在被測程式旁邊的 `__tests__/` 資料夾，檔名 `*.test.ts`。商業邏輯（task 3）放 `src/composables/__tests__/`。
 - 測試**不連真正的 PocketBase**：需要 client 的地方傳入假的 client（例如 `src/lib/__tests__/restoreAuth.test.ts`）；store 與頁面測試用 `src/test-utils/fakePocketBase.ts`（記憶體假資料庫，模擬 UNIQUE、Restrict、連線錯誤）。
-- 頁面測試用 `src/test-utils/mountPage.ts` 掛載（Pinia、路由、Quasar 與 Notify / Dialog）。
+- 頁面測試用 `src/test-utils/mountPage.ts` 掛載（Pinia、路由、Quasar 與 Notify / Dialog），頁面會放在 QLayout 裡（和真正的 App 一樣）。
+- `vitest.config.ts` 加了 `@quasar/vite-plugin`（和正式 build 一樣自動載入 `<q-dialog>` 等元件）。**少了它，Quasar 元件在測試裡只是沒有功能的普通標籤**，對話框之類的問題測不出來。
+- `src/test-utils/setup.ts`：補上 jsdom 沒有的 `ResizeObserver`（QLayout 需要）。
 - 假資料庫**不會模擬 SDK 本身的行為**（例如自動取消請求），所以重要流程仍要用無頭 Chrome 對正式 build 做 e2e 驗證。
+- e2e 要用**真正的滑鼠與鍵盤事件**（Chrome DevTools Protocol 的 `Input.dispatchMouseEvent`、`Input.insertText`），不要用程式直接 `el.click()` 或改 `value`：後者會繞過點擊穿透、焦點等真實行為（task 6.5 面板「一點就關閉」就是這樣漏掉的）。
 
 目前的測試：
 
@@ -185,6 +189,8 @@ npm run test:watch    # 改檔案時自動重跑（開發時開著）
 | 建置 PWA 時找不到 `workbox-build` | 沒有安裝 `src-pwa/` 的套件 | `cd src-pwa && npm install` |
 | `Port 9000 is already in use` | 已經有一個 dev server 在跑 | 關掉另一個，或加 `--port 9100` 換一個 port |
 | 手機上看不到「加到主畫面」 | service worker 只能在 HTTPS 或 localhost 下運作 | 正式環境要透過 `tailscale serve` 提供 HTTPS（task 13.1） |
+| 測試出現 `QPage needs to be a deep child of QLayout` | 頁面沒有放在 QLayout 裡 | 用 `mountPage` 掛載（它會包好 QLayout） |
+| 測試出現 `ResizeObserver is not defined` | jsdom 沒有這個 API | 確認 `vitest.config.ts` 有 `setupFiles: ['src/test-utils/setup.ts']` |
 | 測試出現 `The SSR server build was installed without an ssrContext` | 測試沒有用到 Quasar 的瀏覽器版本 | 確認 `vitest.config.ts` 的 alias 有 `/^quasar$/ → quasar/dist/quasar.client.js` |
 | `npm audit` 顯示十幾個 moderate 漏洞 | 都在 ESLint 相關的**開發工具**裡（minimatch），不會打包進 App | 用 `npm audit --omit=dev` 檢查正式會用到的套件（應為 0）。不要執行 `npm audit fix --force`，它會把 ESLint 降到很舊的版本 |
 | 安裝時出現 `npm warn install-scripts` | npm 11 預設不執行套件的安裝腳本（`@parcel/watcher`、`fsevents`） | 目前不影響開發與建置，不用處理 |
