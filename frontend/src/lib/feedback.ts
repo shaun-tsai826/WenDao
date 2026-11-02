@@ -5,12 +5,12 @@ import { Dialog, Notify } from 'quasar';
 
 /** 成功提示（例如 MSG-001「分類建立成功」） */
 export function notifySuccess(message: string): void {
-  Notify.create({ message, icon: 'none' });
+  Notify.create({ message });
 }
 
 /** 錯誤提示（用在沒有對應欄位可以顯示錯誤的情況，例如刪除失敗） */
 export function notifyError(message: string): void {
-  Notify.create({ message, icon: 'none', color: 'negative' });
+  Notify.create({ message, color: 'negative' });
 }
 
 /**

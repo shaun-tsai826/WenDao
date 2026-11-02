@@ -91,3 +91,10 @@ h6 {
   font-family: var(--font);
   font-size: 15px;
 }
+
+// 確認對話框（Quasar Dialog）：圓角與字體依 UI 設計規範（task 6.5）
+.q-dialog .q-card {
+  border-radius: var(--radius-card);
+  font-family: var(--font);
+  font-size: 16px;
+}

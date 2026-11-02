@@ -24,7 +24,18 @@
 import { computed } from 'vue';
 
 export type IconName =
-  'home' | 'receipt' | 'box' | 'tag' | 'back' | 'chevron' | 'plus' | 'eye' | 'eye-off' | 'alert';
+  | 'home'
+  | 'receipt'
+  | 'box'
+  | 'tag'
+  | 'back'
+  | 'chevron'
+  | 'plus'
+  | 'eye'
+  | 'eye-off'
+  | 'alert'
+  | 'up'
+  | 'down';
 
 const ICONS: Record<IconName, string[]> = {
   home: ['M3.5 10 11 4l7.5 6v8a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1z'],
@@ -42,6 +53,8 @@ const ICONS: Record<IconName, string[]> = {
     'M2 11s3.5-6 9-6c1.6 0 3 .5 4.2 1.2M20 11s-3.5 6-9 6c-1.6 0-3-.5-4.2-1.2',
     'M3.5 18.5 18.5 3.5',
   ],
+  up: ['m5 13.5 6-6 6 6'],
+  down: ['m5 8.5 6 6 6-6'],
   alert: ['M19.5 11a8.5 8.5 0 1 1-17 0 8.5 8.5 0 0 1 17 0z', 'M11 6.5V12', 'M11 15.2v.01'],
 };
 
