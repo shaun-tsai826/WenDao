@@ -5,7 +5,7 @@
 // - remaining_updated_at 為空 → 剩餘數量未設定（null），此時 remaining_quantity 的 0 沒有意義
 // 再用 task 3 的 composables 算出耗盡日期、狀態，以及 AC-7.14 的「久未更新」。
 import { diffDays, localToday, toDateOnly, type DateOnly } from '@/composables/dates';
-import { calculateDepletionDate } from '@/composables/useDepletionEstimate';
+import { calculateDepletionDate, PERIOD_DAYS } from '@/composables/useDepletionEstimate';
 import { getDepletionStatus, type DepletionStatus } from '@/composables/useDepletionStatus';
 import type { ProductRecord } from '@/types/models';
 
@@ -114,4 +114,31 @@ export function productSummary(view: ProductView): string {
   }
   const unitText = `計價單位：${view.record.unit}`;
   return remaining === null ? unitText : `${remaining} · ${unitText}`;
+}
+
+/**
+ * 更新消耗設定頁的即時預估（task 7.6，設計稿 Prod-Edit）。儲存時更新日會記為今天，所以用 today 當起點。
+ * 缺少剩餘數量或消耗速率時回傳 null（畫面改顯示提示）。
+ * @example depletionPreview(2, 4, 'monthly', '2026-11-02')
+ *   // { headline: '預計 11/17 用完（剩 15 天）', formula: '2 ÷ 4 × 30 天 = 15 天' }
+ */
+export function depletionPreview(
+  remaining: number | null,
+  rate: number | null,
+  period: 'monthly' | 'weekly',
+  today: DateOnly,
+): { headline: string; formula: string } | null {
+  if (remaining === null || remaining < 0 || rate === null || rate <= 0) return null;
+  const date = calculateDepletionDate(remaining, today, rate, period);
+  if (date === null) return null;
+  const days = diffDays(today, date);
+  const exact = (remaining / rate) * PERIOD_DAYS[period];
+  const equals = Math.abs(exact - days) < 1e-9 ? '=' : '≈';
+  return {
+    headline:
+      days === 0
+        ? `預計今天（${formatMonthDay(date)}）用完`
+        : `預計 ${formatMonthDay(date)} 用完（剩 ${days} 天）`,
+    formula: `${formatQuantity(remaining)} ÷ ${formatQuantity(rate)} × ${PERIOD_DAYS[period]} 天 ${equals} ${days} 天`,
+  };
 }

@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import {
   compareByUrgency,
+  depletionPreview,
   formatMonthDay,
   formatQuantity,
   normalizeForCompare,
@@ -256,5 +257,39 @@ describe('productSummary：商品列表第二行', () => {
         remaining_updated_at: '2026-10-30 00:00:00.000Z',
       }),
     ).toBe('剩 3 · 計價單位：抽');
+  });
+});
+
+// task 7.6：更新消耗設定頁的即時預估（設計稿 Prod-Edit；儲存時更新日 = 今天）
+describe('depletionPreview：即時預估用完日', () => {
+  const TODAY_EDIT = '2026-11-02';
+
+  it('設計稿：剩 2、每月用 4 → 預計 11/17 用完（剩 15 天），算式 2 ÷ 4 × 30 天 = 15 天', () => {
+    expect(depletionPreview(2, 4, 'monthly', TODAY_EDIT)).toEqual({
+      headline: '預計 11/17 用完（剩 15 天）',
+      formula: '2 ÷ 4 × 30 天 = 15 天',
+    });
+  });
+
+  it('不是整數天時四捨五入，算式用「≈」', () => {
+    expect(depletionPreview(0.5, 2, 'monthly', TODAY_EDIT)).toEqual({
+      headline: '預計 11/10 用完（剩 8 天）',
+      formula: '0.5 ÷ 2 × 30 天 ≈ 8 天',
+    });
+  });
+
+  it('每週：× 7 天', () => {
+    expect(depletionPreview(1, 0.5, 'weekly', TODAY_EDIT)?.formula).toBe('1 ÷ 0.5 × 7 天 = 14 天');
+  });
+
+  it('剩 0 → 今天用完', () => {
+    expect(depletionPreview(0, 4, 'monthly', TODAY_EDIT)?.headline).toBe('預計今天（11/2）用完');
+  });
+
+  it('缺剩餘數量或消耗速率（或速率不大於 0）→ null，畫面改顯示提示', () => {
+    expect(depletionPreview(null, 4, 'monthly', TODAY_EDIT)).toBeNull();
+    expect(depletionPreview(2, null, 'monthly', TODAY_EDIT)).toBeNull();
+    expect(depletionPreview(2, 0, 'monthly', TODAY_EDIT)).toBeNull();
+    expect(depletionPreview(-1, 4, 'monthly', TODAY_EDIT)).toBeNull();
   });
 });

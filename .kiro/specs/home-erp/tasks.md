@@ -281,7 +281,7 @@
     - 先實作 usePurchaseStore 的讀取：`fetchByProduct(productId)`（新→舊，數量 0 轉為缺失）、`fetchUsers()`（購買記錄的新增者頭像）
     - _對應：REQ-6, AC-6.4, REQ-8, AC-8.2, AC-8.4_
 
-  - [ ] 7.6 實作 ProductEdit 頁面
+  - [x] 7.6 實作 ProductEdit 頁面
     - 設定消耗速率、消耗週期（monthly/weekly）、消耗單位（consumption_unit）、剩餘數量（remaining_quantity，負數顯示 ERR-015）、消耗規劃備註
     - 儲存剩餘數量時自動填入 remaining_updated_at 為當天日期
     - 設定消耗速率但未填消耗單位顯示 ERR-016「請設定消耗單位」
