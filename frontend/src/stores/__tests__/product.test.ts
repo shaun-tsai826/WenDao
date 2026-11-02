@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useProductStore, type ConsumptionInput } from '@/stores/product';
-import { apiErrorMessage } from '@/lib/errors';
+import { apiErrorMessage, DuplicateProductError } from '@/lib/errors';
 import { ERR } from '@/constants/messages';
 import { installFakePocketBase } from '@/test-utils/fakePocketBase';
 
@@ -168,6 +168,19 @@ describe('createProduct（AC-3.1～3.6）', () => {
       name: '抽取式衛生紙',
     });
     expect(fake.rows('products')).toHaveLength(3);
+  });
+
+  it('重複時錯誤帶出已存在的商品（task 7.4 畫面顯示「已有『Kleenex 舒潔衛生紙』」）', async () => {
+    seed();
+    const err = await useProductStore()
+      .createProduct({ ...NEW, brand: 'ＫＬＥＥＮＥＸ', name: '舒潔衛生紙' })
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(DuplicateProductError);
+    expect((err as DuplicateProductError).message).toBe(ERR.productDuplicate);
+    expect((err as DuplicateProductError).existing).toEqual({
+      brand: 'Kleenex',
+      name: '舒潔衛生紙',
+    });
   });
 
   it('另一人剛好建立相同商品（前端查詢之後、資料庫 UNIQUE 擋下）→ ERR-007', async () => {

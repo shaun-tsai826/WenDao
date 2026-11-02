@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v5.3（2026-11-02）
-> 變更摘要：v5.3 商品列表篩選記在網址（design.md v3.3）；`lint:check` 補上 prettier `--check`。
+> 版本：v5.4（2026-11-02）
+> 變更摘要：v5.4 task 7.4（新增商品頁）完成；新增 e2e product-new。
+> v5.3 商品列表篩選記在網址（design.md v3.3）；`lint:check` 補上 prettier `--check`。
 > v5.2 task 7.3（商品列表頁）完成；新增 e2e products。
 > v5.1 task 7.2（DepletionBadge 元件）完成。
 > v5.0 補齊交接（工作慣例、e2e 指令、待確認事項）；e2e 腳本移入 repo；記錄商業規則「儲存剩餘數量即更新日期」。
@@ -48,13 +49,13 @@
 
 ## 目前階段
 
-**實作中。** task 1（環境建置）全部完成；**task 1～6、7.1～7.3 完成**，下一步是 task 7.4（ProductNew 新增商品頁）。commit 前執行 `npm test`（目前 363 項）。
+**實作中。** task 1（環境建置）全部完成；**task 1～6、7.1～7.4 完成**，下一步是 task 7.5（ProductDetail 商品詳情頁）。commit 前執行 `npm test`（目前 384 項）。
 
 > **2026-11-01 起短期內不使用 Kiro**：規格需要修改時，由 Claude Code 先問使用者、同意後直接改（含版本號與變更摘要）。
 > **task 2.6 之前**：先用已安裝的設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿（儀表板、新增購買記錄），使用者選定後整理成 UI 設計規範寫進規格。
 
 ```
-規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（7.3 完成，下一步 7.4）
+規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（7.4 完成，下一步 7.5）
   (完成)       (完成)          (完成)            (完成)        ◄ 目前在這裡
 ```
 
@@ -118,10 +119,11 @@
 | 2026-11-02 | **task 7.2**：`components/DepletionBadge.vue`（依 DepletionStatus 顯示 STATUS-002 / 003 / 004 / 007，normal 不顯示；樣式依設計稿 13px 膠囊、CSS 變數配色）。`DepletionBadge.test.ts` 10 項（含與 getDepletionStatus 串接的 0 / 7 / 8 天與昨天邊界），全專案 334 項；3 種故意改壞皆被抓到。STATUS-008 久未更新留給 task 7.8 | — |
 | 2026-11-02 | **task 7.3**：`pages/Products.vue` 商品列表（依急迫程度排序、分類圖塊、第二行剩餘數量與預計用完日、DepletionBadge、依分類篩選且放不下換行、載入中 / 失敗重試 / 空清單）；`lib/productView.ts` 新增 `productSummary`、`formatQuantity`、`formatMonthDay`。新增 25 項測試（頁面 11、第二行文字 14），全專案 359 項；4 種故意改壞皆被抓到。e2e `products.mjs`（自建測試資料、真實滑鼠事件）8 步驟通過。**e2e 發現**：已耗盡第二行加上「已過 N 天」在手機寬斷成三行 → 改回設計稿寫法「剩 0.5 包 · 10/25 已用完」 | — |
 | 2026-11-02 | **task 7.3 追加（使用者同意）**：篩選記在網址 `?category=<id>`（`router.replace`，上一頁 / 重新整理保留，不存在的分類當成全部）；新增 4 項測試，全專案 363 項，2 種故意改壞皆被抓到；e2e products 10 步驟通過。`npm run lint:check` 的 prettier 補上 `--check`（原本只印出結果、永遠成功），已確認排版錯誤會讓它失敗。方向鍵切換篩選：使用者決定不做 | design.md v3.3 |
+| 2026-11-02 | **task 7.4**：`pages/ProductNew.vue`（依設計稿 Prod-New：分類、品牌＋品名並排、計價單位與常用單位按鈕、消耗單位選填與白話說明；錯誤顯示在送出按鈕上方並標紅框、焦點移到第一個有問題的欄位、修改後拿掉紅框；成功 MSG-003 並 `replace` 到商品詳情；從篩選過的列表進來預先選好分類，返回時回到同一篩選；沒有分類時引導到分類管理）。`lib/errors.ts` 新增 `DuplicateProductError`（帶出已存在的商品，畫面顯示「已有『Kleenex 舒潔衛生紙』」）。新增 21 項測試，全專案 384 項；4 種故意改壞皆被抓到。e2e `product-new.mjs` 10 步驟通過（BDD 5 個情境） | — |
 
 ## 待辦（依順序）
 
-1. **[Claude Code]** task 7.4～7.8：新增、詳情、編輯、測試、久未更新提醒。
+1. **[Claude Code]** task 7.5～7.8：詳情、編輯、測試、久未更新提醒。
 3. 之後依 `tasks.md` 順序，一次做一個 task → 勾選 `[x]` → commit（message 帶 task 編號）。
 
 ## 重要決定紀錄
@@ -198,9 +200,9 @@ git pull
 
 ### 目前位置（2026-11-02）
 
-- 已完成：task 1～6、7.1～7.3。**下一步：task 7.4 ProductNew 新增商品頁**（設計稿 Prod-New；新頁面要加 e2e 腳本），接著 7.5～7.8（詳情、編輯、測試、久未更新提醒）。
+- 已完成：task 1～6、7.1～7.4。**下一步：task 7.5 ProductDetail 商品詳情頁**（設計稿 Prod-Detail；新頁面要加 e2e 腳本），接著 7.6～7.8（編輯、測試、久未更新提醒）。
 - 商品頁設計稿已確認：設計稿最下面一排 Prod-List / Prod-New / Prod-Detail / Prod-Edit（https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf ；本機原始檔在 `.design-canvas/`，不進 git）。
-- 沒有待使用者決定的事項。
+- 待使用者確認（task 7.4 先用預設做法）：建立商品後進入商品詳情頁；沒篩選時預設第一個分類。
 
 ### 工作慣例（Claude Code 接手時照做）
 
@@ -208,7 +210,7 @@ git pull
 2. **新畫面先做設計稿**：先呼叫設計 skills（ui-ux-pro-max、taste-skill），依 design.md「UI 設計規範」做稿放到設計稿，使用者確認後才實作。
 3. **規格有落差**：先停下來列「問題＋建議（含推薦選項）」問使用者（選擇題），同意後才改 design.md / tasks.md，並升版號、寫變更摘要。暫停使用 Kiro。
 4. **驗證三層**：
-   - `cd frontend && npm test`（Vitest，目前 363 項）、`npm run lint:check`、`npm run typecheck`
+   - `cd frontend && npm test`（Vitest，目前 384 項）、`npm run lint:check`、`npm run typecheck`
    - 故意改壞關鍵程式確認測試抓得到（**先備份檔案**，不要用 `git checkout` 還原未 commit 的修改）
    - `./e2e/run.sh`（正式 build + 臨時 PocketBase + 無頭 Chrome，**真實滑鼠鍵盤事件**；手機寬 390）。新頁面要在 `frontend/e2e/` 加腳本
 5. **修 bug**：先寫會失敗的回歸測試，再修正。

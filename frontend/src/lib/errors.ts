@@ -13,6 +13,14 @@ export class ValidationError extends Error {
   }
 }
 
+/** 商品重複（ERR-007）：附上已存在的那一筆，讓畫面可以寫出「已有『Kleenex 舒潔衛生紙』」（task 7.4） */
+export class DuplicateProductError extends ValidationError {
+  constructor(public readonly existing: { brand: string; name: string }) {
+    super(ERR.productDuplicate);
+    this.name = 'DuplicateProductError';
+  }
+}
+
 /**
  * 把任何錯誤轉成要顯示的訊息：
  * - ValidationError → 它自己的訊息

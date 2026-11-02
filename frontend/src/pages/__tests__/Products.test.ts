@@ -261,6 +261,15 @@ describe('記住篩選（網址 ?category=）', () => {
     expect(names(wrapper)).toEqual(['白蘭 洗衣精補充包', '泡舒 洗碗精', '3M 菜瓜布']);
   });
 
+  it('篩選中按「新增商品」：帶上分類（task 7.4 預先選好）', async () => {
+    seed();
+    const { wrapper } = await mountPage('/products', routes);
+    expect(wrapper.find('a.add-link').attributes('href')).toBe('/products/new');
+    await chip(wrapper, '清潔用品').trigger('click');
+    await flushPromises();
+    expect(wrapper.find('a.add-link').attributes('href')).toBe('/products/new?category=c-clean');
+  });
+
   it('網址上的分類不存在（例如已被刪除）：當成「全部」', async () => {
     seed();
     const { wrapper } = await mountPage('/products?category=c-gone', routes);

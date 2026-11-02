@@ -13,7 +13,10 @@
         <h1 class="page__title">商品</h1>
         <span v-if="ready" class="page__meta">共 {{ views.length }} 項 · 最需要補的排在前面</span>
       </div>
-      <router-link to="/products/new" class="add-link">
+      <router-link
+        :to="selected ? { path: '/products/new', query: { category: selected } } : '/products/new'"
+        class="add-link"
+      >
         <AppIcon name="plus" :size="18" />新增商品
       </router-link>
     </div>

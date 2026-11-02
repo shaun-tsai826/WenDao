@@ -9,7 +9,7 @@
 import { defineStore, acceptHMRUpdate } from 'pinia';
 import pb from '@/lib/pocketbase';
 import { ERR } from '@/constants/messages';
-import { ValidationError, isUniqueViolation } from '@/lib/errors';
+import { DuplicateProductError, ValidationError, isUniqueViolation } from '@/lib/errors';
 import { compareByUrgency, normalizeForCompare, toProductView } from '@/lib/productView';
 import { localToday } from '@/composables/dates';
 import type { ConsumptionPeriod, ProductRecord } from '@/types/models';
@@ -80,10 +80,10 @@ export const useProductStore = defineStore('product', {
         fields: 'id,brand,name',
       });
       const key = `${normalizeForCompare(brand)}\u0000${normalizeForCompare(name)}`;
-      const duplicate = sameCategory.some(
+      const existing = sameCategory.find(
         (p) => `${normalizeForCompare(p.brand)}\u0000${normalizeForCompare(p.name)}` === key,
       );
-      if (duplicate) throw new ValidationError(ERR.productDuplicate);
+      if (existing) throw new DuplicateProductError({ brand: existing.brand, name: existing.name });
 
       try {
         const created = await pb.collection('products').create<ProductRecord>({
