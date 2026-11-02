@@ -1,4 +1,4 @@
-// MainLayout（task 2.6，AC-1.5）：右上角顯示使用者名稱與登出按鈕、底部導覽列
+// MainLayout（task 2.6、5.4，AC-1.5、AC-1.6）：右上角使用者名稱與登出按鈕、底部導覽列
 import { describe, it, expect, beforeEach } from 'vitest';
 import { mount, flushPromises } from '@vue/test-utils';
 import { Quasar } from 'quasar';
@@ -7,6 +7,7 @@ import { h } from 'vue';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import MainLayout from '@/layouts/MainLayout.vue';
 import { useAuthStore } from '@/stores/auth';
+import pb from '@/lib/pocketbase';
 import type { UserRecord } from '@/types/models';
 
 const Dummy = { render: () => h('div') };
@@ -18,6 +19,7 @@ async function mountAt(path: string) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
+      { path: '/login', component: { render: () => h('div', { id: 'login-page' }) } },
       {
         path: '/',
         component: MainLayout,
@@ -34,23 +36,31 @@ async function mountAt(path: string) {
     { global: { plugins: [Quasar, pinia, router] } },
   );
   await flushPromises();
-  return wrapper;
+  return { wrapper, router };
+}
+
+function fakeJwt(): string {
+  const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const exp = Math.floor(Date.now() / 1000) + 3600;
+  return `${b64({ alg: 'HS256' })}.${b64({ id: 'u1', type: 'auth', exp })}.sig`;
 }
 
 beforeEach(() => {
   document.body.innerHTML = '';
+  pb.authStore.clear();
+  localStorage.clear();
 });
 
 describe('MainLayout', () => {
   it('右上角顯示使用者名稱、頭像（名稱最後一字）與登出按鈕（AC-1.5）', async () => {
-    const w = await mountAt('/');
+    const { wrapper: w } = await mountAt('/');
     expect(w.find('.user__name').text()).toBe('老皮');
     expect(w.find('.user__avatar').text()).toBe('皮');
     expect(w.find('button.user__logout').text()).toBe('登出');
   });
 
   it('底部導覽列有 4 個項目，順序與連結正確', async () => {
-    const w = await mountAt('/');
+    const { wrapper: w } = await mountAt('/');
     const links = w.findAll('nav[aria-label="主選單"] a');
     expect(links.map((a) => a.text())).toEqual(['首頁', '購買記錄', '商品', '分類']);
     expect(links.map((a) => a.attributes('href'))).toEqual([
@@ -67,8 +77,21 @@ describe('MainLayout', () => {
     ['/products/abc', '商品'],
     ['/categories', '分類'],
   ])('在 %s 時只有「%s」標示為目前頁', async (path, label) => {
-    const w = await mountAt(path);
+    const { wrapper: w } = await mountAt(path);
     const current = w.findAll('nav[aria-label="主選單"] a[aria-current="page"]');
     expect(current.map((a) => a.text())).toEqual([label]);
+  });
+
+  it('按「登出」：清除登入狀態並回到登入頁（AC-1.6）', async () => {
+    pb.authStore.save(fakeJwt(), { id: 'u1', name: '老皮' } as never);
+    const { wrapper, router } = await mountAt('/products');
+    await wrapper.find('button.user__logout').trigger('click');
+    await flushPromises();
+    const auth = useAuthStore();
+    expect(router.currentRoute.value.path).toBe('/login');
+    expect(wrapper.find('#login-page').exists()).toBe(true);
+    expect(auth.isAuthenticated).toBe(false);
+    expect(pb.authStore.isValid).toBe(false);
+    expect(localStorage.getItem('pocketbase_auth')).toBeNull();
   });
 });

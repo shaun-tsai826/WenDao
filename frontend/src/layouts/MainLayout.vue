@@ -1,7 +1,7 @@
 <!--
   MainLayout：功能頁共用的外框（task 2.6，AC-1.5）
   design.md「UI 設計規範 › 元件」：
-  - 頂欄：品牌標記 +「家庭ERP」；右邊頭像 + 使用者名稱 +「登出」
+  - 頂欄：品牌標記 +「家庭ERP」；右邊頭像 + 使用者名稱 +「登出」（task 5.4 接上登出）
   - 底部導覽列：首頁、購買記錄、商品、分類（目前頁用 --accent）
 -->
 <template>
@@ -16,8 +16,7 @@
         <div class="user">
           <span class="user__avatar" aria-hidden="true">{{ avatarChar }}</span>
           <span class="user__name">{{ auth.displayName }}</span>
-          <!-- 登出行為於 task 5.4 接上 -->
-          <button type="button" class="user__logout">登出</button>
+          <button type="button" class="user__logout" @click="logout">登出</button>
         </div>
       </div>
     </q-header>
@@ -46,7 +45,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import AppIcon, { type IconName } from '@/components/AppIcon.vue';
 import { useAuthStore } from '@/stores/auth';
 
@@ -59,6 +58,13 @@ const NAV_ITEMS: { to: string; label: string; icon: IconName }[] = [
 
 const auth = useAuthStore();
 const route = useRoute();
+const router = useRouter();
+
+// 登出（task 5.4，AC-1.6）：清除登入狀態，回到登入頁
+async function logout() {
+  auth.logout();
+  await router.replace('/login');
+}
 
 // 頭像放名稱的最後一個字（老皮 →「皮」）
 const avatarChar = computed(() => Array.from(auth.displayName).at(-1) ?? '');
