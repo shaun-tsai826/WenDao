@@ -77,3 +77,41 @@ export function compareByUrgency(a: ProductView, b: ProductView): number {
 export function normalizeForCompare(text: string): string {
   return text.normalize('NFKC').trim().toLowerCase();
 }
+
+/** 數量顯示：最多 2 位小數、不顯示浮點誤差（0.1 + 0.2 → '0.3'） */
+export function formatQuantity(n: number): string {
+  return String(Math.round(n * 100) / 100);
+}
+
+/** 'YYYY-MM-DD' → 'M/D'（例：'2026-11-08' → '11/8'） */
+export function formatMonthDay(date: DateOnly): string {
+  const [, m, d] = date.split('-');
+  return `${Number(m)}/${Number(d)}`;
+}
+
+const PERIOD_LABEL = { monthly: '每月', weekly: '每週' } as const;
+
+/**
+ * 商品列表第二行（task 7.3，design.md v3.2、設計稿 Prod-List）：
+ * - 已耗盡：「剩 0.5 包 · 10/25 已用完」（依設計稿，不加已過天數，避免手機寬度斷成三行）
+ * - 即將耗盡 / 正常：「剩 2 包 · 預計 11/8（剩 6 天）」，當天用完寫「（今天）」
+ * - 未設定剩餘數量：「每月用 2 包」
+ * - 未設定消耗速率：「計價單位：片」（有剩餘數量時前面加「剩 N 包 · 」）
+ */
+export function productSummary(view: ProductView): string {
+  const unit = view.record.consumption_unit;
+  const qty = (n: number) => (unit ? `${formatQuantity(n)} ${unit}` : formatQuantity(n));
+  const remaining = view.remaining === null ? null : `剩 ${qty(view.remaining)}`;
+
+  if (view.depletionDate !== null && view.daysLeft !== null && remaining !== null) {
+    const date = formatMonthDay(view.depletionDate);
+    if (view.daysLeft < 0) return `${remaining} · ${date} 已用完`;
+    const left = view.daysLeft === 0 ? '今天' : `剩 ${view.daysLeft} 天`;
+    return `${remaining} · 預計 ${date}（${left}）`;
+  }
+  if (view.status === 'no_remaining' && view.rate !== null && view.period) {
+    return `${PERIOD_LABEL[view.period]}用 ${qty(view.rate)}`;
+  }
+  const unitText = `計價單位：${view.record.unit}`;
+  return remaining === null ? unitText : `${remaining} · ${unitText}`;
+}

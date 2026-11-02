@@ -3,7 +3,10 @@ import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import {
   compareByUrgency,
+  formatMonthDay,
+  formatQuantity,
   normalizeForCompare,
+  productSummary,
   toProductView,
   STALE_DAYS,
 } from '@/lib/productView';
@@ -170,5 +173,88 @@ describe('normalizeForCompare（AC-3.6）', () => {
         expect(normalizeForCompare(fullWidth)).toBe(normalizeForCompare(s));
       }),
     );
+  });
+});
+
+// task 7.3：商品列表第二行（design.md v3.2 商品管理、設計稿 Prod-List；AC-7.3 剩餘數量以消耗單位計）
+describe('formatQuantity / formatMonthDay', () => {
+  it.each([
+    [2, '2'],
+    [0.5, '0.5'],
+    [0.1 + 0.2, '0.3'], // 不顯示浮點誤差
+    [1.234, '1.23'], // 最多 2 位小數
+    [0, '0'],
+  ])('formatQuantity(%s) → %s', (n, text) => expect(formatQuantity(n)).toBe(text));
+
+  it.each([
+    ['2026-11-08', '11/8'],
+    ['2026-01-05', '1/5'],
+    ['2026-12-31', '12/31'],
+  ])('formatMonthDay(%s) → %s', (d, text) => expect(formatMonthDay(d)).toBe(text));
+});
+
+describe('productSummary：商品列表第二行', () => {
+  const summary = (over: Partial<ProductRecord>) =>
+    productSummary(toProductView(product(over), TODAY));
+  const tracked = { consumption_rate: 1, consumption_period: 'monthly' as const };
+
+  it('已耗盡：剩餘數量 · 用完日（設計稿 Prod-List；BDD：昨天 = 已耗盡）', () => {
+    expect(
+      summary({
+        ...tracked,
+        remaining_quantity: 1,
+        remaining_updated_at: '2026-10-01 00:00:00.000Z',
+      }),
+    ).toBe('剩 1 包 · 10/31 已用完');
+  });
+
+  it('今天用完：顯示「今天」而不是「剩 0 天」', () => {
+    expect(
+      summary({
+        ...tracked,
+        remaining_quantity: 1,
+        remaining_updated_at: '2026-10-02 00:00:00.000Z',
+      }),
+    ).toBe('剩 1 包 · 預計 11/1（今天）');
+  });
+
+  it('即將耗盡 / 正常：剩餘數量 · 預計日期（剩 N 天）', () => {
+    expect(
+      summary({
+        consumption_rate: 1,
+        consumption_period: 'weekly',
+        remaining_quantity: 1,
+        remaining_updated_at: '2026-10-30 00:00:00.000Z',
+      }),
+    ).toBe('剩 1 包 · 預計 11/6（剩 5 天）');
+    expect(
+      summary({
+        ...tracked,
+        remaining_quantity: 0.5,
+        remaining_updated_at: '2026-10-28 00:00:00.000Z',
+      }),
+    ).toBe('剩 0.5 包 · 預計 11/12（剩 11 天）');
+  });
+
+  it('未設定剩餘數量：顯示消耗速率（每月 / 每週）', () => {
+    expect(summary({ consumption_rate: 2, consumption_period: 'monthly' })).toBe('每月用 2 包');
+    expect(summary({ consumption_rate: 0.5, consumption_period: 'weekly' })).toBe('每週用 0.5 包');
+  });
+
+  it('未設定消耗速率：顯示計價單位；有剩餘數量時一併顯示', () => {
+    expect(summary({})).toBe('計價單位：抽');
+    expect(
+      summary({ remaining_quantity: 3, remaining_updated_at: '2026-10-30 00:00:00.000Z' }),
+    ).toBe('剩 3 包 · 計價單位：抽');
+  });
+
+  it('沒有消耗單位時只顯示數字', () => {
+    expect(
+      summary({
+        consumption_unit: '',
+        remaining_quantity: 3,
+        remaining_updated_at: '2026-10-30 00:00:00.000Z',
+      }),
+    ).toBe('剩 3 · 計價單位：抽');
   });
 });

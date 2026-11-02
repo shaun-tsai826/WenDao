@@ -267,7 +267,7 @@
     - 依 getDepletionStatus 顯示狀態標籤：unset 顯示 STATUS-002「未設定消耗速率」、no_remaining 顯示 STATUS-007「未設定剩餘數量」、soon 顯示 STATUS-003「即將耗盡」、depleted 顯示 STATUS-004「已耗盡」
     - _對應：REQ-7, AC-7.4, AC-7.5, AC-7.7, AC-7.12_
 
-  - [ ] 7.3 實作 Products 列表頁面
+  - [x] 7.3 實作 Products 列表頁面
     - 商品清單含預計耗盡日期與使用者手動輸入的剩餘數量（以消耗單位計）；以 DepletionBadge 醒目標示即將耗盡/已耗盡/未設定剩餘數量；可依分類篩選
     - _對應：REQ-7, AC-7.3, AC-7.4, AC-7.5, AC-7.12_
 
