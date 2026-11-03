@@ -1,4 +1,4 @@
-// 溫叨Pantry 圖示產生器（Logo A：台北市門牌 5888）
+// 溫叨@Pantry 圖示產生器（Logo A：台北市門牌 5888）
 //
 // 用法（在 frontend/ 底下）：node brand/build-icons.mjs
 //

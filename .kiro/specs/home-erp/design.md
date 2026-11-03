@@ -1,7 +1,8 @@
 # Design Document
 
-> 版本：v4.0（2026-11-03）
-> 變更摘要：v4.0 購買記錄設計稿確認（設計稿 Pur-* 8 張，使用者同意 4 項提案）：新增「購買記錄」設計段落（列表篩選、新增 / 編輯表單與 CustomFieldInput、錯誤顯示與錯誤摘要、存檔後更新剩餘數量、詳情的價格比較、刪除確認）。
+> 版本：v4.1（2026-11-03）
+> 變更摘要：v4.1 App 更名「溫叨Pantry」→「溫叨@Pantry」（使用者決定）：manifest name / short_name、頂欄名稱。
+> v4.0 變更摘要：v4.0 購買記錄設計稿確認（設計稿 Pur-* 8 張，使用者同意 4 項提案）：新增「購買記錄」設計段落（列表篩選、新增 / 編輯表單與 CustomFieldInput、錯誤顯示與錯誤摘要、存檔後更新剩餘數量、詳情的價格比較、刪除確認）。
 > v3.9 變更摘要：v3.9 Logo A 定稿（台北市門牌 5888，使用者選定）：頂欄與登入頁改用 BrandLogo 元件，App 圖示、瀏覽器分頁圖示由 frontend/brand/build-icons.mjs 產生。
 > v3.8 變更摘要：v3.8 App 更名「家庭ERP」→「溫叨Pantry」（使用者決定）：manifest name / short_name、頂欄名稱、launchd 設定 com.wendaopantry.pocketbase；畫面上的名稱集中在 constants/app.ts。
 > v3.7 變更摘要：v3.7 回寫 K-16（使用者同意）：usePurchaseStore 依 task 8.1 實作更新——不使用 expand、檢查與計算拆到 lib/purchaseForm.ts、FieldsValidationError、PurchaseFormData 欄位、日期篩選字串、新增失敗時刪除記錄。
@@ -593,8 +594,8 @@ pwa: {
 ```json
 // src-pwa/manifest.json
 {
-  "name": "溫叨Pantry",
-  "short_name": "溫叨Pantry",
+  "name": "溫叨@Pantry",
+  "short_name": "溫叨@Pantry",
   "description": "家庭用品管理系統",
   "orientation": "portrait",
   "background_color": "#f3f5f7",
@@ -920,7 +921,7 @@ graph LR
 
 #### 元件
 
-- **頂欄（MainLayout）**：左邊是門牌 Logo（`BrandLogo variant="header"`，44×30）加「溫叨Pantry」（名稱集中在 `src/constants/app.ts`）；右邊是使用者頭像、名稱和「登出」文字按鈕（AC-1.5）。**所有頁面（含子頁）頂欄都一樣**，不可拿掉使用者資訊。
+- **頂欄（MainLayout）**：左邊是門牌 Logo（`BrandLogo variant="header"`，44×30）加「溫叨@Pantry」（名稱集中在 `src/constants/app.ts`）；右邊是使用者頭像、名稱和「登出」文字按鈕（AC-1.5）。**所有頁面（含子頁）頂欄都一樣**，不可拿掉使用者資訊。
 - **子頁返回列**：新增、編輯、詳情等子頁在內容區最上方放「返回箭頭（44×44）+ 頁面標題（20px h1）」。
 - **底部導覽列**：4 個項目：首頁、購買記錄、商品、分類。每個項目是 22px 線條圖示加 12px 文字；目前所在的頁面用 `--accent` 顏色標示，其他用 `--muted`。手機與桌機都使用底部導覽列（家庭用、主要用手機）。
 - **卡片**：白底、圓角 20px、**沒有陰影也沒有外框**，靠和淺灰底色的差異區分出來。

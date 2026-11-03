@@ -1,4 +1,4 @@
-// BrandLogo：溫叨Pantry 的門牌 Logo（Logo A，2026-11-03 使用者選定）
+// BrandLogo：溫叨@Pantry 的門牌 Logo（Logo A，2026-11-03 使用者選定）
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
 import BrandLogo from '@/components/BrandLogo.vue';

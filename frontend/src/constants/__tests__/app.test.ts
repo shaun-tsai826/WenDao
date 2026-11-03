@@ -1,4 +1,4 @@
-// App 名稱（品牌更名：家庭ERP → 溫叨Pantry，2026-11-03 使用者決定）
+// App 名稱（品牌更名：家庭ERP → 溫叨@Pantry → 溫叨@Pantry，2026-11-03 使用者決定）
 // 畫面上的名稱來自 constants/app.ts；設定檔（package.json、PWA manifest）不能 import，
 // 所以用這個測試確認它們和常數一致，以後改名不會漏改。
 import { describe, it, expect } from 'vitest';
@@ -13,8 +13,8 @@ const readJson = (rel: string) =>
   >;
 
 describe('App 名稱', () => {
-  it('中文名稱「溫叨Pantry」；不能用中文的地方用「WenDaoPantry」', () => {
-    expect(APP_NAME).toBe('溫叨Pantry');
+  it('中文名稱「溫叨@Pantry」；不能用中文的地方用「WenDaoPantry」', () => {
+    expect(APP_NAME).toBe('溫叨@Pantry');
     expect(APP_NAME_ASCII).toBe('WenDaoPantry');
   });
 

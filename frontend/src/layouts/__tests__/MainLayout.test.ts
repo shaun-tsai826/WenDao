@@ -53,7 +53,7 @@ beforeEach(() => {
 });
 
 describe('MainLayout', () => {
-  it('左上角顯示 App 名稱「溫叨Pantry」，品牌連結回首頁', async () => {
+  it('左上角顯示 App 名稱「溫叨@Pantry」，品牌連結回首頁', async () => {
     const { wrapper: w } = await mountAt('/products');
     expect(w.find('.brand__name').text()).toBe(APP_NAME);
     const brand = w.find('a.brand');

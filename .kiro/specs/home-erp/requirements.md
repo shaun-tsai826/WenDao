@@ -1,7 +1,8 @@
 # Requirements Document
 
-> 版本：v1.4（2026-11-03）
-> 變更摘要：v1.4 系統更名「溫叨Pantry系統」→「溫叨Pantry系統」（使用者決定，內容不變）。
+> 版本：v1.5（2026-11-03）
+> 變更摘要：v1.5 系統更名「溫叨Pantry系統」→「溫叨@Pantry系統」（使用者決定，內容不變）。
+> v1.4 系統更名「家庭ERP系統」→「溫叨Pantry系統」（使用者決定，內容不變）。
 > v1.3 變更摘要：v1.3 修正 AC-7.13 對話框預設值為「目前的剩餘數量（未設定時留空）」（review-notes v1.2 F-4）。
 > v1.2 變更摘要：依 review-notes R-2、R-3、C-6~C-13 修正；依 Q-1~Q-4 新增規格。主要變更：AC-1.1 登入後導向首頁、REQ-2 新增分類編輯 AC（2.7~2.9）、REQ-4 新增自訂欄位編輯限制 AC（4.7~4.11）、REQ-7 新增剩餘數量手動輸入與消耗單位 AC（7.9~7.14）、AC-7.2/7.3 修正為手動剩餘數量公式、AC-7.4 加註含今天、AC-8.3 補上新増者欄位、AC-8.10 新增價格比較 null 處理、Glossary 拆分計價單位與消耗單位、非功能性約束更新外網存取方式為 Tailscale HTTPS。
 
@@ -13,7 +14,7 @@
 
 ## Glossary
 
-- **溫叨Pantry系統**：本專案開發的家庭用品管理 Web 應用程式
+- **溫叨@Pantry系統**：本專案開發的家庭用品管理 Web 應用程式
 - **使用者**：系統的授權使用者，本系統共有兩位使用者（夫妻）
 - **商品分類**：家庭用品的類別，如衛生紙、蔬菜、清潔用品、食品
 - **商品**：分類下的具體商品項目，以品牌與品名識別（如品牌「春風」、品名「抽取式衛生紙」）
@@ -37,13 +38,13 @@
 
 #### Acceptance Criteria
 
-1. WHEN 使用者在登入頁面輸入正確的帳號與密碼，THE 溫叨Pantry系統 SHALL 驗證成功並導向系統首頁（儀表板）
-2. WHEN 使用者輸入錯誤的帳號或密碼，THE 溫叨Pantry系統 SHALL 顯示錯誤訊息「帳號或密碼錯誤，請重新輸入」
-3. WHEN 未登入使用者嘗試存取任何功能頁面，THE 溫叨Pantry系統 SHALL 導向登入頁面
-4. THE 溫叨Pantry系統 SHALL 在每筆購買記錄顯示新增該記錄的使用者名稱
-5. WHILE 使用者已登入，THE 溫叨Pantry系統 SHALL 在頁面右上角顯示目前登入的使用者名稱與登出按鈕
-6. WHEN 使用者點擊登出按鈕，THE 溫叨Pantry系統 SHALL 結束登入狀態並導向登入頁面
-7. WHILE 使用者已登入且未主動登出，THE 溫叨Pantry系統 SHALL 保持使用者的登入狀態
+1. WHEN 使用者在登入頁面輸入正確的帳號與密碼，THE 溫叨@Pantry系統 SHALL 驗證成功並導向系統首頁（儀表板）
+2. WHEN 使用者輸入錯誤的帳號或密碼，THE 溫叨@Pantry系統 SHALL 顯示錯誤訊息「帳號或密碼錯誤，請重新輸入」
+3. WHEN 未登入使用者嘗試存取任何功能頁面，THE 溫叨@Pantry系統 SHALL 導向登入頁面
+4. THE 溫叨@Pantry系統 SHALL 在每筆購買記錄顯示新增該記錄的使用者名稱
+5. WHILE 使用者已登入，THE 溫叨@Pantry系統 SHALL 在頁面右上角顯示目前登入的使用者名稱與登出按鈕
+6. WHEN 使用者點擊登出按鈕，THE 溫叨@Pantry系統 SHALL 結束登入狀態並導向登入頁面
+7. WHILE 使用者已登入且未主動登出，THE 溫叨@Pantry系統 SHALL 保持使用者的登入狀態
 
 ### Requirement 2: 商品分類管理
 
@@ -51,15 +52,15 @@
 
 #### Acceptance Criteria
 
-1. WHEN 使用者進入分類管理頁面，THE 溫叨Pantry系統 SHALL 顯示所有已建立的商品分類清單
-2. WHEN 使用者輸入分類名稱（如「衛生紙」「蔬菜」「清潔用品」）並點擊新增，THE 溫叨Pantry系統 SHALL 建立新分類並顯示「分類建立成功」
-3. WHEN 使用者輸入空的分類名稱並送出，THE 溫叨Pantry系統 SHALL 顯示錯誤訊息「分類名稱不可為空」
-4. WHEN 使用者輸入已存在的分類名稱，THE 溫叨Pantry系統 SHALL 顯示錯誤訊息「此分類名稱已存在，請使用其他名稱」
-5. IF 使用者嘗試刪除已關聯商品的分類，THEN THE 溫叨Pantry系統 SHALL 顯示錯誤訊息「此分類下仍有商品，無法刪除」
-6. WHEN 使用者刪除未關聯任何商品的分類，THE 溫叨Pantry系統 SHALL 刪除該分類並顯示「分類刪除成功」
-7. WHEN 使用者修改分類名稱並儲存，THE 溫叨Pantry系統 SHALL 更新分類名稱並顯示「分類更新成功」
-8. WHEN 使用者修改分類名稱為空並送出，THE 溫叨Pantry系統 SHALL 顯示錯誤訊息「分類名稱不可為空」
-9. WHEN 使用者修改分類名稱後與其他已存在的分類名稱重複，THE 溫叨Pantry系統 SHALL 顯示錯誤訊息「此分類名稱已存在，請使用其他名稱」
+1. WHEN 使用者進入分類管理頁面，THE 溫叨@Pantry系統 SHALL 顯示所有已建立的商品分類清單
+2. WHEN 使用者輸入分類名稱（如「衛生紙」「蔬菜」「清潔用品」）並點擊新增，THE 溫叨@Pantry系統 SHALL 建立新分類並顯示「分類建立成功」
+3. WHEN 使用者輸入空的分類名稱並送出，THE 溫叨@Pantry系統 SHALL 顯示錯誤訊息「分類名稱不可為空」
+4. WHEN 使用者輸入已存在的分類名稱，THE 溫叨@Pantry系統 SHALL 顯示錯誤訊息「此分類名稱已存在，請使用其他名稱」
+5. IF 使用者嘗試刪除已關聯商品的分類，THEN THE 溫叨@Pantry系統 SHALL 顯示錯誤訊息「此分類下仍有商品，無法刪除」
+6. WHEN 使用者刪除未關聯任何商品的分類，THE 溫叨@Pantry系統 SHALL 刪除該分類並顯示「分類刪除成功」
+7. WHEN 使用者修改分類名稱並儲存，THE 溫叨@Pantry系統 SHALL 更新分類名稱並顯示「分類更新成功」
+8. WHEN 使用者修改分類名稱為空並送出，THE 溫叨@Pantry系統 SHALL 顯示錯誤訊息「分類名稱不可為空」
+9. WHEN 使用者修改分類名稱後與其他已存在的分類名稱重複，THE 溫叨@Pantry系統 SHALL 顯示錯誤訊息「此分類名稱已存在，請使用其他名稱」
 
 ### Requirement 3: 商品建立與計量單位設定
 
@@ -67,12 +68,12 @@
 
 #### Acceptance Criteria
 
-1. WHEN 使用者在指定分類下輸入品牌與品名（如品牌「春風」、品名「抽取式衛生紙」）並送出，THE 溫叨Pantry系統 SHALL 建立新商品
-2. WHEN 使用者為商品設定計量單位（如「抽」「ml」「g」「片」），THE 溫叨Pantry系統 SHALL 儲存該計量單位
-3. WHEN 使用者輸入空的品牌或品名並送出，THE 溫叨Pantry系統 SHALL 顯示錯誤訊息「品牌與品名不可為空」
-4. WHEN 使用者未選擇或輸入計量單位，THE 溫叨Pantry系統 SHALL 顯示錯誤訊息「請設定計量單位」
-5. THE 溫叨Pantry系統 SHALL 允許同一分類下建立多個商品
-6. WHEN 使用者輸入的品牌與品名，在忽略大小寫、前後空白及全半角差異後，與同一分類下已存在的商品相同，THE 溫叨Pantry系統 SHALL 顯示錯誤訊息「此品牌與品名已存在於此分類」
+1. WHEN 使用者在指定分類下輸入品牌與品名（如品牌「春風」、品名「抽取式衛生紙」）並送出，THE 溫叨@Pantry系統 SHALL 建立新商品
+2. WHEN 使用者為商品設定計量單位（如「抽」「ml」「g」「片」），THE 溫叨@Pantry系統 SHALL 儲存該計量單位
+3. WHEN 使用者輸入空的品牌或品名並送出，THE 溫叨@Pantry系統 SHALL 顯示錯誤訊息「品牌與品名不可為空」
+4. WHEN 使用者未選擇或輸入計量單位，THE 溫叨@Pantry系統 SHALL 顯示錯誤訊息「請設定計量單位」
+5. THE 溫叨@Pantry系統 SHALL 允許同一分類下建立多個商品
+6. WHEN 使用者輸入的品牌與品名，在忽略大小寫、前後空白及全半角差異後，與同一分類下已存在的商品相同，THE 溫叨@Pantry系統 SHALL 顯示錯誤訊息「此品牌與品名已存在於此分類」
 
 ### Requirement 4: 品類自訂欄位與包裝規格
 
@@ -80,17 +81,17 @@
 
 #### Acceptance Criteria
 
-1. WHEN 使用者建立或編輯分類，THE 溫叨Pantry系統 SHALL 允許新增該分類的專屬欄位（如衛生紙分類的「抽數(單包)」「包數」「層數」）
-2. THE 溫叨Pantry系統 SHALL 允許使用者將自訂欄位標記為「數量組成欄位」或「一般資訊欄位」
-3. WHERE 分類已設定「數量組成欄位」，THE 溫叨Pantry系統 SHALL 於購買記錄中將「數量組成欄位」的數值相乘作為總數量，並顯示計算結果
-4. WHERE 分類未設定「數量組成欄位」，THE 溫叨Pantry系統 SHALL 於購買記錄中提供數量欄位供使用者直接輸入
-5. WHEN 使用者建立購買記錄且商品所屬分類有自訂欄位，THE 溫叨Pantry系統 SHALL 顯示這些欄位供使用者填寫
-6. IF 使用者在「數量組成欄位」輸入 0 或負數，THEN THE 溫叨Pantry系統 SHALL 顯示錯誤訊息「數量組成欄位必須大於 0」
-7. WHEN 使用者新增自訂欄位時輸入與同一分類下已存在相同的欄位名稱，THE 溫叨Pantry系統 SHALL 顯示錯誤訊息「此欄位名稱已存在於此分類」
-8. IF 使用者嘗試刪除已有購買記錄填寫值的自訂欄位，THEN THE 溫叨Pantry系統 SHALL 顯示錯誤訊息「此欄位已有購買記錄使用，無法刪除」
-9. WHEN 使用者刪除尚未被任何購買記錄使用的自訂欄位，THE 溫叨Pantry系統 SHALL 刪除該欄位並顯示「欄位刪除成功」
-10. IF 使用者嘗試修改已有購買記錄填寫值的自訂欄位之「型別」或「是否為數量組成欄位」，THEN THE 溫叨Pantry系統 SHALL 顯示錯誤訊息「此欄位已有購買記錄使用，無法修改型別或計算設定」
-11. WHEN 使用者修改自訂欄位的「欄位名稱」或「顯示順序」，THE 溫叨Pantry系統 SHALL 允許儲存並顯示「欄位更新成功」
+1. WHEN 使用者建立或編輯分類，THE 溫叨@Pantry系統 SHALL 允許新增該分類的專屬欄位（如衛生紙分類的「抽數(單包)」「包數」「層數」）
+2. THE 溫叨@Pantry系統 SHALL 允許使用者將自訂欄位標記為「數量組成欄位」或「一般資訊欄位」
+3. WHERE 分類已設定「數量組成欄位」，THE 溫叨@Pantry系統 SHALL 於購買記錄中將「數量組成欄位」的數值相乘作為總數量，並顯示計算結果
+4. WHERE 分類未設定「數量組成欄位」，THE 溫叨@Pantry系統 SHALL 於購買記錄中提供數量欄位供使用者直接輸入
+5. WHEN 使用者建立購買記錄且商品所屬分類有自訂欄位，THE 溫叨@Pantry系統 SHALL 顯示這些欄位供使用者填寫
+6. IF 使用者在「數量組成欄位」輸入 0 或負數，THEN THE 溫叨@Pantry系統 SHALL 顯示錯誤訊息「數量組成欄位必須大於 0」
+7. WHEN 使用者新增自訂欄位時輸入與同一分類下已存在相同的欄位名稱，THE 溫叨@Pantry系統 SHALL 顯示錯誤訊息「此欄位名稱已存在於此分類」
+8. IF 使用者嘗試刪除已有購買記錄填寫值的自訂欄位，THEN THE 溫叨@Pantry系統 SHALL 顯示錯誤訊息「此欄位已有購買記錄使用，無法刪除」
+9. WHEN 使用者刪除尚未被任何購買記錄使用的自訂欄位，THE 溫叨@Pantry系統 SHALL 刪除該欄位並顯示「欄位刪除成功」
+10. IF 使用者嘗試修改已有購買記錄填寫值的自訂欄位之「型別」或「是否為數量組成欄位」，THEN THE 溫叨@Pantry系統 SHALL 顯示錯誤訊息「此欄位已有購買記錄使用，無法修改型別或計算設定」
+11. WHEN 使用者修改自訂欄位的「欄位名稱」或「顯示順序」，THE 溫叨@Pantry系統 SHALL 允許儲存並顯示「欄位更新成功」
 
 ### Requirement 5: 購買記錄建立與編輯
 
@@ -98,17 +99,17 @@
 
 #### Acceptance Criteria
 
-1. WHEN 使用者進入新增購買記錄頁面，THE 溫叨Pantry系統 SHALL 顯示以下必填欄位：購入日期、購買地點、商品、總價
-2. WHEN 使用者填寫所有必填欄位並送出，THE 溫叨Pantry系統 SHALL 建立購買記錄並顯示「記錄新增成功」
-3. WHEN 使用者未填寫必填欄位並送出，THE 溫叨Pantry系統 SHALL 在未填寫的欄位旁顯示錯誤訊息「此欄位為必填」
-4. WHEN 使用者輸入總價為 0 或負數，THE 溫叨Pantry系統 SHALL 顯示錯誤訊息「總價必須大於 0」
-5. WHEN 使用者輸入的購入日期為未來日期，THE 溫叨Pantry系統 SHALL 顯示錯誤訊息「購入日期不可為未來日期」
-6. THE 溫叨Pantry系統 SHALL 在每筆購買記錄自動記錄新增者的使用者名稱與新增時間
-7. WHEN 使用者編輯現有購買記錄並送出，THE 溫叨Pantry系統 SHALL 更新該記錄並顯示「記錄更新成功」
-8. WHEN 使用者點擊刪除購買記錄，THE 溫叨Pantry系統 SHALL 顯示確認對話框「確定要刪除此筆記錄嗎？」
-9. WHEN 使用者在確認對話框點擊「確定」，THE 溫叨Pantry系統 SHALL 刪除該記錄並顯示「記錄刪除成功」
-10. THE 溫叨Pantry系統 SHALL 允許使用者輸入購買地點（如「蝦皮」「全聯」「家樂福」）
-11. WHEN 使用者輸入總價為 0 或負數，THE 溫叨Pantry系統 SHALL 僅顯示「總價必須大於 0」，且不顯示「此欄位為必填」錯誤訊息
+1. WHEN 使用者進入新增購買記錄頁面，THE 溫叨@Pantry系統 SHALL 顯示以下必填欄位：購入日期、購買地點、商品、總價
+2. WHEN 使用者填寫所有必填欄位並送出，THE 溫叨@Pantry系統 SHALL 建立購買記錄並顯示「記錄新增成功」
+3. WHEN 使用者未填寫必填欄位並送出，THE 溫叨@Pantry系統 SHALL 在未填寫的欄位旁顯示錯誤訊息「此欄位為必填」
+4. WHEN 使用者輸入總價為 0 或負數，THE 溫叨@Pantry系統 SHALL 顯示錯誤訊息「總價必須大於 0」
+5. WHEN 使用者輸入的購入日期為未來日期，THE 溫叨@Pantry系統 SHALL 顯示錯誤訊息「購入日期不可為未來日期」
+6. THE 溫叨@Pantry系統 SHALL 在每筆購買記錄自動記錄新增者的使用者名稱與新增時間
+7. WHEN 使用者編輯現有購買記錄並送出，THE 溫叨@Pantry系統 SHALL 更新該記錄並顯示「記錄更新成功」
+8. WHEN 使用者點擊刪除購買記錄，THE 溫叨@Pantry系統 SHALL 顯示確認對話框「確定要刪除此筆記錄嗎？」
+9. WHEN 使用者在確認對話框點擊「確定」，THE 溫叨@Pantry系統 SHALL 刪除該記錄並顯示「記錄刪除成功」
+10. THE 溫叨@Pantry系統 SHALL 允許使用者輸入購買地點（如「蝦皮」「全聯」「家樂福」）
+11. WHEN 使用者輸入總價為 0 或負數，THE 溫叨@Pantry系統 SHALL 僅顯示「總價必須大於 0」，且不顯示「此欄位為必填」錯誤訊息
 
 ### Requirement 6: 單位均價與歷史均價自動計算
 
@@ -116,11 +117,11 @@
 
 #### Acceptance Criteria
 
-1. WHEN 購買記錄建立或更新，THE 溫叨Pantry系統 SHALL 自動計算單位均價（公式：總價 ÷ 數量）並顯示於該筆記錄
-2. WHEN 使用者查看購買記錄列表，THE 溫叨Pantry系統 SHALL 顯示每筆記錄的單位均價
-3. THE 溫叨Pantry系統 SHALL 計算同一商品的歷史均價（公式：該商品所有購買記錄的單位均價平均值）
-4. WHEN 使用者查看特定商品詳情，THE 溫叨Pantry系統 SHALL 顯示該商品的歷史均價
-5. IF 計算過程中數量為 0 或缺失，THEN THE 溫叨Pantry系統 SHALL 顯示「無法計算」取代單位均價
+1. WHEN 購買記錄建立或更新，THE 溫叨@Pantry系統 SHALL 自動計算單位均價（公式：總價 ÷ 數量）並顯示於該筆記錄
+2. WHEN 使用者查看購買記錄列表，THE 溫叨@Pantry系統 SHALL 顯示每筆記錄的單位均價
+3. THE 溫叨@Pantry系統 SHALL 計算同一商品的歷史均價（公式：該商品所有購買記錄的單位均價平均值）
+4. WHEN 使用者查看特定商品詳情，THE 溫叨@Pantry系統 SHALL 顯示該商品的歷史均價
+5. IF 計算過程中數量為 0 或缺失，THEN THE 溫叨@Pantry系統 SHALL 顯示「無法計算」取代單位均價
 
 ### Requirement 7: 消耗預估與補貨提醒
 
@@ -128,20 +129,20 @@
 
 #### Acceptance Criteria
 
-1. WHEN 使用者為商品設定每月或每週消耗量，THE 溫叨Pantry系統 SHALL 儲存該消耗速率
-2. THE 溫叨Pantry系統 SHALL 根據使用者輸入的剩餘數量、剩餘數量更新日期與消耗速率，計算預計耗盡日期。公式：耗盡日期 = 剩餘數量更新日期 + (剩餘數量 ÷ 消耗速率) × 週期天數（monthly=30，weekly=7）
-3. WHEN 使用者查看商品列表，THE 溫叨Pantry系統 SHALL 顯示各商品的預計耗盡日期與使用者手動輸入的剩餘數量（以消耗單位計）
-4. WHEN 商品的預計耗盡日期距今 0 至 7 天（含今天，即 0 ≤ 距今天數 ≤ 7），THE 溫叨Pantry系統 SHALL 在商品列表中以醒目方式標示該商品為「即將耗盡」
-5. WHEN 商品的預計耗盡日期已過，THE 溫叨Pantry系統 SHALL 在商品列表中以醒目方式標示該商品為「已耗盡」
-6. WHEN 使用者進入系統首頁，THE 溫叨Pantry系統 SHALL 顯示所有「即將耗盡」與「已耗盡」的商品提醒清單
-7. IF 使用者未設定商品的消耗速率，THEN THE 溫叨Pantry系統 SHALL 顯示「未設定消耗速率」且不計算預計耗盡日期
-8. THE 溫叨Pantry系統 SHALL 允許使用者為商品輸入消耗規劃備註（如「2026年預計消耗12包」「每週消耗量約0.5包」）
-9. WHEN 使用者在商品編輯頁輸入剩餘數量並儲存，THE 溫叨Pantry系統 SHALL 儲存剩餘數量與當天日期（remaining_updated_at 自動設為儲存當天）
-10. IF 使用者在剩餘數量欄位輸入負數，THEN THE 溫叨Pantry系統 SHALL 顯示錯誤訊息「剩餘數量不可為負數」
-11. WHEN 使用者設定消耗速率，THE 溫叨Pantry系統 SHALL 要求同時設定消耗單位（consumption_unit），若未填寫則顯示「請設定消耗單位」
-12. IF 商品已設定消耗速率但尚未輸入剩餘數量，THEN THE 溫叨Pantry系統 SHALL 在商品列表中顯示「未設定剩餘數量」且不計算預計耗盡日期
-13. WHEN 使用者新增一筆購買記錄成功後，THE 溫叨Pantry系統 SHALL 顯示對話框詢問「是否更新此商品的剩餘數量？」並預先帶入該商品目前的剩餘數量（尚未設定時留空），供使用者修改後手動儲存
-14. WHEN 商品的 remaining_updated_at 距今超過 30 天，THE 溫叨Pantry系統 SHALL 在商品列表與商品詳情頁中顯示「剩餘數量已久未更新」提示
+1. WHEN 使用者為商品設定每月或每週消耗量，THE 溫叨@Pantry系統 SHALL 儲存該消耗速率
+2. THE 溫叨@Pantry系統 SHALL 根據使用者輸入的剩餘數量、剩餘數量更新日期與消耗速率，計算預計耗盡日期。公式：耗盡日期 = 剩餘數量更新日期 + (剩餘數量 ÷ 消耗速率) × 週期天數（monthly=30，weekly=7）
+3. WHEN 使用者查看商品列表，THE 溫叨@Pantry系統 SHALL 顯示各商品的預計耗盡日期與使用者手動輸入的剩餘數量（以消耗單位計）
+4. WHEN 商品的預計耗盡日期距今 0 至 7 天（含今天，即 0 ≤ 距今天數 ≤ 7），THE 溫叨@Pantry系統 SHALL 在商品列表中以醒目方式標示該商品為「即將耗盡」
+5. WHEN 商品的預計耗盡日期已過，THE 溫叨@Pantry系統 SHALL 在商品列表中以醒目方式標示該商品為「已耗盡」
+6. WHEN 使用者進入系統首頁，THE 溫叨@Pantry系統 SHALL 顯示所有「即將耗盡」與「已耗盡」的商品提醒清單
+7. IF 使用者未設定商品的消耗速率，THEN THE 溫叨@Pantry系統 SHALL 顯示「未設定消耗速率」且不計算預計耗盡日期
+8. THE 溫叨@Pantry系統 SHALL 允許使用者為商品輸入消耗規劃備註（如「2026年預計消耗12包」「每週消耗量約0.5包」）
+9. WHEN 使用者在商品編輯頁輸入剩餘數量並儲存，THE 溫叨@Pantry系統 SHALL 儲存剩餘數量與當天日期（remaining_updated_at 自動設為儲存當天）
+10. IF 使用者在剩餘數量欄位輸入負數，THEN THE 溫叨@Pantry系統 SHALL 顯示錯誤訊息「剩餘數量不可為負數」
+11. WHEN 使用者設定消耗速率，THE 溫叨@Pantry系統 SHALL 要求同時設定消耗單位（consumption_unit），若未填寫則顯示「請設定消耗單位」
+12. IF 商品已設定消耗速率但尚未輸入剩餘數量，THEN THE 溫叨@Pantry系統 SHALL 在商品列表中顯示「未設定剩餘數量」且不計算預計耗盡日期
+13. WHEN 使用者新增一筆購買記錄成功後，THE 溫叨@Pantry系統 SHALL 顯示對話框詢問「是否更新此商品的剩餘數量？」並預先帶入該商品目前的剩餘數量（尚未設定時留空），供使用者修改後手動儲存
+14. WHEN 商品的 remaining_updated_at 距今超過 30 天，THE 溫叨@Pantry系統 SHALL 在商品列表與商品詳情頁中顯示「剩餘數量已久未更新」提示
 
 ### Requirement 8: 歷史資料查詢與價格趨勢
 
@@ -149,16 +150,16 @@
 
 #### Acceptance Criteria
 
-1. WHEN 使用者進入購買記錄列表頁面，THE 溫叨Pantry系統 SHALL 顯示所有購買記錄，按購入日期由新至舊排列
-2. WHEN 使用者選擇特定商品並查看歷史記錄，THE 溫叨Pantry系統 SHALL 顯示該商品所有購買記錄，按購入日期由新至舊排列
-3. THE 溫叨Pantry系統 SHALL 在購買記錄列表中顯示每次購買的日期、購買地點、商品名稱、所屬分類、數量、總價、單位均價、新增者
-4. WHEN 使用者查看特定商品歷史記錄，THE 溫叨Pantry系統 SHALL 顯示該商品的歷史均價（計算時包含所有購買記錄，含當次查看的記錄）
-5. WHEN 使用者以分類篩選購買記錄，THE 溫叨Pantry系統 SHALL 顯示屬於該分類的所有購買記錄
-6. WHEN 使用者以日期區間篩選購買記錄，THE 溫叨Pantry系統 SHALL 顯示符合日期條件的購買記錄
-7. WHEN 使用者輸入結束日期早於開始日期，THE 溫叨Pantry系統 SHALL 顯示錯誤訊息「結束日期不可早於開始日期」
-8. WHEN 使用者查看特定商品歷史記錄，THE 溫叨Pantry系統 SHALL 以視覺化方式呈現單位均價的歷史趨勢
-9. WHEN 使用者查看特定購買記錄，THE 溫叨Pantry系統 SHALL 顯示當次單位均價與歷史均價的比較結果（高於／低於／等於歷史均價）
-10. IF 當次單位均價或歷史均價為「無法計算」，THEN THE 溫叨Pantry系統 SHALL 顯示「無法比較」取代比較結果
+1. WHEN 使用者進入購買記錄列表頁面，THE 溫叨@Pantry系統 SHALL 顯示所有購買記錄，按購入日期由新至舊排列
+2. WHEN 使用者選擇特定商品並查看歷史記錄，THE 溫叨@Pantry系統 SHALL 顯示該商品所有購買記錄，按購入日期由新至舊排列
+3. THE 溫叨@Pantry系統 SHALL 在購買記錄列表中顯示每次購買的日期、購買地點、商品名稱、所屬分類、數量、總價、單位均價、新增者
+4. WHEN 使用者查看特定商品歷史記錄，THE 溫叨@Pantry系統 SHALL 顯示該商品的歷史均價（計算時包含所有購買記錄，含當次查看的記錄）
+5. WHEN 使用者以分類篩選購買記錄，THE 溫叨@Pantry系統 SHALL 顯示屬於該分類的所有購買記錄
+6. WHEN 使用者以日期區間篩選購買記錄，THE 溫叨@Pantry系統 SHALL 顯示符合日期條件的購買記錄
+7. WHEN 使用者輸入結束日期早於開始日期，THE 溫叨@Pantry系統 SHALL 顯示錯誤訊息「結束日期不可早於開始日期」
+8. WHEN 使用者查看特定商品歷史記錄，THE 溫叨@Pantry系統 SHALL 以視覺化方式呈現單位均價的歷史趨勢
+9. WHEN 使用者查看特定購買記錄，THE 溫叨@Pantry系統 SHALL 顯示當次單位均價與歷史均價的比較結果（高於／低於／等於歷史均價）
+10. IF 當次單位均價或歷史均價為「無法計算」，THEN THE 溫叨@Pantry系統 SHALL 顯示「無法比較」取代比較結果
 
 ### Requirement 9: 外網安全存取
 
@@ -166,8 +167,8 @@
 
 #### Acceptance Criteria
 
-1. THE 溫叨Pantry系統 SHALL 支援透過 HTTPS 協定從外網存取
-2. WHEN 使用者從手機瀏覽器存取系統，THE 溫叨Pantry系統 SHALL 以響應式網頁設計適配手機螢幕尺寸
+1. THE 溫叨@Pantry系統 SHALL 支援透過 HTTPS 協定從外網存取
+2. WHEN 使用者從手機瀏覽器存取系統，THE 溫叨@Pantry系統 SHALL 以響應式網頁設計適配手機螢幕尺寸
 
 ## 非功能性約束
 

@@ -1,5 +1,5 @@
 <!--
-  溫叨Pantry 標誌（Logo A：台北市門牌 5888，2026-11-03 使用者選定）
+  溫叨@Pantry 標誌（Logo A：台北市門牌 5888，2026-11-03 使用者選定）
   - 藍底（--accent #1d5fd6）、內側白色細框、數字 5888 一行排開
   - 數字是 Barlow Condensed SemiBold 的外框路徑（brandPaths.ts，由 brand/build-icons.mjs 產生），不依賴字型
   - variant="header"：頂欄小尺寸用，框線加粗、數字放大，縮小後仍看得清楚

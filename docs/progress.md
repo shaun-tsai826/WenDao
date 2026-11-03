@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v7.1（2026-11-03）
-> 變更摘要：v7.1 task 8.5（購買記錄詳情）完成；新增 e2e purchase-detail；K-18 待同意回寫。
+> 版本：v7.2（2026-11-03）
+> 變更摘要：v7.2 App 更名「溫叨Pantry」→「溫叨@Pantry」（程式、PWA、規格、文件）；requirements v1.5、design v4.1。
+> v7.1 task 8.5（購買記錄詳情）完成；新增 e2e purchase-detail；K-18 待同意回寫。
 > v7.0 交接整理：「目前位置」更新到 task 8.4；工作慣例補上驗證順序、回報格式、e2e 與 Quasar 對話框的注意事項。
 > v6.9 task 8.4（新增購買記錄）完成；新增 e2e purchase-new；K-17 待同意回寫。
 > v6.8 setup-frontend.md v1.9 新增「在手機上測試（家裡 Wi-Fi）」；待使用者回家後在手機上測試。
@@ -149,6 +150,7 @@
 | 2026-11-03 | **在手機上測試的方法**：PocketBase 用 `--http=0.0.0.0:8090 --publicDir=../frontend/dist/pwa` 同時提供建置好的前端與 API，iPhone 連家裡 Wi-Fi 開 `http://<Mac IP>:8090`；已在 Mac 上用區域網路 IP 驗證首頁、history 路由、API 皆 200（尚未用實機測試）。整理進 setup-frontend.md 第 9 節＋疑難排解 5 項 | `docs/setup-frontend.md` v1.9 |
 | 2026-11-03 | **task 8.4**：`pages/PurchaseNew.vue`＋共用表單 `components/PurchaseForm.vue`（8.6 編輯頁共用）：商品依分類分組、預設「請選擇商品」（沿用 7.4 決定）、左側分類圖塊；購入日期預設今天、不能選未來；購買地點＋常去的地點按鈕（`purchaseStore.fetchRecentStores`，最近用過、最多 6 個）；總價；自訂欄位用 CustomFieldInput（`customFieldStore.listFields` 只取欄位、不查使用狀況），沒有數量組成欄位時數量欄位放在同一張卡片最前面＋說明（CustomFieldInput 新增 footer 插槽）；「自動計算結果」即時顯示總數量與單位均價及算式，算不出來時灰底寫原因；送出前 validatePurchase：欄位下方錯誤＋上方錯誤摘要（連到欄位、取得焦點），改了欄位就拿掉；存檔 → MSG-004 → 回購買記錄列表 → `RemainingDialog`（CONFIRM-002，全域 Quasar Dialog，預先帶入目前剩餘數量、未設定留空；`productStore.updateRemaining` 只改剩餘數量；成功 MSG-007）。新增 41 項測試，全專案 629 項；5 種故意改壞皆被抓到。e2e `purchase-new.mjs`（真實滑鼠鍵盤，含 CustomFieldInput 的全形輸入整理、離開欄位 ERR-008）17 步驟通過。**e2e 發現並修正**：對話框打開時焦點沒在剩餘數量欄位（元件掛上時 Quasar 開啟動畫還沒結束）→ 改在 `@show` 聚焦（先寫回歸測試） | — |
 | 2026-11-03 | **task 8.5**：`pages/PurchaseDetail.vue`（設計稿 Pur-Detail）：商品卡（分類圖塊、商品名稱連到商品詳情、分類、總價）；購入日期含星期、購買地點、新增者頭像＋名稱＋新增時間（本地時間，AC-5.6）；包裝規格（依欄位順序、只列有填的、數字加千分位）；總數量與單位均價（缺失「未填」/「無法計算」）；**價格比較**（AC-8.9、8.10）：↑ 琥珀 / ↓ 綠 / ＝ 灰 / 無法比較灰＋原因，另寫每單位差額與百分比（減號用 −，太小寫「不到 0.1%」）、歷史均價用了幾筆（含這一筆）；返回時保留列表篩選；記錄不存在、載入失敗（含第二段載入）各有畫面。新增 `lib/purchaseView.ts` 的 `priceComparisonOf`、`formatLongDate`、`formatCreatedAt`；`purchaseStore.fetchRecord`（404 → null）、`fetchFieldValues`（8.6 編輯頁也會用）；`fakePocketBase` 加 `getOne`（找不到 → 404，契約測試已對真正的 PocketBase 驗證）；AppIcon 加 4 個比較圖示；色彩變數 `--price-lower-*`（綠）。「刪除這筆記錄」按鈕留到 task 8.7 與對話框一起做（避免放一個按了沒反應的按鈕）。新增 32 項測試，全專案 661 項；3 種故意改壞皆被抓到。e2e `purchase-detail.mjs` 7 步驟通過（高 / 低 / 無法比較、返回保留篩選、商品連結、編輯入口、不存在的記錄） | — |
+| 2026-11-03 | **App 再次更名（使用者決定）**：「溫叨Pantry」→「溫叨@Pantry」。程式：`constants/app.ts` 的 APP_NAME（頂欄、登入頁、Logo 的 aria-label 都用它）、`package.json` productName（瀏覽器分頁標題）、PWA manifest name / short_name；先改 `constants/__tests__/app.test.ts` 確認失敗再改。規格：requirements.md 76 處「溫叨Pantry系統」→「溫叨@Pantry系統」（順便修正 v1.4 摘要被上次更名誤改的文字）、design.md manifest 範例與頂欄說明；README、frontend/README、brand/README、setup-frontend、setup-pocketbase 同步並升版。**不改**：過去的變更摘要與進度紀錄（歷史）、英文識別名 WenDaoPantry、設計稿（claude.ai 上的 artifact 標題與畫板仍是舊名稱） | requirements v1.5、design v4.1 |
 | 2026-11-03 | **App 更名（使用者決定）**：「家庭ERP」→「溫叨Pantry」；不能用中文的地方用「WenDaoPantry」（全小寫時 wendaopantry）。新增 `src/constants/app.ts`（APP_NAME、APP_NAME_ASCII），頂欄與登入頁改用常數；`package.json` productName、PWA manifest name / short_name 改名，並以 `constants/__tests__/app.test.ts` 檢查設定檔與常數一致。規格：requirements.md 76 處「家庭ERP系統」→「溫叨Pantry系統」、design.md、tasks.md；launchd 設定改為 `com.wendaopantry.pocketbase`（尚未安裝）；README、frontend/README、setup-frontend、setup-pocketbase 同步。依使用者同意**不改**：規格資料夾 `.kiro/specs/home-erp/`、`package.json` name `wendao-frontend`、說明文字「家庭用品管理系統」、過去進度紀錄裡的舊名稱。新增 5 項測試，全專案 544 項；e2e 全部通過，正式 build 的分頁標題與 manifest 已是新名稱。Logo（選 A 經典門牌）與設計稿更新另外進行 | requirements v1.4、design v3.8、tasks v1.7 |
 | 2026-11-03 | **Logo A 定稿**：數字用 Barlow Condensed SemiBold（SIL OFL 1.1，從 Google Fonts 官方 GitHub 下載）的外框；`brand/extract-digits.py`（fontTools，暫時 venv 安裝）取出路徑 → `brand/digits.json`；`brand/build-icons.mjs` 產生 SVG 原始檔、`src/components/brandPaths.ts`、PWA / iOS / maskable（縮 0.78 倍在安全範圍）/ monochrome / 分頁 PNG 與 favicon.ico（無頭 Chrome 繪製），並自動跑 prettier。新增 `BrandLogo.vue`（plate / header、裝飾用 aria-hidden 或 label 時 role=img），頂欄與登入頁換掉「家」字標記。新增 5 項測試，全專案 548 項；e2e 全部通過。16px 分頁圖示仍難辨認數字（尺寸限制） | design.md v3.9、`frontend/brand/README.md` v1.0 |
 | 2026-11-03 | **設計稿更名與換 Logo**：設計稿標題改為「溫叨Pantry 設計稿」；採用的 16 張畫板（B-Home、登入 2 張、Cat-List、商品 4 張、購買記錄 8 張）頂欄與登入頁換上門牌 Logo（上傳 brand/svg/logo-header.svg、logo.svg 為素材）與新名稱。A、C 風格提案（Main、C-Home 等）保留舊樣子作為紀錄 | 設計稿 |
@@ -193,7 +195,7 @@
 | 正式環境 PocketBase 網址 | 使用者決定用相對路徑 `/`（前端放在 pb_public，與 API 同網址），不把 Tailscale 主機名稱寫進 repo | task 2.2 |
 | 路由 | 使用者決定：功能頁**嵌套在 MainLayout 下**、**history 模式**（不帶 #）、刪除範例頁。頁面檔名維持 design.md 的單字名稱，ESLint 只對 `src/pages/` 關閉 multi-word 規則 | task 2.4 |
 | 剩餘數量更新日 | 使用者同意：只要儲存時剩餘數量有值（即使數字沒變），更新日就設為當天——按儲存即代表確認目前數量，「久未更新」提醒跟著消失 | task 7.1 |
-| App 名稱 | 使用者決定：中文「溫叨Pantry」、英文識別名「WenDaoPantry」（全小寫 wendaopantry）；Logo 採 A 經典門牌（藍底白框、5888 橫排）；規格資料夾 home-erp 不改名 | 2026-11-03 |
+| App 名稱 | 使用者決定：中文「溫叨@Pantry」、英文識別名「WenDaoPantry」（全小寫 wendaopantry）；Logo 採 A 經典門牌（藍底白框、5888 橫排）；規格資料夾 home-erp 不改名 | 2026-11-03 |
 | 購買記錄設計 | 使用者同意 4 項：(1) 購買地點附「常去的地點」按鈕（以前用過的地點）；(2) 存檔後回到購買記錄列表、顯示 MSG-004，再跳出 CONFIRM-002；(3) 價格比較另外顯示差額與百分比、歷史均價用了幾筆；(4) 送出失敗時表單上方加錯誤摘要（連到各欄位），欄位下方錯誤保留。編輯頁沿用新增頁表單 | 購買記錄設計稿 |
 | 購買記錄讀取提前 | 使用者決定：7.5 需要依商品讀取購買記錄，`fetchByProduct`、`fetchUsers` 在 7.5 先做，8.1 只剩其餘 actions | task 7.5 |
 | 久未更新顯示 | 使用者決定：列表每列一個標籤（急迫狀態優先，兩者都有時第二行加更新日）；詳情頁在資訊塊下方放提示列，緊鄰更新按鈕 | task 7.8 |
@@ -258,8 +260,8 @@ git pull
 - **下一步：task 8.6 PurchaseEdit 編輯購買記錄**（design.md v4.0「購買記錄 › 編輯購買記錄」）：沿用 `components/PurchaseForm.vue`，標題改「編輯購買記錄」、預先帶入原本的值（記錄用 `purchaseStore.fetchRecord`、欄位值用 `fetchFieldValues`，8.5 已做好）；存檔 `updateRecord` → MSG-005。接著 8.7 刪除確認（詳情頁加「刪除這筆記錄」紅字按鈕＋CONFIRM-001 對話框）、8.8 測試對照。
 - **待使用者回報**：回家後用 iPhone 測試（步驟見 `docs/setup-frontend.md` 第 9 節）：購買記錄的日期選擇器與 ERR-012 換行、新增購買記錄（商品選單、數字鍵盤、更新剩餘數量對話框）、商品頁操作、門牌 Logo。結果回報後再決定要不要調整。
 - **待使用者決定**：K-17、K-18 是否回寫 design.md（task 8.4、8.5 新增的 store 方法、元件與色彩變數，見「待回寫規格的變更」）。
-- App 名稱「溫叨Pantry」（`src/constants/app.ts`），Logo A 門牌 5888（`frontend/brand/`）。
-- 設計稿：https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf （標題「溫叨Pantry 設計稿」；購買記錄在 Pur-* 那排，Logo 在最下排；本機原始檔在 `.design-canvas/`，不進 git）。
+- App 名稱「溫叨@Pantry」（`src/constants/app.ts`），Logo A 門牌 5888（`frontend/brand/`）。
+- 設計稿：https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf （標題「溫叨@Pantry 設計稿」；購買記錄在 Pur-* 那排，Logo 在最下排；本機原始檔在 `.design-canvas/`，不進 git）。
 
 ### 工作慣例（Claude Code 接手時照做）
 

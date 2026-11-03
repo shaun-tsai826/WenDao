@@ -69,7 +69,7 @@ beforeEach(() => {
 });
 
 describe('登入頁', () => {
-  it('上方顯示 App 名稱「溫叨Pantry」', async () => {
+  it('上方顯示 App 名稱「溫叨@Pantry」', async () => {
     const { wrapper } = await mountLogin();
     expect(wrapper.find('.login__name').text()).toBe(APP_NAME);
     expect(wrapper.find('.login__brand svg.brand-logo').exists()).toBe(true);

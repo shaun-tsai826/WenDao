@@ -1,7 +1,8 @@
 # PocketBase 環境建置教學（setup-pocketbase.md）
 
-> 版本：v1.2（2026-11-03）
-> 變更摘要：v1.2 App 更名為「溫叨Pantry」。
+> 版本：v1.3（2026-11-03）
+> 變更摘要：v1.3 App 更名「溫叨Pantry」→「溫叨@Pantry」（使用者決定）。
+> v1.2 App 更名為「溫叨Pantry」。
 > v1.1 新增第 7 節 migration 操作（task 1.2）、疑難排解補上 migration 相關項目。
 > v1.0 初次建立（task 1.1）。涵蓋下載、checksum 驗證、第一次啟動、建立 superuser 與疑難排解。
 
@@ -78,7 +79,7 @@ curl http://127.0.0.1:8090/api/health
 
 ## 5. 建立 superuser（管理員）帳號
 
-**superuser** 是管理後台的最高權限帳號，**只用來管理，不用來登入溫叨Pantry**。夫妻兩人的帳號之後在 task 1.8 另外建立。
+**superuser** 是管理後台的最高權限帳號，**只用來管理，不用來登入溫叨@Pantry**。夫妻兩人的帳號之後在 task 1.8 另外建立。
 
 **做法 A（推薦）：用瀏覽器**
 

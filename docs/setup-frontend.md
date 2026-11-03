@@ -1,7 +1,8 @@
 # 前端環境建置教學（setup-frontend.md）
 
-> 版本：v1.9（2026-11-03）
-> 變更摘要：v1.9 新增第 9 節「在手機上測試（家裡 Wi-Fi）」與相關疑難排解；第 8 節 e2e 腳本清單更新。
+> 版本：v2.0（2026-11-03）
+> 變更摘要：v2.0 App 更名「溫叨Pantry」→「溫叨@Pantry」（使用者決定）：第 4 節的 --product 與說明更新。
+> v1.9 新增第 9 節「在手機上測試（家裡 Wi-Fi）」與相關疑難排解；第 8 節 e2e 腳本清單更新。
 > v1.8 App 更名為「溫叨Pantry」：第 4 節的 --product 改為新名稱，並註明當初用的是舊名稱。
 > v1.7 新增 e2e 驗證（frontend/e2e/run.sh）。
 > v1.6 測試改用 @quasar/vite-plugin 載入真正的 Quasar 元件、新增 setup 檔；e2e 要用真實滑鼠鍵盤事件。
@@ -68,14 +69,14 @@ cd ~/Projects/WenDao
 npm init -y quasar@5.0.35 frontend -- \
   --template app \
   --preset typescript --preset sass --preset eslint --preset pinia \
-  --name wendao-frontend --product "溫叨Pantry" \
+  --name wendao-frontend --product "溫叨@Pantry" \
   --no-git --install --defaults
 
 cd frontend
 npx quasar mode add pwa
 ```
 
-> 2026-11-01 建立時用的是舊名稱「家庭ERP」，2026-11-03 改名為「溫叨Pantry」（`package.json` 的 `productName`、`src-pwa/manifest.json` 的 `name` / `short_name`）。畫面上的名稱集中在 `src/constants/app.ts`。
+> 2026-11-01 建立時用的是舊名稱「家庭ERP」，2026-11-03 先改名為「溫叨Pantry」，同日再改為「溫叨@Pantry」（`package.json` 的 `productName`、`src-pwa/manifest.json` 的 `name` / `short_name`）。畫面上的名稱集中在 `src/constants/app.ts`。
 
 | 參數 | 意思 |
 |---|---|

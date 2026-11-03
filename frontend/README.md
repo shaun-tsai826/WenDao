@@ -1,4 +1,4 @@
-# 溫叨Pantry (wendao-frontend)
+# 溫叨@Pantry (wendao-frontend)
 
 ## Install the dependencies
 
