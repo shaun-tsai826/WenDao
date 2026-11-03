@@ -1,7 +1,8 @@
 # Design Document
 
-> 版本：v3.6（2026-11-03）
-> 變更摘要：v3.6 久未更新（STATUS-008）的顯示方式（使用者決定，task 7.8）：列表每列只放一個標籤，已耗盡 / 即將耗盡優先，兩者都有時第二行開頭加「M/D 更新」；詳情頁在資訊塊下方放提示列，緊鄰更新按鈕。
+> 版本：v3.7（2026-11-03）
+> 變更摘要：v3.7 回寫 K-16（使用者同意）：usePurchaseStore 依 task 8.1 實作更新——不使用 expand、檢查與計算拆到 lib/purchaseForm.ts、FieldsValidationError、PurchaseFormData 欄位、日期篩選字串、新增失敗時刪除記錄。
+> v3.6 變更摘要：v3.6 久未更新（STATUS-008）的顯示方式（使用者決定，task 7.8）：列表每列只放一個標籤，已耗盡 / 即將耗盡優先，兩者都有時第二行開頭加「M/D 更新」；詳情頁在資訊塊下方放提示列，緊鄰更新按鈕。
 > v3.5 變更摘要：v3.5 新增商品頁（使用者決定）：建立成功後進入新商品的詳情頁；分類預設留空「請選擇分類」，沒選顯示 ERR-009（從篩選過的商品列表進來時預先選好該分類）。
 > v3.4 變更摘要：v3.4 usePurchaseStore 新增 fetchByProduct（商品詳情的購買記錄）與 fetchUsers / users（新增者頭像），於 task 7.5 先實作（使用者同意）；新增 lib/purchaseView.ts、lib/personTone.ts。
 > v3.3 變更摘要：v3.3 商品列表的分類篩選記在網址 `?category=<id>`（使用者同意，task 7.3）；已耗盡列的第二行依設計稿只寫「M/D 已用完」。
@@ -501,67 +502,41 @@ export default defineBoot(async ({ store }) => {
 })
 ```
 
-**usePurchaseStore — 購買記錄狀態**
+**usePurchaseStore — 購買記錄狀態**（v3.7 依實作回寫 K-16）
 
-> v3.4（task 7.5 先實作的讀取）：
-> - `fetchByProduct(productId): Promise<PurchaseView[]>`：只取該商品的記錄，`sort: '-purchase_date,-created'`（同一天後建立的在前），經 `lib/purchaseView.ts` 的 `toPurchaseView` 轉換（quantity 0 → null、unit_price 跟著 null）。回傳給頁面使用，不寫入 `records`（`records` 留給 8.x 的購買記錄列表）。
-> - `users` 與 `fetchUsers()`：家庭成員 id 與名稱，依建立順序（決定頭像顏色，`lib/personTone.ts`）；getter `userIndex(id)`、`userName(id)`。不使用 `expand: 'user'`，因為頭像顏色需要全部使用者的順序。
+- 讀取：
+  - `fetchByProduct(productId): Promise<PurchaseView[]>`（task 7.5）：只取該商品的記錄，回傳給商品詳情頁使用，不寫入 `records`。
+  - `fetchRecords(filters?)`（task 8.1）：購買記錄列表。`categoryId` 用 `product.category` 篩選；`startDate` / `endDate` 可單獨或一起使用，結束日包含當天；結束早於開始丟出 `FieldsValidationError({ endDate: ERR-012 })`，不查詢。結果寫入 `records`，getter `views` 轉成畫面用資料。
+  - `users` 與 `fetchUsers()`（task 7.5）：家庭成員 id 與名稱，依建立順序（決定頭像顏色，`lib/personTone.ts`）；getter `userIndex(id)`、`userName(id)`。
+  - **不使用 `expand`**：商品名稱、分類、新增者由頁面對照已載入的商品 / 分類 / 使用者清單（頭像顏色需要全部使用者的順序）。
+  - 排序一律 `-purchase_date,-created`（同一天後建立的在前；created 精確到毫秒）。
+- 寫入：
+  - 檢查與計算放在 `lib/purchaseForm.ts`（純函數，新增 / 編輯頁共用做即時檢查與預覽）：`validatePurchase(data, today)` 回傳「欄位 → 訊息」，`computePurchase(data)` 算數量與單位均價，`fieldValuesToSave(data)` 整理要寫入的自訂欄位值。檢查不通過時 store 丟出 `FieldsValidationError`（每個欄位各自的訊息，AC-5.3），一筆都不寫。
+  - `createRecord(data)`：寫入前端算好的 `quantity` / `unit_price`（缺失寫 0）、`user` = 目前登入者（AC-5.6），再逐筆寫入 `purchase_record_field_values`；欄位值寫到一半失敗時刪除剛建立的記錄（cascade 一起刪掉已寫入的值），不留下半套資料。資料庫擋下總價（min 0.01）時轉成 ERR-010。
+  - `updateRecord(id, data)`：重新計算，不送 `user`（新增者不變）；同步欄位值：改了的更新、清空的刪除、新填的新增、不屬於目前分類的（換了商品）刪除。
+  - `deleteRecord(id)`：刪除記錄，欄位值由資料庫 cascade 刪除。
 
 ```typescript
-// src/stores/purchase.ts（摘要）
-import { defineStore } from 'pinia'
-import pb from '@/lib/pocketbase'
-import { calculateUnitPrice, calculateQuantityFromComponents } from '@/composables/useUnitPrice'
+// src/lib/purchaseForm.ts（摘要）
+export type PurchaseField = Pick<CustomFieldRecord, 'id' | 'field_type' | 'is_quantity_component'>
 
-export const usePurchaseStore = defineStore('purchase', {
-  state: () => ({
-    records: [] as PurchaseRecord[],
-    loading: false,
-  }),
-  actions: {
-    async fetchRecords(filters?: { categoryId?: string; startDate?: string; endDate?: string }) {
-      let filter = ''
-      if (filters?.categoryId) filter += `product.category = "${filters.categoryId}"`
-      if (filters?.startDate && filters?.endDate)
-        filter += `purchase_date >= "${filters.startDate}" && purchase_date <= "${filters.endDate}"`
-      
-      this.records = await pb.collection('purchase_records').getFullList({
-        sort: '-purchase_date',
-        expand: 'product,product.category,user',
-        filter,
-      })
-    },
-    async createRecord(data: PurchaseFormData) {
-      // 前端計算 quantity 和 unit_price
-      const quantity = data.fieldValues
-        ? calculateQuantityFromComponents(data.fieldValues, data.customFields)
-        : data.quantity
-      const unitPrice = calculateUnitPrice(data.totalPrice, quantity)
-      
-      const record = await pb.collection('purchase_records').create({
-        product: data.productId,
-        purchase_date: data.purchaseDate,
-        store: data.store,
-        total_price: data.totalPrice,
-        quantity,
-        unit_price: unitPrice,
-        user: pb.authStore.record!.id,
-      })
-      
-      // 儲存自訂欄位值（EAV）
-      if (data.fieldValues) {
-        for (const [fieldId, value] of Object.entries(data.fieldValues)) {
-          await pb.collection('purchase_record_field_values').create({
-            purchase_record: record.id,
-            custom_field: fieldId,
-            field_value: String(value),
-          })
-        }
-      }
-    },
-  },
-})
+export interface PurchaseFormData {
+  productId: string
+  purchaseDate: string            // 'YYYY-MM-DD'
+  store: string
+  totalPrice: number | null       // 沒填為 null（ERR-009）；0 或負數 → 只回報 ERR-010（AC-5.11）
+  quantity: number | null         // 分類沒有數量組成欄位時直接輸入（AC-4.4）
+  customFields: PurchaseField[]   // 商品所屬分類的自訂欄位
+  fieldValues: Record<string, string>  // 自訂欄位 id → 輸入的文字
+}
+
+// src/stores/purchase.ts 的日期篩選（用 pb.filter() 安全組字串，日期存成 'YYYY-MM-DD 00:00:00.000Z'）
+if (categoryId) parts.push(pb.filter('product.category = {:c}', { c: categoryId }))
+if (startDate) parts.push(pb.filter('purchase_date >= {:s}', { s: `${startDate} 00:00:00.000Z` }))
+if (endDate) parts.push(pb.filter('purchase_date <= {:e}', { e: `${endDate} 23:59:59.999Z` }))  // 含結束日當天
 ```
+
+> fakePocketBase 的關聯篩選、日期比較、cascade 行為由 `e2e/purchase-contract.mjs` 對真正的 PocketBase 驗證。
 
 #### PocketBase SDK 整合
 
