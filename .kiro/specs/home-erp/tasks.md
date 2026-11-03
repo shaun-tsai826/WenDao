@@ -300,7 +300,7 @@
     - 顯示 STATUS-008「剩餘數量已久未更新」提示
     - _對應：REQ-7, AC-7.14_
 
-- [ ] 8. 購買記錄頁面
+- [x] 8. 購買記錄頁面
   - [x] 8.1 實作 usePurchaseStore
     - （fetchByProduct、fetchUsers 已於 7.5 完成）fetchRecords（支援分類/日期區間篩選、按日期降序）、createRecord（前端計算 quantity 與 unit_price 後寫入，含 EAV 值寫入）、updateRecord、deleteRecord
     - 日期區間篩選使用 `pb.filter()` 安全組字串，包含結束日當天
@@ -333,7 +333,7 @@
     - 點擊刪除顯示確認對話框 CONFIRM-001「確定要刪除此筆記錄嗎？」；確認後刪除並顯示 MSG-006「記錄刪除成功」
     - _對應：REQ-5, AC-5.8, AC-5.9_
 
-  - [ ] 8.8 撰寫購買記錄測試
+  - [x] 8.8 撰寫購買記錄測試
     - 總價 <= 0 被拒（EDGE_CASE）、未來日期被拒（EDGE_CASE）、必填缺失被拒（EDGE_CASE）、結束日期早於開始被拒（EDGE_CASE）
     - 前端計算寫入驗證（整合，fakePocketBase 驗證寫入的 quantity/unit_price）
     - 存檔後提示更新剩餘數量（整合，驗證 QDialog 彈出）

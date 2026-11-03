@@ -217,6 +217,19 @@ describe('儲存（AC-5.7、6.1）', () => {
     expect(page.router.currentRoute.value.path).toBe('/purchases/r-1/edit');
   });
 
+  it('必填欄位清空（購買地點、總價）→ 各自顯示 ERR-009，不寫入（AC-5.3）', async () => {
+    const fake = seed();
+    const page = await mountPage('/purchases/r-1/edit', routes);
+    await fill(page, { '#p-store': '  ', '#p-price': '' });
+    await submit(page);
+    expect(text(page, '#p-store-error')).toBe(ERR.required);
+    expect(text(page, '#p-price-error')).toBe(ERR.required);
+    expect(fake.rows('purchase_records').find((r) => r.id === 'r-1')).toMatchObject({
+      store: '全聯',
+      total_price: 599,
+    });
+  });
+
   it('購入日期改成未來 → ERR-011（AC-5.5）', async () => {
     seed();
     const page = await mountPage('/purchases/r-1/edit', routes);

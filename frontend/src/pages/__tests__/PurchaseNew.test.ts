@@ -5,7 +5,7 @@ import { flushPromises } from '@vue/test-utils';
 import PurchaseNew from '@/pages/PurchaseNew.vue';
 import { installFakePocketBase } from '@/test-utils/fakePocketBase';
 import { mountPage, stubPage } from '@/test-utils/mountPage';
-import { ERR, MSG } from '@/constants/messages';
+import { CONFIRM, ERR, MSG } from '@/constants/messages';
 import * as feedback from '@/lib/feedback';
 import pb from '@/lib/pocketbase';
 
@@ -455,5 +455,70 @@ describe('輸入錯誤（AC-5.3、5.4、5.5、5.11、4.6）', () => {
     expect(button.attributes('disabled')).toBeDefined();
     expect(button.text()).toBe('儲存中…');
     await flushPromises();
+  });
+});
+
+// ---- task 8.8：購買記錄測試對照補上的項目（見 docs/progress.md「task 8.8 測試對照」） ----
+describe('task 8.8 補充：邊界與整合', () => {
+  async function fillCabbage(page: Page, values: Record<string, string>) {
+    await choose(page, 'p-cabbage');
+    await fill(page, { '#p-store': '市場', '#p-price': '90', '#p-qty': '3', ...values });
+  }
+
+  it.each(['-5', '-0.01'])(
+    '總價輸入負數 %s → 只顯示 ERR-010，不寫入（AC-5.4、5.11）',
+    async (price) => {
+      const fake = seed();
+      const page = await mountPage('/purchases/new', routes);
+      await fillCabbage(page, { '#p-price': price });
+      await submit(page);
+      expect(text(page, '#p-price-error')).toBe(ERR.totalPriceNotPositive);
+      expect(page.wrapper.text()).not.toContain(ERR.required);
+      expect(fake.rows('purchase_records')).toHaveLength(2);
+    },
+  );
+
+  // 台灣 00:30 時 UTC 還是前一天：「今天」要用裝置本地日期判斷（design.md 日期處理規則）
+  it('午夜邊界：本地 11/2 00:30（UTC 還是 11/1）選 11/2 → 不是未來，可以存', async () => {
+    vi.setSystemTime(new Date(2026, 10, 2, 0, 30));
+    const fake = seed();
+    const page = await mountPage('/purchases/new', routes);
+    expect(value(page, '#p-date')).toBe('2026-11-02');
+    await fillCabbage(page, {});
+    await submit(page);
+    expect(page.wrapper.find('#p-date-error').exists()).toBe(false);
+    expect(fake.rows('purchase_records').at(-1)).toMatchObject({
+      purchase_date: '2026-11-02 00:00:00.000Z',
+    });
+  });
+
+  it('午夜邊界：本地 11/2 23:59 選 11/3 → ERR-011（AC-5.5）', async () => {
+    vi.setSystemTime(new Date(2026, 10, 2, 23, 59));
+    const fake = seed();
+    const page = await mountPage('/purchases/new', routes);
+    await fillCabbage(page, { '#p-date': '2026-11-03' });
+    await submit(page);
+    expect(text(page, '#p-date-error')).toBe(ERR.purchaseDateInFuture);
+    expect(fake.rows('purchase_records')).toHaveLength(2);
+  });
+
+  it('整合：存檔後真的彈出 CONFIRM-002 對話框（Quasar Dialog），預先帶入目前的 3', async () => {
+    ask.mockRestore(); // 不用假的，讓真正的對話框打開
+    seed();
+    const page = await mountPage('/purchases/new', routes);
+    await choose(page, 'p-spring');
+    await fill(page, {
+      '#p-store': '全聯',
+      '#p-price': '599',
+      '#cf-f-sheets': '120',
+      '#cf-f-packs': '10',
+    });
+    await submit(page);
+    await flushPromises();
+    const dialog = document.querySelector('.q-dialog');
+    expect(dialog, 'QDialog 沒有彈出').not.toBeNull();
+    expect(dialog!.textContent).toContain(CONFIRM.updateRemaining);
+    expect(document.querySelector<HTMLInputElement>('#remain-dialog-input')?.value).toBe('3');
+    expect(page.router.currentRoute.value.path).toBe('/purchases');
   });
 });
