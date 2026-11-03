@@ -146,6 +146,7 @@ import {
   formatShortDate,
   formatUnitPrice,
   historicalAverageOf,
+  purchaseAmountLine,
   type PurchaseView,
 } from '@/lib/purchaseView';
 import { useCategoryStore } from '@/stores/category';
@@ -209,11 +210,7 @@ const average = computed(() => historicalAverageOf(purchases.value));
 
 /** 「1,200 抽 · 0.4992 元/抽」；數量缺失時「數量未填 · 無法計算」 */
 function purchaseDetail(p: PurchaseView): string {
-  const unitName = view.value?.record.unit ?? '';
-  if (p.quantity === null || p.unitPrice === null) {
-    return `數量未填 · ${STATUS.cannotCalculate}`;
-  }
-  return `${formatAmount(p.quantity)} ${unitName} · ${formatUnitPrice(p.unitPrice)} 元/${unitName}`;
+  return purchaseAmountLine(p, view.value?.record.unit ?? '');
 }
 
 async function load() {

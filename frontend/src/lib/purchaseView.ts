@@ -2,6 +2,7 @@
 //
 // 資料庫原始值 → 畫面使用的值，依 design.md「PocketBase 的 required 與 null 語意」：
 // - quantity 為 0 → 數量缺失（null），此時 unit_price 沒有意義（null，畫面顯示 STATUS-001「無法計算」）
+import { STATUS } from '@/constants/messages';
 import { calculateHistoricalAverage } from '@/composables/useHistoricalAverage';
 import { toDateOnly, type DateOnly } from '@/composables/dates';
 import type { PurchaseRecordRecord } from '@/types/models';
@@ -55,4 +56,16 @@ export function formatShortDate(date: DateOnly, today: DateOnly): string {
 /** 單位均價：固定 4 位小數（與計算時的四捨五入一致；BDD 寫作 0.5000） */
 export function formatUnitPrice(n: number): string {
   return n.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+}
+
+/**
+ * 「1,200 抽 · 0.4992 元/抽」；數量缺失時「數量未填 · 無法計算」（STATUS-001）。
+ * 購買記錄列表（task 8.3）與商品詳情的購買記錄（task 7.5）共用。
+ * @param unit 商品的計價單位
+ */
+export function purchaseAmountLine(view: PurchaseView, unit: string): string {
+  if (view.quantity === null || view.unitPrice === null) {
+    return `數量未填 · ${STATUS.cannotCalculate}`;
+  }
+  return `${formatAmount(view.quantity)} ${unit} · ${formatUnitPrice(view.unitPrice)} 元/${unit}`;
 }

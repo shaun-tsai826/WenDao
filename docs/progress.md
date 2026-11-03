@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v6.6（2026-11-03）
-> 變更摘要：v6.6 task 8.2（CustomFieldInput）完成。
+> 版本：v6.7（2026-11-03）
+> 變更摘要：v6.7 task 8.3（購買記錄列表）完成；新增 e2e purchases。
+> v6.6 task 8.2（CustomFieldInput）完成。
 > v6.5 購買記錄設計寫入 design.md v4.0。
 > v6.4 Logo A（台北市門牌 5888）定稿：BrandLogo 元件、App / 分頁圖示產生器；design.md v3.9。
 > v6.3 App 更名「家庭ERP」→「溫叨Pantry」（程式、PWA、規格、文件）；requirements v1.4、design v3.8、tasks v1.7。
@@ -61,13 +62,13 @@
 
 ## 目前階段
 
-**實作中。** task 1（環境建置）全部完成；**task 1～7、8.1、8.2 完成**，下一步是 task 8.3（Purchases 列表頁）。commit 前執行 `npm test`（目前 565 項）。
+**實作中。** task 1（環境建置）全部完成；**task 1～7、8.1～8.3 完成**，下一步是 task 8.4（PurchaseNew 新增購買記錄）。commit 前執行 `npm test`（目前 589 項）。
 
 > **2026-11-01 起短期內不使用 Kiro**：規格需要修改時，由 Claude Code 先問使用者、同意後直接改（含版本號與變更摘要）。
 > **task 2.6 之前**：先用已安裝的設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿（儀表板、新增購買記錄），使用者選定後整理成 UI 設計規範寫進規格。
 
 ```
-規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（8.2 完成，下一步 8.3）
+規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（8.3 完成，下一步 8.4）
   (完成)       (完成)          (完成)            (完成)        ◄ 目前在這裡
 ```
 
@@ -140,6 +141,7 @@
 | 2026-11-03 | **task 8.1**：`usePurchaseStore` 的 fetchRecords（分類 `product.category`、日期區間含結束日當天、結束早於開始 ERR-012、新到舊、同日後建立在前；getter `views`）、createRecord（前端算 quantity / unit_price，缺失寫 0；新增者 = 登入者；EAV 寫到一半失敗會刪掉剛建立的記錄；資料庫擋下總價 → ERR-010）、updateRecord（重算、新增者不變、EAV 同步：改了更新 / 清空刪除 / 新填新增 / 換商品刪除舊值）、deleteRecord（cascade）。新增 `lib/purchaseForm.ts`（validatePurchase、computePurchase、fieldValuesToSave，8.4 / 8.6 頁面共用）與 `FieldsValidationError`（每個欄位各自的訊息，AC-5.3）。`fakePocketBase` 擴充：比較運算子 >= <= > <、關聯欄位 `product.category`、cascade 刪除（附 5 項自身測試）。移除 task 2.5 的「尚未實作」骨架測試 2 項。新增 54 項測試，全專案 539 項；6 種故意改壞皆被抓到。**新增契約測試** `e2e/purchase-contract.mjs`：用同樣的 SDK 查詢對真正的 PocketBase 驗證 fake 的假設，7 項全部符合；**發現** PocketBase 的 created 只到毫秒，連續建立可能同一毫秒而排序不定（實際使用不影響，腳本已間隔 20ms） | — |
 | 2026-11-03 | **購買記錄設計稿**：ui-ux-pro-max 查表單 / 篩選 / 對話框 UX 規則後，設計稿新增「購買記錄（task 8）」一排 8 張：Pur-List（分類＋日期篩選）、Pur-List-Range（ERR-012）、Pur-New（有包裝規格，即 8.2 CustomFieldInput）、Pur-New-Error（欄位下方錯誤＋上方錯誤摘要）、Pur-New-Qty（沒有包裝規格，直接輸入數量、文字欄位）、Pur-Remain（CONFIRM-002 對話框）、Pur-Detail（價格比較，圖示＋文字＋顏色）、Pur-Delete（CONFIRM-001）。使用者確認並同意 4 項提案（見重要決定紀錄）。已寫入 design.md v4.0「購買記錄」段落 | 設計稿 Pur-*、design.md v4.0 |
 | 2026-11-03 | **task 8.2**：`components/CustomFieldInput.vue`（依 display_order 三欄並排；數字欄位 inputmode=decimal、輸入時整理成數字且不收負號；文字欄位原樣；每欄標示「算數量 / 只記錄」；數量組成欄位離開時檢查，有填但不大於 0 → ERR-008 顯示在欄位下方（aria-invalid、aria-describedby），沒填不算錯；頁面送出的錯誤由 errors 傳入；leading 插槽給沒有包裝規格的分類放「數量」；v-model 為「欄位 id → 文字」，與 lib/purchaseForm.ts 的 fieldValues 相同）。新增 17 項測試，全專案 565 項；5 種故意改壞皆被抓到。元件還沒有頁面使用，**e2e（真實滑鼠鍵盤）與截圖比對留到 task 8.4** | — |
+| 2026-11-03 | **task 8.3**：`pages/Purchases.vue`（依設計稿 Pur-List / Pur-List-Range：新到舊；每列新增者頭像、商品、「日期 · 地點 · 分類」、「數量 · 單位均價」、總價；分類按鈕＋開始 / 結束日期（含當天）；結束早於開始 → ERR-012 在結束日期下方、清單維持上一次結果；篩選記在網址 ?category=&start=&end=（replace，沿用商品列表的做法），網址上不合法的值當作沒有篩選；沒有記錄 / 篩選後沒有記錄＋清除篩選；載入失敗重試）。`lib/purchaseView.ts` 新增 `purchaseAmountLine`，商品詳情改用它（共用）。新增 24 項測試，全專案 589 項；5 種故意改壞皆被抓到。e2e `purchases.mjs`（真實滑鼠＋鍵盤輸入日期，Chrome 繁中語系）10 步驟通過。**e2e 發現並修正**：用鍵盤打日期時年份可打成 5～6 位數（如 202610-03-01）並寫進網址 → 日期欄位加 min 2000-01-01 / max 9999-12-31（Chrome 依 max 限制年份 4 位），頁面忽略格式不對的值（先寫回歸測試）。另外：這次 e2e 前沒先跑 typecheck / lint，正式 build 才抓到 exactOptionalPropertyTypes 與多餘型別斷言 → 已修正，之後依「單元測試 → lint → typecheck → e2e」順序 | — |
 | 2026-11-03 | **App 更名（使用者決定）**：「家庭ERP」→「溫叨Pantry」；不能用中文的地方用「WenDaoPantry」（全小寫時 wendaopantry）。新增 `src/constants/app.ts`（APP_NAME、APP_NAME_ASCII），頂欄與登入頁改用常數；`package.json` productName、PWA manifest name / short_name 改名，並以 `constants/__tests__/app.test.ts` 檢查設定檔與常數一致。規格：requirements.md 76 處「家庭ERP系統」→「溫叨Pantry系統」、design.md、tasks.md；launchd 設定改為 `com.wendaopantry.pocketbase`（尚未安裝）；README、frontend/README、setup-frontend、setup-pocketbase 同步。依使用者同意**不改**：規格資料夾 `.kiro/specs/home-erp/`、`package.json` name `wendao-frontend`、說明文字「家庭用品管理系統」、過去進度紀錄裡的舊名稱。新增 5 項測試，全專案 544 項；e2e 全部通過，正式 build 的分頁標題與 manifest 已是新名稱。Logo（選 A 經典門牌）與設計稿更新另外進行 | requirements v1.4、design v3.8、tasks v1.7 |
 | 2026-11-03 | **Logo A 定稿**：數字用 Barlow Condensed SemiBold（SIL OFL 1.1，從 Google Fonts 官方 GitHub 下載）的外框；`brand/extract-digits.py`（fontTools，暫時 venv 安裝）取出路徑 → `brand/digits.json`；`brand/build-icons.mjs` 產生 SVG 原始檔、`src/components/brandPaths.ts`、PWA / iOS / maskable（縮 0.78 倍在安全範圍）/ monochrome / 分頁 PNG 與 favicon.ico（無頭 Chrome 繪製），並自動跑 prettier。新增 `BrandLogo.vue`（plate / header、裝飾用 aria-hidden 或 label 時 role=img），頂欄與登入頁換掉「家」字標記。新增 5 項測試，全專案 548 項；e2e 全部通過。16px 分頁圖示仍難辨認數字（尺寸限制） | design.md v3.9、`frontend/brand/README.md` v1.0 |
 | 2026-11-03 | **設計稿更名與換 Logo**：設計稿標題改為「溫叨Pantry 設計稿」；採用的 16 張畫板（B-Home、登入 2 張、Cat-List、商品 4 張、購買記錄 8 張）頂欄與登入頁換上門牌 Logo（上傳 brand/svg/logo-header.svg、logo.svg 為素材）與新名稱。A、C 風格提案（Main、C-Home 等）保留舊樣子作為紀錄 | 設計稿 |
@@ -159,7 +161,7 @@
 
 ## 待辦（依順序）
 
-1. **[Claude Code]** task 8.3～8.8（設計稿已確認、已寫入 design.md v4.0）。8.4 時補 CustomFieldInput 的 e2e。
+1. **[Claude Code]** task 8.4～8.8（設計稿已確認、已寫入 design.md v4.0）。8.4 時補 CustomFieldInput 的 e2e。
 3. 之後依 `tasks.md` 順序，一次做一個 task → 勾選 `[x]` → commit（message 帶 task 編號）。
 
 ## 重要決定紀錄
@@ -243,7 +245,7 @@ git pull
 
 ### 目前位置（2026-11-02）
 
-- 已完成：task 1～7、8.1、8.2；購買記錄設計稿已確認（設計稿 Pur-*，design.md v4.0「購買記錄」）。**下一步：task 8.3 Purchases 列表頁**（設計稿 Pur-List、Pur-List-Range）。新增 / 編輯頁直接用 `lib/purchaseForm.ts` 做即時檢查與數量預覽。
+- 已完成：task 1～7、8.1～8.3；購買記錄設計稿已確認（設計稿 Pur-*，design.md v4.0「購買記錄」）。**下一步：task 8.4 PurchaseNew**（設計稿 Pur-New / Pur-New-Error / Pur-New-Qty / Pur-Remain；用 CustomFieldInput 與 lib/purchaseForm.ts；補 CustomFieldInput 的 e2e）。新增 / 編輯頁直接用 `lib/purchaseForm.ts` 做即時檢查與數量預覽。
 - 商品頁設計稿已確認：設計稿最下面一排 Prod-List / Prod-New / Prod-Detail / Prod-Edit（https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf ；本機原始檔在 `.design-canvas/`，不進 git）。
 - 沒有待使用者決定的事項。
 
@@ -253,7 +255,7 @@ git pull
 2. **新畫面先做設計稿**：先呼叫設計 skills（ui-ux-pro-max、taste-skill），依 design.md「UI 設計規範」做稿放到設計稿，使用者確認後才實作。
 3. **規格有落差**：先停下來列「問題＋建議（含推薦選項）」問使用者（選擇題），同意後才改 design.md / tasks.md，並升版號、寫變更摘要。暫停使用 Kiro。
 4. **驗證三層**：
-   - `cd frontend && npm test`（Vitest，目前 565 項）、`npm run lint:check`、`npm run typecheck`
+   - `cd frontend && npm test`（Vitest，目前 589 項）、`npm run lint:check`、`npm run typecheck`
    - 故意改壞關鍵程式確認測試抓得到（**先備份檔案**，不要用 `git checkout` 還原未 commit 的修改）
    - `./e2e/run.sh`（正式 build + 臨時 PocketBase + 無頭 Chrome，**真實滑鼠鍵盤事件**；手機寬 390）。新頁面要在 `frontend/e2e/` 加腳本
 5. **修 bug**：先寫會失敗的回歸測試，再修正。

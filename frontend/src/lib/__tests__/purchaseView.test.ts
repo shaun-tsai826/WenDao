@@ -4,10 +4,12 @@ import {
   formatAmount,
   formatShortDate,
   formatUnitPrice,
+  purchaseAmountLine,
   historicalAverageOf,
   toPurchaseView,
 } from '@/lib/purchaseView';
 import { personInitial, personTone } from '@/lib/personTone';
+import { STATUS } from '@/constants/messages';
 import type { PurchaseRecordRecord } from '@/types/models';
 
 function record(over: Partial<PurchaseRecordRecord> = {}): PurchaseRecordRecord {
@@ -94,5 +96,24 @@ describe('personTone / personInitial（design.md 使用者代表色）', () => {
     expect(personInitial('老皮')).toBe('皮');
     expect(personInitial('Alice')).toBe('e');
     expect(personInitial('')).toBe('?');
+  });
+});
+
+// task 8.3：購買記錄列表與商品詳情共用的「數量 · 單位均價」那一行
+describe('purchaseAmountLine', () => {
+  it('「1,200 抽 · 0.4992 元/抽」（單位用商品的計價單位）', () => {
+    expect(purchaseAmountLine(toPurchaseView(record()), '抽')).toBe('1,200 抽 · 0.4992 元/抽');
+  });
+
+  it('數量缺失 →「數量未填 · 無法計算」（STATUS-001）', () => {
+    expect(purchaseAmountLine(toPurchaseView(record({ quantity: 0, unit_price: 0 })), '抽')).toBe(
+      `數量未填 · ${STATUS.cannotCalculate}`,
+    );
+  });
+
+  it('單位均價固定 4 位小數（30 → 30.0000）', () => {
+    expect(purchaseAmountLine(toPurchaseView(record({ quantity: 2, unit_price: 30 })), '顆')).toBe(
+      '2 顆 · 30.0000 元/顆',
+    );
   });
 });

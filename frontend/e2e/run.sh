@@ -46,7 +46,7 @@ curl -s -o /dev/null -X POST $B/collections/purchase_record_field_values/records
   -d "{\"purchase_record\":\"$R\",\"custom_field\":\"$F\",\"field_value\":\"100\"}"
 
 SCRIPTS=("$@")
-[[ ${#SCRIPTS[@]} -eq 0 ]] && SCRIPTS=(purchase-contract login categories custom-field-sheet products product-new product-detail product-edit stale logout)
+[[ ${#SCRIPTS[@]} -eq 0 ]] && SCRIPTS=(purchase-contract login categories custom-field-sheet products product-new product-detail product-edit stale purchases logout)
 for name in "${SCRIPTS[@]}"; do
   echo "== $name"
   node "$FRONTEND/e2e/$name.mjs" "http://127.0.0.1:${PORT}" "$SHOTS" 390 844 2>&1 | grep -v Warning
