@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v7.2（2026-11-03）
-> 變更摘要：v7.2 App 更名「溫叨Pantry」→「溫叨@Pantry」（程式、PWA、規格、文件）；requirements v1.5、design v4.1。
+> 版本：v7.3（2026-11-03）
+> 變更摘要：v7.3 task 8.6（編輯購買記錄）完成；新增 e2e purchase-edit；設計稿更名為「溫叨@Pantry」；K-19 待同意回寫。
+> v7.2 App 更名「溫叨Pantry」→「溫叨@Pantry」（程式、PWA、規格、文件）；requirements v1.5、design v4.1。
 > v7.1 task 8.5（購買記錄詳情）完成；新增 e2e purchase-detail；K-18 待同意回寫。
 > v7.0 交接整理：「目前位置」更新到 task 8.4；工作慣例補上驗證順序、回報格式、e2e 與 Quasar 對話框的注意事項。
 > v6.9 task 8.4（新增購買記錄）完成；新增 e2e purchase-new；K-17 待同意回寫。
@@ -67,13 +68,13 @@
 
 ## 目前階段
 
-**實作中。** task 1（環境建置）全部完成；**task 1～7、8.1～8.5 完成**，下一步是 task 8.6（PurchaseEdit 編輯購買記錄）。commit 前執行 `npm test`（目前 661 項）。
+**實作中。** task 1（環境建置）全部完成；**task 1～7、8.1～8.6 完成**，下一步是 task 8.7（刪除確認對話框）。commit 前執行 `npm test`（目前 673 項）。
 
 > **2026-11-01 起短期內不使用 Kiro**：規格需要修改時，由 Claude Code 先問使用者、同意後直接改（含版本號與變更摘要）。
 > **task 2.6 之前**：先用已安裝的設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿（儀表板、新增購買記錄），使用者選定後整理成 UI 設計規範寫進規格。
 
 ```
-規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（8.5 完成，下一步 8.6）
+規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（8.6 完成，下一步 8.7）
   (完成)       (完成)          (完成)            (完成)        ◄ 目前在這裡
 ```
 
@@ -151,6 +152,8 @@
 | 2026-11-03 | **task 8.4**：`pages/PurchaseNew.vue`＋共用表單 `components/PurchaseForm.vue`（8.6 編輯頁共用）：商品依分類分組、預設「請選擇商品」（沿用 7.4 決定）、左側分類圖塊；購入日期預設今天、不能選未來；購買地點＋常去的地點按鈕（`purchaseStore.fetchRecentStores`，最近用過、最多 6 個）；總價；自訂欄位用 CustomFieldInput（`customFieldStore.listFields` 只取欄位、不查使用狀況），沒有數量組成欄位時數量欄位放在同一張卡片最前面＋說明（CustomFieldInput 新增 footer 插槽）；「自動計算結果」即時顯示總數量與單位均價及算式，算不出來時灰底寫原因；送出前 validatePurchase：欄位下方錯誤＋上方錯誤摘要（連到欄位、取得焦點），改了欄位就拿掉；存檔 → MSG-004 → 回購買記錄列表 → `RemainingDialog`（CONFIRM-002，全域 Quasar Dialog，預先帶入目前剩餘數量、未設定留空；`productStore.updateRemaining` 只改剩餘數量；成功 MSG-007）。新增 41 項測試，全專案 629 項；5 種故意改壞皆被抓到。e2e `purchase-new.mjs`（真實滑鼠鍵盤，含 CustomFieldInput 的全形輸入整理、離開欄位 ERR-008）17 步驟通過。**e2e 發現並修正**：對話框打開時焦點沒在剩餘數量欄位（元件掛上時 Quasar 開啟動畫還沒結束）→ 改在 `@show` 聚焦（先寫回歸測試） | — |
 | 2026-11-03 | **task 8.5**：`pages/PurchaseDetail.vue`（設計稿 Pur-Detail）：商品卡（分類圖塊、商品名稱連到商品詳情、分類、總價）；購入日期含星期、購買地點、新增者頭像＋名稱＋新增時間（本地時間，AC-5.6）；包裝規格（依欄位順序、只列有填的、數字加千分位）；總數量與單位均價（缺失「未填」/「無法計算」）；**價格比較**（AC-8.9、8.10）：↑ 琥珀 / ↓ 綠 / ＝ 灰 / 無法比較灰＋原因，另寫每單位差額與百分比（減號用 −，太小寫「不到 0.1%」）、歷史均價用了幾筆（含這一筆）；返回時保留列表篩選；記錄不存在、載入失敗（含第二段載入）各有畫面。新增 `lib/purchaseView.ts` 的 `priceComparisonOf`、`formatLongDate`、`formatCreatedAt`；`purchaseStore.fetchRecord`（404 → null）、`fetchFieldValues`（8.6 編輯頁也會用）；`fakePocketBase` 加 `getOne`（找不到 → 404，契約測試已對真正的 PocketBase 驗證）；AppIcon 加 4 個比較圖示；色彩變數 `--price-lower-*`（綠）。「刪除這筆記錄」按鈕留到 task 8.7 與對話框一起做（避免放一個按了沒反應的按鈕）。新增 32 項測試，全專案 661 項；3 種故意改壞皆被抓到。e2e `purchase-detail.mjs` 7 步驟通過（高 / 低 / 無法比較、返回保留篩選、商品連結、編輯入口、不存在的記錄） | — |
 | 2026-11-03 | **App 再次更名（使用者決定）**：「溫叨Pantry」→「溫叨@Pantry」。程式：`constants/app.ts` 的 APP_NAME（頂欄、登入頁、Logo 的 aria-label 都用它）、`package.json` productName（瀏覽器分頁標題）、PWA manifest name / short_name；先改 `constants/__tests__/app.test.ts` 確認失敗再改。規格：requirements.md 76 處「溫叨Pantry系統」→「溫叨@Pantry系統」（順便修正 v1.4 摘要被上次更名誤改的文字）、design.md manifest 範例與頂欄說明；README、frontend/README、brand/README、setup-frontend、setup-pocketbase 同步並升版。**不改**：過去的變更摘要與進度紀錄（歷史）、英文識別名 WenDaoPantry、設計稿（claude.ai 上的 artifact 標題與畫板仍是舊名稱） | requirements v1.5、design v4.1 |
+| 2026-11-03 | **設計稿更名**：claude.ai 設計稿（第 24 版）標題、16 張採用畫板、Logo 提案 3 張與列標題改為「溫叨@Pantry」；A、C 風格提案的「家庭ERP」保留作紀錄。本機 `.design-canvas/` 同步 | 設計稿 |
+| 2026-11-03 | **task 8.6**：`pages/PurchaseEdit.vue`：沿用 `PurchaseForm`（標題「編輯購買記錄」、按鈕「儲存變更」），載入記錄（`fetchRecord`，404 → 找不到）與欄位值（`fetchFieldValues`）後預先帶入：商品、日期、地點、總價、包裝規格；沒有包裝規格的分類帶入數量（資料庫 0 = 沒填 → 欄位留空）。存檔 `updateRecord`（重算數量與單位均價、同步欄位值、新增者不變）→ MSG-005 → **回到這筆記錄的詳情**；返回與取消也回詳情；編輯不問更新剩餘數量。`PurchaseFormInitial` 型別從 PurchaseForm.vue 移到 `lib/purchaseForm.ts`（ESLint 讀不到 .vue 匯出的型別）。新增 12 項測試，全專案 673 項；4 種故意改壞皆被抓到。e2e `purchase-edit.mjs` 8 步驟通過（BDD 599 → 549 單位均價重算、包數改 10 → 1,000 抽、總價 0 只顯示 ERR-010 且不寫入、取消、不存在的記錄） | — |
 | 2026-11-03 | **App 更名（使用者決定）**：「家庭ERP」→「溫叨Pantry」；不能用中文的地方用「WenDaoPantry」（全小寫時 wendaopantry）。新增 `src/constants/app.ts`（APP_NAME、APP_NAME_ASCII），頂欄與登入頁改用常數；`package.json` productName、PWA manifest name / short_name 改名，並以 `constants/__tests__/app.test.ts` 檢查設定檔與常數一致。規格：requirements.md 76 處「家庭ERP系統」→「溫叨Pantry系統」、design.md、tasks.md；launchd 設定改為 `com.wendaopantry.pocketbase`（尚未安裝）；README、frontend/README、setup-frontend、setup-pocketbase 同步。依使用者同意**不改**：規格資料夾 `.kiro/specs/home-erp/`、`package.json` name `wendao-frontend`、說明文字「家庭用品管理系統」、過去進度紀錄裡的舊名稱。新增 5 項測試，全專案 544 項；e2e 全部通過，正式 build 的分頁標題與 manifest 已是新名稱。Logo（選 A 經典門牌）與設計稿更新另外進行 | requirements v1.4、design v3.8、tasks v1.7 |
 | 2026-11-03 | **Logo A 定稿**：數字用 Barlow Condensed SemiBold（SIL OFL 1.1，從 Google Fonts 官方 GitHub 下載）的外框；`brand/extract-digits.py`（fontTools，暫時 venv 安裝）取出路徑 → `brand/digits.json`；`brand/build-icons.mjs` 產生 SVG 原始檔、`src/components/brandPaths.ts`、PWA / iOS / maskable（縮 0.78 倍在安全範圍）/ monochrome / 分頁 PNG 與 favicon.ico（無頭 Chrome 繪製），並自動跑 prettier。新增 `BrandLogo.vue`（plate / header、裝飾用 aria-hidden 或 label 時 role=img），頂欄與登入頁換掉「家」字標記。新增 5 項測試，全專案 548 項；e2e 全部通過。16px 分頁圖示仍難辨認數字（尺寸限制） | design.md v3.9、`frontend/brand/README.md` v1.0 |
 | 2026-11-03 | **設計稿更名與換 Logo**：設計稿標題改為「溫叨Pantry 設計稿」；採用的 16 張畫板（B-Home、登入 2 張、Cat-List、商品 4 張、購買記錄 8 張）頂欄與登入頁換上門牌 Logo（上傳 brand/svg/logo-header.svg、logo.svg 為素材）與新名稱。A、C 風格提案（Main、C-Home 等）保留舊樣子作為紀錄 | 設計稿 |
@@ -170,7 +173,7 @@
 
 ## 待辦（依順序）
 
-1. **[Claude Code]** task 8.6～8.8（設計稿已確認、已寫入 design.md v4.0）。
+1. **[Claude Code]** task 8.7～8.8（設計稿已確認、已寫入 design.md v4.0）。
 3. 之後依 `tasks.md` 順序，一次做一個 task → 勾選 `[x]` → commit（message 帶 task 編號）。
 
 ## 重要決定紀錄
@@ -241,6 +244,7 @@
 | K-16 | task 8.1 | **（已回寫 design.md v3.7）** design.md 的 usePurchaseStore 範例：不用 `expand: 'product,product.category,user'`，商品、分類、新增者由頁面對照已載入的清單（沿用 7.5）；檢查與計算拆到 `lib/purchaseForm.ts`（頁面共用），不通過丟出 `FieldsValidationError`（欄位 → 訊息）；`PurchaseFormData` 加上 `customFields`（商品所屬分類的欄位定義）、`totalPrice` 可為 null、`fieldValues` 為文字；日期篩選改為 `purchase_date >= 'YYYY-MM-DD 00:00:00.000Z'`、`<= 'YYYY-MM-DD 23:59:59.999Z'`（用 `pb.filter()`）；排序 `-purchase_date,-created`；新增時欄位值寫入失敗會刪除剛建立的記錄 |
 | K-17 | task 8.4 | **（待使用者同意）** design.md 補上 task 8.4 新增的 store 方法：`productStore.updateRemaining(id, remaining)`（只更新剩餘數量與更新日，給 CONFIRM-002 對話框用）、`purchaseStore.fetchRecentStores()` / `recentStores`（常去的地點）、`customFieldStore.listFields(categoryId)`（表單用，不查使用狀況）；元件 `PurchaseForm.vue`（新增 / 編輯共用）、`RemainingDialog.vue`（`lib/feedback.askUpdateRemaining` 開啟） |
 | K-18 | task 8.5 | **（待使用者同意）** design.md 補上 task 8.5 新增的：`purchaseStore.fetchRecord(id)`（用 getOne，404 回傳 null 顯示「找不到這筆記錄」）、`purchaseStore.fetchFieldValues(recordId)`；`lib/purchaseView.ts` 的 `priceComparisonOf`（價格比較的畫面文字）；UI 設計規範的色彩加上 `--price-lower-bg #e3f4dc` / `--price-lower-ink #24501a`（比歷史均價低的綠色）；詳情頁的包裝規格只列有填值的欄位 |
+| K-19 | task 8.6 | **（待使用者同意）** design.md「編輯購買記錄」補上：按鈕文字「儲存變更」；存檔後 MSG-005 → 回到這筆記錄的詳情（返回、取消也回詳情）；編輯不詢問更新剩餘數量（CONFIRM-002 只在新增）；`PurchaseFormInitial` 放在 `lib/purchaseForm.ts` |
 | K-7 | task 1.6 | purchase_record_field_values 同 K-3，改為 `(purchase_record, custom_field)` UNIQUE INDEX + 前端保證 |
 
 ## 下次接手時
@@ -256,10 +260,10 @@ git pull
 
 ### 目前位置（2026-11-03）
 
-- **已完成**：task 1～7（環境、認證、分類、商品）、task 8.1～8.5（購買記錄 store、CustomFieldInput、列表、新增、詳情）。
-- **下一步：task 8.6 PurchaseEdit 編輯購買記錄**（design.md v4.0「購買記錄 › 編輯購買記錄」）：沿用 `components/PurchaseForm.vue`，標題改「編輯購買記錄」、預先帶入原本的值（記錄用 `purchaseStore.fetchRecord`、欄位值用 `fetchFieldValues`，8.5 已做好）；存檔 `updateRecord` → MSG-005。接著 8.7 刪除確認（詳情頁加「刪除這筆記錄」紅字按鈕＋CONFIRM-001 對話框）、8.8 測試對照。
+- **已完成**：task 1～7（環境、認證、分類、商品）、task 8.1～8.6（購買記錄 store、CustomFieldInput、列表、新增、詳情、編輯）。
+- **下一步：task 8.7 刪除確認對話框**（設計稿 Pur-Delete；design.md v4.1「購買記錄 › 刪除確認」）：詳情頁底部加「刪除這筆記錄」（紅字）→ CONFIRM-001 對話框（`role="alertdialog"`，寫出是哪一筆、提醒「刪除後無法復原，商品的歷史均價會重新計算」；按鈕「取消 / 刪除」紅底）→ `purchaseStore.deleteRecord` → MSG-006 → 回購買記錄列表。可參考 `lib/feedback.ts` 既有的刪除確認（task 6.2）。接著 8.8 測試對照。
 - **待使用者回報**：回家後用 iPhone 測試（步驟見 `docs/setup-frontend.md` 第 9 節）：購買記錄的日期選擇器與 ERR-012 換行、新增購買記錄（商品選單、數字鍵盤、更新剩餘數量對話框）、商品頁操作、門牌 Logo。結果回報後再決定要不要調整。
-- **待使用者決定**：K-17、K-18 是否回寫 design.md（task 8.4、8.5 新增的 store 方法、元件與色彩變數，見「待回寫規格的變更」）。
+- **待使用者決定**：K-17、K-18、K-19 是否回寫 design.md（task 8.4～8.6 新增的 store 方法、元件、色彩變數與編輯頁行為，見「待回寫規格的變更」）。
 - App 名稱「溫叨@Pantry」（`src/constants/app.ts`），Logo A 門牌 5888（`frontend/brand/`）。
 - 設計稿：https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf （標題「溫叨@Pantry 設計稿」；購買記錄在 Pur-* 那排，Logo 在最下排；本機原始檔在 `.design-canvas/`，不進 git）。
 
@@ -269,7 +273,7 @@ git pull
 2. **新畫面先做設計稿**：先呼叫設計 skills（ui-ux-pro-max、taste-skill），依 design.md「UI 設計規範」做稿放到設計稿，使用者確認後才實作。
 3. **規格有落差**：先停下來列「問題＋建議（含推薦選項）」問使用者（選擇題），同意後才改 design.md / tasks.md，並升版號、寫變更摘要。暫停使用 Kiro。
 4. **驗證三層**：
-   - `cd frontend && npm test`（Vitest，目前 661 項）、`npm run lint:check`、`npm run typecheck`
+   - `cd frontend && npm test`（Vitest，目前 673 項）、`npm run lint:check`、`npm run typecheck`
    - 故意改壞關鍵程式確認測試抓得到（**先備份檔案**，不要用 `git checkout` 還原未 commit 的修改）
    - `./e2e/run.sh`（正式 build + 臨時 PocketBase + 無頭 Chrome，**真實滑鼠鍵盤事件**；手機寬 390）。新頁面要在 `frontend/e2e/` 加腳本
 5. **修 bug**：先寫會失敗的回歸測試，再修正。

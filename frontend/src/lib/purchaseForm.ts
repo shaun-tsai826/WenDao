@@ -38,6 +38,16 @@ export interface PurchaseFormData {
   fieldValues: Record<string, string>;
 }
 
+/** 表單的初始值（components/PurchaseForm.vue；編輯頁 task 8.6 帶入原本的值；數字欄位是文字） */
+export interface PurchaseFormInitial {
+  productId: string;
+  purchaseDate: string;
+  store: string;
+  totalPrice: string;
+  quantity: string;
+  fieldValues: Record<string, string>;
+}
+
 /** 欄位 → 錯誤訊息。key 是 productId / purchaseDate / store / totalPrice，或自訂欄位的 id */
 export type PurchaseErrors = Record<string, string>;
 

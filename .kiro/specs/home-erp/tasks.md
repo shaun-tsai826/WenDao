@@ -324,7 +324,7 @@
     - 顯示當次單位均價與歷史均價比較結果（高於/低於/等於）；當次或歷史均價為 null 時顯示 STATUS-006「無法比較」
     - _對應：REQ-5, AC-5.6, REQ-6, AC-6.2, AC-6.5, REQ-8, AC-8.9, AC-8.10_
 
-  - [ ] 8.6 實作 PurchaseEdit 頁面
+  - [x] 8.6 實作 PurchaseEdit 頁面
     - 編輯表單（含自訂欄位）；更新成功顯示 MSG-005「記錄更新成功」
     - 編輯時重新計算 quantity / unit_price，並同步更新 EAV 值
     - _對應：REQ-5, AC-5.7, REQ-6, AC-6.1_

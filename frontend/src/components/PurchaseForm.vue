@@ -223,6 +223,7 @@ import {
   validatePurchase,
   type PurchaseErrors,
   type PurchaseFormData,
+  type PurchaseFormInitial,
 } from '@/lib/purchaseForm';
 import { formatAmount, formatUnitPrice } from '@/lib/purchaseView';
 import { useCategoryStore } from '@/stores/category';
@@ -230,16 +231,6 @@ import { useCustomFieldStore } from '@/stores/customField';
 import { useProductStore } from '@/stores/product';
 import { usePurchaseStore } from '@/stores/purchase';
 import type { CustomFieldRecord } from '@/types/models';
-
-/** 表單的初始值（編輯時帶入；數字欄位是文字） */
-export interface PurchaseFormInitial {
-  productId: string;
-  purchaseDate: string;
-  store: string;
-  totalPrice: string;
-  quantity: string;
-  fieldValues: Record<string, string>;
-}
 
 const DATE_MIN = '2000-01-01';
 /** 購買地點長度上限（與 migration purchase_records.store 的 max 100 一致） */
