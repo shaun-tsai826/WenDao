@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v7.6（2026-11-03）
-> 變更摘要：v7.6 K-17～K-20 已回寫 design.md v4.2（使用者同意）。
+> 版本：v7.7（2026-11-03）
+> 變更摘要：v7.7 task 9 首頁設計稿 4 張放上設計稿（Dash、Dash-Grouped、Dash-Clear、Dash-First），待使用者確認。
+> v7.6 K-17～K-20 已回寫 design.md v4.2（使用者同意）。
 > v7.5 task 8.8（購買記錄測試對照）完成，task 8 全部完成；新增「task 8.8 測試對照」一節。
 > v7.4 task 8.7（刪除確認對話框）完成；新增 e2e purchase-delete；K-20 待同意回寫。
 > v7.3 task 8.6（編輯購買記錄）完成；新增 e2e purchase-edit；設計稿更名為「溫叨@Pantry」；K-19 待同意回寫。
@@ -282,7 +283,7 @@ git pull
 ### 目前位置（2026-11-03）
 
 - **已完成**：task 1～7（環境、認證、分類、商品）、task 8（購買記錄：store、CustomFieldInput、列表、新增、詳情、編輯、刪除、測試對照）。
-- **下一步：task 9 儀表板與補貨提醒**：照工作慣例 2，**新畫面先做設計稿**（呼叫 ui-ux-pro-max、taste-skill，依 design.md「UI 設計規範」，參考 task 2.6 選定的 B-Home 風格），使用者確認後才實作。先讀 tasks.md 第 9 節與 requirements REQ-7。
+- **下一步：task 9 儀表板與補貨提醒——等使用者確認設計稿**（設計稿最下排「首頁 / 儀表板」）：Dash（A：照 design.md，兩格摘要＋提醒清單＋庫存正常）、Dash-Grouped（B 提案：taste-skill 的 app 畫面規則建議數字不放在有底色的格子、同一個數字不出現兩次，改成清單依狀態分組、組標題寫「已耗盡 · 1 項」）、Dash-Clear（沒有需要補貨：摘要寫 0、說明下一個預計用完、提醒還沒設定消耗速率的商品）、Dash-First（還沒有商品：引導新增商品）。待決定：A 或 B；Dash-Clear 底部「另有 N 項還沒設定消耗速率」提示要不要放；「庫存正常」最多列幾項。確認後寫入 design.md 再實作 9.1。
 - **待使用者回報**：回家後用 iPhone 測試（步驟見 `docs/setup-frontend.md` 第 9 節）：購買記錄的日期選擇器與 ERR-012 換行、新增購買記錄（商品選單、數字鍵盤、更新剩餘數量對話框）、商品頁操作、門牌 Logo。結果回報後再決定要不要調整。
 - **待回寫規格**：目前沒有（K-17～K-20 已於 2026-11-03 回寫 design.md v4.2）。
 - App 名稱「溫叨@Pantry」（`src/constants/app.ts`），Logo A 門牌 5888（`frontend/brand/`）。
