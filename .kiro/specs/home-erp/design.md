@@ -1,7 +1,8 @@
 # Design Document
 
-> 版本：v4.2（2026-11-03）
-> 變更摘要：v4.2 回寫 K-17～K-20（使用者同意）：task 8.4～8.7 新增的 store 方法（updateRemaining、listFields、fetchRecentStores、fetchRecord、fetchFieldValues）、元件（PurchaseForm、RemainingDialog、DeleteRecordDialog）、lib（purchaseView 的 priceComparisonOf / purchaseSummary、purchaseForm 的 PurchaseFormInitial、feedback）、色彩變數 --price-lower-* 與 --danger，以及詳情、編輯、刪除的行為細節。
+> 版本：v4.3（2026-11-03）
+> 變更摘要：v4.3 首頁設計稿確認（設計稿 Dash、Dash-Clear、Dash-First；使用者選 A 照規格）：補上首頁的排序、第二行文字、「庫存正常」最多 5 項、沒有需要補貨與還沒有商品的畫面、未設定消耗速率提示。
+> v4.2 變更摘要：v4.2 回寫 K-17～K-20（使用者同意）：task 8.4～8.7 新增的 store 方法（updateRemaining、listFields、fetchRecentStores、fetchRecord、fetchFieldValues）、元件（PurchaseForm、RemainingDialog、DeleteRecordDialog）、lib（purchaseView 的 priceComparisonOf / purchaseSummary、purchaseForm 的 PurchaseFormInitial、feedback）、色彩變數 --price-lower-* 與 --danger，以及詳情、編輯、刪除的行為細節。
 > v4.1 變更摘要：v4.1 App 更名「溫叨Pantry」→「溫叨@Pantry」（使用者決定）：manifest name / short_name、頂欄名稱。
 > v4.0 變更摘要：v4.0 購買記錄設計稿確認（設計稿 Pur-* 8 張，使用者同意 4 項提案）：新增「購買記錄」設計段落（列表篩選、新增 / 編輯表單與 CustomFieldInput、錯誤顯示與錯誤摘要、存檔後更新剩餘數量、詳情的價格比較、刪除確認）。
 > v3.9 變更摘要：v3.9 Logo A 定稿（台北市門牌 5888，使用者選定）：頂欄與登入頁改用 BrandLogo 元件，App 圖示、瀏覽器分頁圖示由 frontend/brand/build-icons.mjs 產生。
@@ -970,10 +971,14 @@ graph LR
 - **表單**：標籤放在輸入框**上方**（不用 placeholder 代替標籤），錯誤訊息放在該欄位正下方。
   - 自訂欄位在標籤下方用 12px 小字標示「算數量」（數量組成欄位）或「只記錄」（一般資訊欄位）。
   - 自動計算結果放在 `--accent-soft` 淡藍區塊，並附上算式，例如「100 × 12」「599 ÷ 1,200」。
-- **首頁（儀表板）**：
-  - 標題「補貨提醒」和主要按鈕「記一筆」放在同一列。
-  - 下方是兩格摘要（已耗盡 N 項 / 即將耗盡 N 項），接著是需要補貨的清單（分類圖塊 + 名稱 + 第二行說明 + 狀態標籤）。
-  - 最後是「庫存正常」的精簡清單，附「全部商品」連結。
+- **首頁（儀表板）**（v4.3，2026-11-03 設計稿 Dash、Dash-Clear、Dash-First 確認；使用者選 A，不採用「依狀態分組」提案 Dash-Grouped）：
+  - 標題「補貨提醒」和主要按鈕「記一筆」（到新增購買記錄）放在同一列；標題下寫「11/3（二）· 追蹤中 N 項」（N = 算得出預計用完日的商品數）。
+  - 下方是兩格摘要（已耗盡 N 項 / 即將耗盡（7 天內）N 項），數量為 0 時寫「0 項」並改成白底灰字（不用狀態色）。
+  - 接著是需要補貨的清單（AC-7.6）：所有「已耗盡」與「即將耗盡」的商品，排序與商品列表相同（已耗盡在前，再依預計用完日早的在前）；每列與商品列表同一個樣子（分類圖塊 + 品牌品名 + 第二行 `productSummary` + `DepletionBadge`），點選進入商品詳情。
+  - 最後是「庫存正常」的精簡清單（狀態 normal，依預計用完日早的在前，**最多 5 項**），每列「品牌 品名」與右側「剩 N 天 · M/D」，附「全部商品」連結；沒有正常的商品時不顯示這張卡片。
+  - **沒有需要補貨**（設計稿 Dash-Clear）：摘要兩格寫 0；清單位置改成「目前沒有需要補貨的商品」，有正常商品時第二行寫「下一個預計用完：品牌 品名，M/D（剩 N 天）」；有未設定消耗速率的商品時，最下面加一行「另有 N 項商品還沒設定消耗速率，設定後才會出現在這裡。」＋「到商品頁設定」連結（使用者同意，只在有未設定時顯示）。
+  - **還沒有商品**（設計稿 Dash-First）：不顯示「記一筆」與摘要；卡片「還沒有任何商品」＋說明「新增商品並設定每月或每週用量，快用完的商品就會出現在這裡。」＋主要按鈕「新增商品」＋文字連結「先整理分類」。
+  - 載入失敗：卡片內顯示錯誤訊息（例如 ERR-014）與「重新載入」。
 - **圖示**：線條風格，粗細 1.6px，大小 16–22px，全站同一套。不使用 emoji。
 
 #### 分類管理（2026-11-02 設計稿確認）
