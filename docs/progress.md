@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v7.5（2026-11-03）
-> 變更摘要：v7.5 task 8.8（購買記錄測試對照）完成，task 8 全部完成；新增「task 8.8 測試對照」一節。
+> 版本：v7.6（2026-11-03）
+> 變更摘要：v7.6 K-17～K-20 已回寫 design.md v4.2（使用者同意）。
+> v7.5 task 8.8（購買記錄測試對照）完成，task 8 全部完成；新增「task 8.8 測試對照」一節。
 > v7.4 task 8.7（刪除確認對話框）完成；新增 e2e purchase-delete；K-20 待同意回寫。
 > v7.3 task 8.6（編輯購買記錄）完成；新增 e2e purchase-edit；設計稿更名為「溫叨@Pantry」；K-19 待同意回寫。
 > v7.2 App 更名「溫叨Pantry」→「溫叨@Pantry」（程式、PWA、規格、文件）；requirements v1.5、design v4.1。
@@ -84,8 +85,8 @@
 
 | 文件 | 版本 |
 |---|---|
-| requirements.md | v1.4 |
-| design.md | v4.0 |
+| requirements.md | v1.5 |
+| design.md | v4.2 |
 | tasks.md | v1.7（勾選狀態持續更新） |
 | BDD.md | v1.1 |
 | review-notes.md | v1.2 |
@@ -261,10 +262,10 @@ tasks.md 8.8 的每一項都對到自動化測試；「8.8 補」是這次補上
 | K-14 | task 6.4 | **（已回寫 design.md v3.1）** design.md「UI 設計規範 › 元件 › 頂欄」寫「子頁的頂欄改成返回箭頭 + 頁面標題」，會拿掉右上角使用者名稱與登出，與 AC-1.5「已登入時右上角顯示使用者名稱與登出」衝突。實作改為：頂欄維持不變，子頁在內容區上方放「返回箭頭 + 頁面標題（20px h1）」 |
 | K-15 | task 6.6 | **（已回寫 design.md v3.1、tasks.md v1.5）** tasks.md 6.6（及後續整合測試）寫「MSW 回傳 400」；實作改用自製的 `test-utils/fakePocketBase.ts`（記憶體假資料庫，模擬 UNIQUE / Restrict / 連線錯誤），不另裝 MSW。重要流程另以無頭 Chrome 對正式 build 做 e2e |
 | K-16 | task 8.1 | **（已回寫 design.md v3.7）** design.md 的 usePurchaseStore 範例：不用 `expand: 'product,product.category,user'`，商品、分類、新增者由頁面對照已載入的清單（沿用 7.5）；檢查與計算拆到 `lib/purchaseForm.ts`（頁面共用），不通過丟出 `FieldsValidationError`（欄位 → 訊息）；`PurchaseFormData` 加上 `customFields`（商品所屬分類的欄位定義）、`totalPrice` 可為 null、`fieldValues` 為文字；日期篩選改為 `purchase_date >= 'YYYY-MM-DD 00:00:00.000Z'`、`<= 'YYYY-MM-DD 23:59:59.999Z'`（用 `pb.filter()`）；排序 `-purchase_date,-created`；新增時欄位值寫入失敗會刪除剛建立的記錄 |
-| K-17 | task 8.4 | **（待使用者同意）** design.md 補上 task 8.4 新增的 store 方法：`productStore.updateRemaining(id, remaining)`（只更新剩餘數量與更新日，給 CONFIRM-002 對話框用）、`purchaseStore.fetchRecentStores()` / `recentStores`（常去的地點）、`customFieldStore.listFields(categoryId)`（表單用，不查使用狀況）；元件 `PurchaseForm.vue`（新增 / 編輯共用）、`RemainingDialog.vue`（`lib/feedback.askUpdateRemaining` 開啟） |
-| K-18 | task 8.5 | **（待使用者同意）** design.md 補上 task 8.5 新增的：`purchaseStore.fetchRecord(id)`（用 getOne，404 回傳 null 顯示「找不到這筆記錄」）、`purchaseStore.fetchFieldValues(recordId)`；`lib/purchaseView.ts` 的 `priceComparisonOf`（價格比較的畫面文字）；UI 設計規範的色彩加上 `--price-lower-bg #e3f4dc` / `--price-lower-ink #24501a`（比歷史均價低的綠色）；詳情頁的包裝規格只列有填值的欄位 |
-| K-19 | task 8.6 | **（待使用者同意）** design.md「編輯購買記錄」補上：按鈕文字「儲存變更」；存檔後 MSG-005 → 回到這筆記錄的詳情（返回、取消也回詳情）；編輯不詢問更新剩餘數量（CONFIRM-002 只在新增）；`PurchaseFormInitial` 放在 `lib/purchaseForm.ts` |
-| K-20 | task 8.7 | **（待使用者同意）** design.md「刪除確認」補上：元件 `DeleteRecordDialog.vue`（`feedback.confirmDeleteRecord(summary)` 開啟，焦點預設在「取消」）；刪除後 MSG-006 → 回購買記錄列表並保留篩選；失敗時提示錯誤留在詳情；UI 設計規範色彩加上 `--danger #c41c29` |
+| K-17 | task 8.4 | **（已回寫 design.md v4.2）** design.md 補上 task 8.4 新增的 store 方法：`productStore.updateRemaining(id, remaining)`（只更新剩餘數量與更新日，給 CONFIRM-002 對話框用）、`purchaseStore.fetchRecentStores()` / `recentStores`（常去的地點）、`customFieldStore.listFields(categoryId)`（表單用，不查使用狀況）；元件 `PurchaseForm.vue`（新增 / 編輯共用）、`RemainingDialog.vue`（`lib/feedback.askUpdateRemaining` 開啟） |
+| K-18 | task 8.5 | **（已回寫 design.md v4.2）** design.md 補上 task 8.5 新增的：`purchaseStore.fetchRecord(id)`（用 getOne，404 回傳 null 顯示「找不到這筆記錄」）、`purchaseStore.fetchFieldValues(recordId)`；`lib/purchaseView.ts` 的 `priceComparisonOf`（價格比較的畫面文字）；UI 設計規範的色彩加上 `--price-lower-bg #e3f4dc` / `--price-lower-ink #24501a`（比歷史均價低的綠色）；詳情頁的包裝規格只列有填值的欄位 |
+| K-19 | task 8.6 | **（已回寫 design.md v4.2）** design.md「編輯購買記錄」補上：按鈕文字「儲存變更」；存檔後 MSG-005 → 回到這筆記錄的詳情（返回、取消也回詳情）；編輯不詢問更新剩餘數量（CONFIRM-002 只在新增）；`PurchaseFormInitial` 放在 `lib/purchaseForm.ts` |
+| K-20 | task 8.7 | **（已回寫 design.md v4.2）** design.md「刪除確認」補上：元件 `DeleteRecordDialog.vue`（`feedback.confirmDeleteRecord(summary)` 開啟，焦點預設在「取消」）；刪除後 MSG-006 → 回購買記錄列表並保留篩選；失敗時提示錯誤留在詳情；UI 設計規範色彩加上 `--danger #c41c29` |
 | K-7 | task 1.6 | purchase_record_field_values 同 K-3，改為 `(purchase_record, custom_field)` UNIQUE INDEX + 前端保證 |
 
 ## 下次接手時
@@ -283,7 +284,7 @@ git pull
 - **已完成**：task 1～7（環境、認證、分類、商品）、task 8（購買記錄：store、CustomFieldInput、列表、新增、詳情、編輯、刪除、測試對照）。
 - **下一步：task 9 儀表板與補貨提醒**：照工作慣例 2，**新畫面先做設計稿**（呼叫 ui-ux-pro-max、taste-skill，依 design.md「UI 設計規範」，參考 task 2.6 選定的 B-Home 風格），使用者確認後才實作。先讀 tasks.md 第 9 節與 requirements REQ-7。
 - **待使用者回報**：回家後用 iPhone 測試（步驟見 `docs/setup-frontend.md` 第 9 節）：購買記錄的日期選擇器與 ERR-012 換行、新增購買記錄（商品選單、數字鍵盤、更新剩餘數量對話框）、商品頁操作、門牌 Logo。結果回報後再決定要不要調整。
-- **待使用者決定**：K-17～K-20 是否回寫 design.md（task 8.4～8.7 新增的 store 方法、元件、色彩變數、編輯與刪除的行為，見「待回寫規格的變更」）。
+- **待回寫規格**：目前沒有（K-17～K-20 已於 2026-11-03 回寫 design.md v4.2）。
 - App 名稱「溫叨@Pantry」（`src/constants/app.ts`），Logo A 門牌 5888（`frontend/brand/`）。
 - 設計稿：https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf （標題「溫叨@Pantry 設計稿」；購買記錄在 Pur-* 那排，Logo 在最下排；本機原始檔在 `.design-canvas/`，不進 git）。
 

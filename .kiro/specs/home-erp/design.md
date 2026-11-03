@@ -1,7 +1,8 @@
 # Design Document
 
-> 版本：v4.1（2026-11-03）
-> 變更摘要：v4.1 App 更名「溫叨Pantry」→「溫叨@Pantry」（使用者決定）：manifest name / short_name、頂欄名稱。
+> 版本：v4.2（2026-11-03）
+> 變更摘要：v4.2 回寫 K-17～K-20（使用者同意）：task 8.4～8.7 新增的 store 方法（updateRemaining、listFields、fetchRecentStores、fetchRecord、fetchFieldValues）、元件（PurchaseForm、RemainingDialog、DeleteRecordDialog）、lib（purchaseView 的 priceComparisonOf / purchaseSummary、purchaseForm 的 PurchaseFormInitial、feedback）、色彩變數 --price-lower-* 與 --danger，以及詳情、編輯、刪除的行為細節。
+> v4.1 變更摘要：v4.1 App 更名「溫叨Pantry」→「溫叨@Pantry」（使用者決定）：manifest name / short_name、頂欄名稱。
 > v4.0 變更摘要：v4.0 購買記錄設計稿確認（設計稿 Pur-* 8 張，使用者同意 4 項提案）：新增「購買記錄」設計段落（列表篩選、新增 / 編輯表單與 CustomFieldInput、錯誤顯示與錯誤摘要、存檔後更新剩餘數量、詳情的價格比較、刪除確認）。
 > v3.9 變更摘要：v3.9 Logo A 定稿（台北市門牌 5888，使用者選定）：頂欄與登入頁改用 BrandLogo 元件，App 圖示、瀏覽器分頁圖示由 frontend/brand/build-icons.mjs 產生。
 > v3.8 變更摘要：v3.8 App 更名「家庭ERP」→「溫叨Pantry」（使用者決定）：manifest name / short_name、頂欄名稱、launchd 設定 com.wendaopantry.pocketbase；畫面上的名稱集中在 constants/app.ts。
@@ -385,13 +386,19 @@ frontend/
 │   ├── components/           # 可重用元件
 │   │   ├── PriceTrendChart.vue    # Chart.js 價格趨勢圖
 │   │   ├── CustomFieldInput.vue   # 動態自訂欄位輸入
+│   │   ├── PurchaseForm.vue       # 購買記錄表單（新增 / 編輯共用，task 8.4）
+│   │   ├── RemainingDialog.vue    # 存檔後更新剩餘數量（CONFIRM-002，task 8.4）
+│   │   ├── DeleteRecordDialog.vue # 刪除購買記錄確認（CONFIRM-001，task 8.7）
 │   │   └── DepletionBadge.vue     # 消耗狀態標籤
 │   ├── layouts/              # 版面布局
 │   │   └── MainLayout.vue    # 導覽列 + 使用者資訊 + 內容區
 │   ├── router/               # Vue Router
 │   │   └── index.ts
-│   ├── lib/                  # 第三方整合
-│   │   └── pocketbase.ts     # PocketBase client 初始化
+│   ├── lib/                  # 第三方整合與頁面共用的純函數
+│   │   ├── pocketbase.ts     # PocketBase client 初始化
+│   │   ├── purchaseForm.ts   # 購買記錄表單的檢查與計算（新增 / 編輯共用）
+│   │   ├── purchaseView.ts   # 購買記錄的畫面文字（金額、日期、價格比較、刪除摘要）
+│   │   └── feedback.ts       # 提示與對話框（Notify、刪除確認、更新剩餘數量）
 │   ├── boot/                 # Quasar boot 檔案
 │   │   └── pocketbase.ts     # 啟動時初始化 PocketBase + authStore
 │   ├── App.vue
@@ -511,6 +518,9 @@ export default defineBoot(async ({ store }) => {
 - 讀取：
   - `fetchByProduct(productId): Promise<PurchaseView[]>`（task 7.5）：只取該商品的記錄，回傳給商品詳情頁使用，不寫入 `records`。
   - `fetchRecords(filters?)`（task 8.1）：購買記錄列表。`categoryId` 用 `product.category` 篩選；`startDate` / `endDate` 可單獨或一起使用，結束日包含當天；結束早於開始丟出 `FieldsValidationError({ endDate: ERR-012 })`，不查詢。結果寫入 `records`，getter `views` 轉成畫面用資料。
+  - `fetchRecord(id): Promise<PurchaseRecordRecord | null>`（task 8.5）：一筆記錄（`getOne`），**404 回傳 null**（頁面顯示「找不到這筆記錄，可能已被刪除」），其他錯誤照樣丟出（連線失敗顯示 ERR-014）。詳情與編輯頁使用。
+  - `fetchFieldValues(recordId): Promise<FieldValueRecord[]>`（task 8.5）：一筆記錄的自訂欄位值（EAV）。詳情與編輯頁使用。
+  - `recentStores` 與 `fetchRecentStores()`（task 8.4）：「常去的地點」按鈕，最近 100 筆記錄用過的地點，最近用的在前、不重複、最多 6 個；讀不到時頁面忽略（只是方便輸入）。
   - `users` 與 `fetchUsers()`（task 7.5）：家庭成員 id 與名稱，依建立順序（決定頭像顏色，`lib/personTone.ts`）；getter `userIndex(id)`、`userName(id)`。
   - **不使用 `expand`**：商品名稱、分類、新增者由頁面對照已載入的商品 / 分類 / 使用者清單（頭像顏色需要全部使用者的順序）。
   - 排序一律 `-purchase_date,-created`（同一天後建立的在前；created 精確到毫秒）。
@@ -519,6 +529,11 @@ export default defineBoot(async ({ store }) => {
   - `createRecord(data)`：寫入前端算好的 `quantity` / `unit_price`（缺失寫 0）、`user` = 目前登入者（AC-5.6），再逐筆寫入 `purchase_record_field_values`；欄位值寫到一半失敗時刪除剛建立的記錄（cascade 一起刪掉已寫入的值），不留下半套資料。資料庫擋下總價（min 0.01）時轉成 ERR-010。
   - `updateRecord(id, data)`：重新計算，不送 `user`（新增者不變）；同步欄位值：改了的更新、清空的刪除、新填的新增、不屬於目前分類的（換了商品）刪除。
   - `deleteRecord(id)`：刪除記錄，欄位值由資料庫 cascade 刪除。
+
+**其他 store 為購買記錄新增的方法**（task 8.4，v4.2 回寫 K-17）：
+
+- `useProductStore.updateRemaining(id, remaining)`：只更新 `remaining_quantity` 與 `remaining_updated_at`（= 今天），給 CONFIRM-002 對話框使用；`remaining` 為 null 時清除（不追蹤）。成功顯示 MSG-007。
+- `useCustomFieldStore.listFields(categoryId)`：只取某分類的欄位定義（依 `display_order`），給購買記錄表單使用；不查「是否已被購買記錄使用」（那是分類管理頁才需要的）。
 
 ```typescript
 // src/lib/purchaseForm.ts（摘要）
@@ -532,6 +547,17 @@ export interface PurchaseFormData {
   quantity: number | null         // 分類沒有數量組成欄位時直接輸入（AC-4.4）
   customFields: PurchaseField[]   // 商品所屬分類的自訂欄位
   fieldValues: Record<string, string>  // 自訂欄位 id → 輸入的文字
+}
+
+// 表單的初始值（components/PurchaseForm.vue 的 initial；編輯頁帶入原本的值；數字欄位是文字）
+// 放在 lib 而不是 .vue 檔：ESLint 讀不到 .vue 匯出的型別
+export interface PurchaseFormInitial {
+  productId: string
+  purchaseDate: string
+  store: string
+  totalPrice: string
+  quantity: string                // 資料庫的 0（沒填）帶成 ''
+  fieldValues: Record<string, string>
 }
 
 // src/stores/purchase.ts 的日期篩選（用 pb.filter() 安全組字串，日期存成 'YYYY-MM-DD 00:00:00.000Z'）
@@ -780,6 +806,17 @@ export function compareWithHistoricalAverage(
 }
 ```
 
+畫面文字由 `lib/purchaseView.ts` 的 `priceComparisonOf(current, history, unit)` 產生（task 8.5，v4.2 回寫 K-18）：`history` 傳入**同一商品的全部記錄（含這一筆）**，回傳 `{ kind, title, detail, basis }`：
+
+| kind | title | detail | basis |
+|---|---|---|---|
+| `higher` | 比歷史均價高 | 每抽多 0.0056 元（+1.1%） | 歷史均價 0.4936 元/抽 · 3 筆，含這一筆 |
+| `lower` | 比歷史均價低 | 每抽少 0.0361 元（−7.3%） | 同上 |
+| `equal` | 和歷史均價相同 | （空） | 同上 |
+| `na` | STATUS-006 無法比較 | 這筆沒有填數量 | 歷史均價 0.4936 元/抽 · 3 筆（沒有「含這一筆」；沒有歷史均價時空白） |
+
+百分比 = 差額 ÷ 歷史均價，四捨五入到 1 位小數，負號用「−」；四捨五入後是 0 時寫「不到 0.1%」。
+
 #### 7. 新增購買記錄後更新剩餘數量提示（Q-1）
 
 當使用者成功新增一筆購買記錄後，前端自動彈出 QDialog 詢問「是否更新此商品的剩餘數量？」，預先帶入該商品**目前的剩餘數量**（尚未設定時留空），使用者修改後手動儲存。不預設為 0，避免使用者直接按儲存就讓商品變成「即將耗盡」。此邏輯由前端 store + 元件實作，不需 PocketBase Hook。
@@ -792,6 +829,8 @@ export function compareWithHistoricalAverage(
 // 4. 使用者確認後，更新 products 的 remaining_quantity 與 remaining_updated_at
 //    remaining_updated_at = 當天日期（前端自動填入）
 ```
+
+實作（task 8.4，v4.2 回寫 K-17）：新增頁存檔成功後呼叫 `lib/feedback.ts` 的 `askUpdateRemaining(options)`，以 Quasar Dialog 開啟 `components/RemainingDialog.vue`（全域，頁面換到購買記錄列表後仍會顯示），儲存時呼叫 `productStore.updateRemaining`。**編輯購買記錄不詢問**（AC-7.13 只規定新增時）。
 
 ### 頁面與路由對照
 
@@ -856,6 +895,8 @@ graph LR
 | `--accent-soft` / `--accent-ink` | `#dcf1ff` / `#0a3a80` | 自動計算結果區塊、品牌淡色 | `$secondary`（淡色）|
 | `--positive` | `#2f7a45` | 成功提示 | `$positive` |
 | `--negative` | `#c41c29` | 錯誤提示 | `$negative` |
+| `--danger` | `#c41c29` | 危險操作：刪除按鈕紅底、「刪除這筆記錄」紅字（對白 5.9:1；v4.2） | `$negative` |
+| `--price-lower-bg` / `--price-lower-ink` | `#e3f4dc` / `#24501a` | 價格比較「比歷史均價低」（同分類色第 5 組綠；高於用 `--status-soon-*`、相同與無法比較用 `--status-neutral-*`；v4.2） | — |
 | `--warning` | `#92400e` | 警告提示 | `$warning` |
 
 **消耗狀態**（淡色底 + 同色系深色字；文字一律用訊息集中表）：
@@ -968,9 +1009,9 @@ graph LR
 - **CustomFieldInput**（task 8.2）：卡片標題「{分類}的包裝規格」；有數量組成欄位時副標「『算數量』的欄位相乘＝總數量」。欄位三欄並排（依 display_order），每欄：標籤、輸入框（number 型別 `inputmode="decimal"`、輸入時整理成數字）、下方標示「算數量」（主色）或「只記錄」（灰）。數量組成欄位離開欄位時檢查，0 或負數 → ERR-008 顯示在該欄位下方。分類沒有數量組成欄位時，數量欄位（直接輸入、選填）放在同一張卡片的最前面，卡片標題改為「數量與其他資訊」，並說明「沒填數量時單位均價顯示『無法計算』」（設計稿 Pur-New-Qty）。
 - **錯誤顯示**（AC-5.3、5.11）：每個錯誤顯示在**該欄位正下方**（紅框、`aria-invalid`、`aria-describedby`）；送出失敗時另在表單上方顯示**錯誤摘要**（`role="alert"`，「有 N 個欄位需要修正」，每項連到該欄位；使用者同意提案 4）。總價 0 或負數只顯示 ERR-010。
 - **存檔後**（使用者同意提案 2）：顯示 MSG-004 →**回到購買記錄列表** → 跳出 CONFIRM-002 對話框：預先帶入目前剩餘數量（未設定時留空）與消耗單位，說明「儲存時記為今天更新」；按鈕「先不用 / 更新剩餘數量」。
-- **編輯購買記錄**（task 8.6）：沿用新增頁表單，標題改「編輯購買記錄」、預先帶入原本的值。
-- **購買記錄詳情**（task 8.5）：商品卡（分類圖塊、商品名稱連到商品詳情、分類、總價）；購入日期、購買地點、新增者（頭像＋名稱＋新增時間）；包裝規格欄位值；總數量與單位均價；**價格比較**（AC-8.9、8.10）同時用圖示、文字、顏色表示，不只靠顏色：高於（↑、琥珀色）、低於（↓、綠色）、相同（＝、灰）、STATUS-006「無法比較」（灰，寫出原因）；另外顯示每單位差額與百分比、歷史均價用了幾筆（含這一筆）（使用者同意提案 3）。底部「編輯這筆記錄」、「刪除這筆記錄」（紅字）。
-- **刪除確認**（task 8.7）：CONFIRM-001 對話框（`role="alertdialog"`），寫出是哪一筆，並提醒「刪除後無法復原，商品的歷史均價會重新計算」；按鈕「取消 / 刪除」（紅底）。
+- **編輯購買記錄**（task 8.6）：沿用新增頁表單，標題改「編輯購買記錄」、預先帶入原本的值（記錄與自訂欄位值；資料庫數量 0 = 沒填 → 數量欄位留空）；按鈕「取消 / 儲存變更」。存檔 → MSG-005 →**回到這筆記錄的詳情**；返回箭頭與「取消」也回詳情；不詢問更新剩餘數量（v4.2 回寫 K-19）。
+- **購買記錄詳情**（task 8.5）：商品卡（分類圖塊、商品名稱連到商品詳情、分類、總價）；購入日期、購買地點、新增者（頭像＋名稱＋新增時間）；包裝規格欄位值；總數量與單位均價；**價格比較**（AC-8.9、8.10）同時用圖示、文字、顏色表示，不只靠顏色：高於（↑、琥珀色）、低於（↓、綠色）、相同（＝、灰）、STATUS-006「無法比較」（灰，寫出原因）；另外顯示每單位差額與百分比、歷史均價用了幾筆（含這一筆）（使用者同意提案 3）。底部「編輯這筆記錄」、「刪除這筆記錄」（紅字）。包裝規格只列有填值的欄位（依 display_order，數字欄位加千分位）；從篩選過的列表進來時返回箭頭回到同一個篩選；記錄不存在時顯示「找不到這筆記錄，可能已被刪除」與回列表的連結（v4.2 回寫 K-18）。
+- **刪除確認**（task 8.7）：CONFIRM-001 對話框（`role="alertdialog"`），寫出是哪一筆，並提醒「刪除後無法復原，商品的歷史均價會重新計算」；按鈕「取消 / 刪除」（紅底）。實作（v4.2 回寫 K-20）：元件 `components/DeleteRecordDialog.vue`，由 `lib/feedback.ts` 的 `confirmDeleteRecord(summary)` 開啟（分類刪除仍用原本的 `confirmDelete`）；`summary` 由 `lib/purchaseView.ts` 的 `purchaseSummary` 產生（「10/31 全聯 · 春風 抽取式衛生紙 · 599 元」）；打開時焦點在「取消」，取消、點背景、Esc 都不刪。刪除成功 → MSG-006 → 回購買記錄列表（**保留原本的篩選**）；失敗時跳錯誤提示（例如 ERR-014）、留在詳情。對話框開著時「刪除這筆記錄」停用，按下「刪除」後才顯示「刪除中…」。
 
 #### 禁止事項（設計 skills 的共同規則）
 
