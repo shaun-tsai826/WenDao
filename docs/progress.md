@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v6.9（2026-11-03）
-> 變更摘要：v6.9 task 8.4（新增購買記錄）完成；新增 e2e purchase-new；K-17 待同意回寫。
+> 版本：v7.0（2026-11-03）
+> 變更摘要：v7.0 交接整理：「目前位置」更新到 task 8.4；工作慣例補上驗證順序、回報格式、e2e 與 Quasar 對話框的注意事項。
+> v6.9 task 8.4（新增購買記錄）完成；新增 e2e purchase-new；K-17 待同意回寫。
 > v6.8 setup-frontend.md v1.9 新增「在手機上測試（家裡 Wi-Fi）」；待使用者回家後在手機上測試。
 > v6.7 task 8.3（購買記錄列表）完成；新增 e2e purchases。
 > v6.6 task 8.2（CustomFieldInput）完成。
@@ -248,12 +249,14 @@ git pull
 
 > 新電腦的 `backend/pocketbase` 與 `pb_data/` 不在 git 裡：執行檔請照 `docs/setup-pocketbase.md` 重新下載；資料庫要另外搬移或備份還原。前端套件：`cd frontend && npm install && (cd src-pwa && npm install)`。
 
-### 目前位置（2026-11-02）
+### 目前位置（2026-11-03）
 
-- **待使用者回家後在 iPhone 上測試**（步驟見 `docs/setup-frontend.md` 第 9 節）：購買記錄的日期選擇器與 ERR-012 換行、商品頁操作、新門牌 Logo；結果回報後再決定要不要調整。
-- 已完成：task 1～7、8.1～8.3；購買記錄設計稿已確認（設計稿 Pur-*，design.md v4.0「購買記錄」）。**下一步：task 8.5 PurchaseDetail**（設計稿 Pur-Detail：價格比較、自訂欄位值、新增者與新增時間；編輯 / 刪除入口）。新增 / 編輯頁直接用 `lib/purchaseForm.ts` 做即時檢查與數量預覽。
-- 商品頁設計稿已確認：設計稿最下面一排 Prod-List / Prod-New / Prod-Detail / Prod-Edit（https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf ；本機原始檔在 `.design-canvas/`，不進 git）。
-- 待使用者決定：K-17 是否回寫 design.md。
+- **已完成**：task 1～7（環境、認證、分類、商品）、task 8.1～8.4（購買記錄 store、CustomFieldInput、列表、新增）。
+- **下一步：task 8.5 PurchaseDetail 購買記錄詳情**（設計稿 Pur-Detail；design.md v4.0「購買記錄 › 購買記錄詳情」）：價格比較（高於 / 低於 / 相同 / 無法比較，圖示＋文字＋顏色，另顯示差額、百分比、歷史均價用了幾筆含這一筆）、自訂欄位值、新增者與新增時間、「編輯這筆記錄」與「刪除這筆記錄」入口。接著 8.6 編輯（共用 `components/PurchaseForm.vue`）、8.7 刪除確認、8.8 測試對照。
+- **待使用者回報**：回家後用 iPhone 測試（步驟見 `docs/setup-frontend.md` 第 9 節）：購買記錄的日期選擇器與 ERR-012 換行、新增購買記錄（商品選單、數字鍵盤、更新剩餘數量對話框）、商品頁操作、門牌 Logo。結果回報後再決定要不要調整。
+- **待使用者決定**：K-17 是否回寫 design.md（task 8.4 新增的 store 方法與元件，見「待回寫規格的變更」）。
+- App 名稱「溫叨Pantry」（`src/constants/app.ts`），Logo A 門牌 5888（`frontend/brand/`）。
+- 設計稿：https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf （標題「溫叨Pantry 設計稿」；購買記錄在 Pur-* 那排，Logo 在最下排；本機原始檔在 `.design-canvas/`，不進 git）。
 
 ### 工作慣例（Claude Code 接手時照做）
 
@@ -267,3 +270,13 @@ git pull
 5. **修 bug**：先寫會失敗的回歸測試，再修正。
 6. 測試工具：`src/test-utils/fakePocketBase.ts`（記憶體假資料庫）、`mountPage.ts`（頁面掛載，含 QLayout）、`setup.ts`。
 7. Repo 是 public：真實 email、密碼、token 不可寫進任何檔案。
+8. **驗證順序固定**：單元測試 → `lint:check` → `typecheck` → e2e，用 `&&` 串起來，任何一步失敗就停下、不 commit（task 8.3 曾因 e2e 前沒跑 typecheck，正式 build 才抓到型別錯誤；Logo 那次用 `;` 串，lint 失敗仍 commit 了）。
+9. **回報格式**：「自己重做一遍的步驟」要寫成可照著重新實作的順序（要寫哪些檔案、先寫哪個測試、為什麼），測試指令放最後當驗收（使用者 2026-11-03 指定）。
+10. **e2e 注意事項**：
+    - 用 CDP 送鍵盤事件時 `keyDown` 要帶 `text`，數字才會真的輸入（日期欄位、下拉選單快速跳選）。
+    - 日期欄位用 Chrome 繁中語系（`--lang=zh-TW`），格式是年 / 月 / 日；欄位要加 `min` / `max`，否則鍵盤可打出 5～6 位數年份。
+    - 下拉選單用 `focus()` 後打英文字母快速跳選（測試資料的品牌用英文開頭）。
+    - 測試資料由每支腳本自己用 API 建立在自己的分類下，不依賴其他腳本改過的種子資料。
+    - `e2e/purchase-contract.mjs` 對真正的 PocketBase 驗證 fakePocketBase 的假設（關聯篩選、日期比較、cascade、錯誤格式）；改 fake 時要一起看。
+11. **Quasar 的坑**：對話框最外層要用 `<div>`（否則點一下就關閉）；對話框裡的欄位要在 `@show` 時聚焦（掛上時開啟動畫還沒結束，focus 會失效）；`h2` 預設行高很大，要自己設 `line-height`；一般 CSS 的 `<style>` 不能用 `//` 註解（SCSS 才可以），Vitest 不會抓到，只有正式 build 會失敗。
+12. **e2e 腳本與 `lint:check`**：`lint:check` 不檢查 `.mjs`，e2e 腳本不要跑 prettier（會整支重排）。產生的檔案（`brand/build-icons.mjs` 產出）已在產生器裡自動跑 prettier。
