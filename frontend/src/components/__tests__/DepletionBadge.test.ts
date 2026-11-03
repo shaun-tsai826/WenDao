@@ -51,3 +51,30 @@ describe('DepletionBadge', () => {
     else expect(badge.text()).toBe(text);
   });
 });
+
+// task 7.8：久未更新（AC-7.14）。列表右側只放一個標籤：已耗盡 / 即將耗盡優先，沒有急迫狀態時放 STATUS-008
+describe('DepletionBadge：久未更新（stale）', () => {
+  const renderStale = (status: DepletionStatus, stale: boolean) =>
+    mount(DepletionBadge, { props: { status, stale } }).find('.depletion-badge');
+
+  it.each([
+    ['normal', STATUS.remainingStale, 'stale'],
+    ['unset', STATUS.remainingStale, 'stale'], // 有剩餘數量但沒速率，數量久未更新仍提醒
+    ['soon', STATUS.soon, 'soon'], // 急迫狀態優先
+    ['depleted', STATUS.depleted, 'depleted'],
+  ] as const)('%s ＋ 久未更新 → 「%s」', (status, text, dataStatus) => {
+    const badge = renderStale(status, true);
+    expect(badge.text()).toBe(text);
+    expect(badge.attributes('data-status')).toBe(dataStatus);
+  });
+
+  it('久未更新用灰色、小一號字（設計稿 Prod-List）', () => {
+    expect(renderStale('normal', true).classes()).toEqual(
+      expect.arrayContaining(['depletion-badge--neutral', 'depletion-badge--small']),
+    );
+  });
+
+  it('沒有久未更新時維持原本的行為（normal 不顯示）', () => {
+    expect(renderStale('normal', false).exists()).toBe(false);
+  });
+});

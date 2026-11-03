@@ -259,7 +259,7 @@
     - 欄位名稱重複被拒（EDGE_CASE）、刪除有紀錄欄位被拒（EDGE_CASE）、修改有紀錄欄位型別被拒（EDGE_CASE）
     - _對應：REQ-2, AC-2.2, AC-2.3, AC-2.4, AC-2.5, AC-2.6, AC-2.7, AC-2.8, AC-2.9, REQ-4, AC-4.7, AC-4.8, AC-4.10_
 
-- [ ] 7. 商品管理頁面
+- [x] 7. 商品管理頁面
   - [x] 7.1 實作 useProductStore
     - fetchProducts / createProduct / updateProduct；建立前查詢同分類 brand+name（忽略大小寫/前後空白/全半角）重複驗證
     - _對應：REQ-3, AC-3.1, AC-3.6_
@@ -294,7 +294,7 @@
     - remaining_updated_at 超過 30 天顯示 STATUS-008、剛好 30 天不顯示（EDGE_CASE，對應 7.8）
     - _對應：REQ-3, AC-3.1, AC-3.3, AC-3.4, AC-3.6, REQ-7, AC-7.9, AC-7.10, AC-7.11, AC-7.14_
 
-  - [ ] 7.8 實作剩餘數量久未更新提醒
+  - [x] 7.8 實作剩餘數量久未更新提醒
     - 在商品列表與商品詳情頁偵測 `remaining_updated_at` 距今超過 30 天
     - 顯示 STATUS-008「剩餘數量已久未更新」提示
     - _對應：REQ-7, AC-7.14_

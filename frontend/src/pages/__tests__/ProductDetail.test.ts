@@ -168,7 +168,8 @@ describe('商品資訊', () => {
     );
     let page = await mountPage('/products/p-spring', routes);
     expect(texts(page, '.stat__value').slice(0, 2)).toEqual(['0.5 包', '10/9']);
-    expect(texts(page, '.stat__sub')).toEqual(['10/1 更新', '已過 24 天 · 每月用 2 包']);
+    // 10/1 更新距今 32 天，久未更新時寫「上次更新」（task 7.8）
+    expect(texts(page, '.stat__sub')).toEqual(['上次更新 10/1', '已過 24 天 · 每月用 2 包']);
 
     document.body.innerHTML = '';
     seed(
@@ -273,6 +274,46 @@ describe('購買記錄（AC-8.2）', () => {
     seed([SPRING], []);
     const page = await mountPage('/products/p-spring', routes);
     expect(text(page, '.purchases .state')).toBe('還沒有購買記錄');
+  });
+});
+
+describe('久未更新（AC-7.14，task 7.8）', () => {
+  it('BDD：今天 11/1、9/30 更新（距今 32 天）→ 資訊塊下方顯示 STATUS-008 提示，剩餘數量寫「上次更新 9/30」', async () => {
+    vi.setSystemTime(new Date(2026, 10, 1, 9, 0));
+    seed([{ ...SPRING, remaining_updated_at: '2026-09-30 00:00:00.000Z' }], []);
+    const page = await mountPage('/products/p-spring', routes);
+    const note = page.wrapper.find('.stale-note');
+    expect(note.attributes('role')).toBe('note');
+    expect(note.find('.stale-note__title').text()).toBe(STATUS.remainingStale);
+    expect(note.find('.stale-note__text').text()).toBe('上次更新 9/30，按下方按鈕確認目前數量');
+    expect(texts(page, '.stat__sub')[0]).toBe('上次更新 9/30');
+    // 提示緊接在「更新剩餘數量與消耗設定」按鈕前面
+    const html = page.wrapper.find('.product').html();
+    expect(html.indexOf('stale-note')).toBeLessThan(html.indexOf('edit-link'));
+  });
+
+  it('剛好 30 天 → 不顯示提示，第二行維持「10/3 更新」', async () => {
+    seed([{ ...SPRING, remaining_updated_at: '2026-10-03 00:00:00.000Z' }], []);
+    const page = await mountPage('/products/p-spring', routes);
+    expect(page.wrapper.find('.stale-note').exists()).toBe(false);
+    expect(texts(page, '.stat__sub')[0]).toBe('10/3 更新');
+  });
+
+  it('商品卡右上角的標籤不受影響（仍顯示消耗狀態）', async () => {
+    seed(
+      [
+        {
+          ...SPRING,
+          consumption_rate: 1,
+          remaining_quantity: 30,
+          remaining_updated_at: '2026-09-01 00:00:00.000Z',
+        },
+      ],
+      [],
+    );
+    const page = await mountPage('/products/p-spring', routes);
+    expect(page.wrapper.find('.stale-note').exists()).toBe(true);
+    expect(page.wrapper.find('.product .depletion-badge').exists()).toBe(false); // 正常狀態不顯示
   });
 });
 

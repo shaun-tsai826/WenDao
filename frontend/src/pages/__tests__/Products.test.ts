@@ -120,7 +120,7 @@ describe('商品列表（AC-7.3）', () => {
     seed();
     const { wrapper } = await mountPage('/products', routes);
     expect(wrapper.findAll('.list__sub').map((n) => n.text())).toEqual([
-      '剩 0.5 包 · 10/9 已用完',
+      '10/1 更新 · 剩 0.5 包 · 10/9 已用完', // 10/1 更新距今 31 天：已耗盡＋久未更新（task 7.8）
       '剩 1 包 · 預計 11/7（剩 6 天）',
       '每月用 2 包',
       '剩 1 瓶 · 預計 11/27（剩 26 天）',
@@ -275,6 +275,63 @@ describe('記住篩選（網址 ?category=）', () => {
     const { wrapper } = await mountPage('/products?category=c-gone', routes);
     expect(chip(wrapper, '全部').attributes('aria-checked')).toBe('true');
     expect(names(wrapper)).toHaveLength(5);
+  });
+});
+
+describe('久未更新（AC-7.14，task 7.8）', () => {
+  const at = (date: string) => `${date} 00:00:00.000Z`;
+  const tracked = { consumption_rate: 1, consumption_period: 'monthly' as const };
+
+  it('BDD：9/30 更新（距今 32 天）→ 顯示 STATUS-008；剛好 30 天（10/2）不顯示；31 天（10/1）顯示', async () => {
+    seed([
+      product({
+        id: 'p-32',
+        brand: 'A',
+        name: '32 天',
+        ...tracked,
+        remaining_quantity: 3,
+        remaining_updated_at: at('2026-09-30'),
+      }),
+      product({
+        id: 'p-30',
+        brand: 'B',
+        name: '30 天',
+        ...tracked,
+        remaining_quantity: 3,
+        remaining_updated_at: at('2026-10-02'),
+      }),
+      product({
+        id: 'p-31',
+        brand: 'C',
+        name: '31 天',
+        ...tracked,
+        remaining_quantity: 3,
+        remaining_updated_at: at('2026-10-01'),
+      }),
+    ]);
+    const { wrapper } = await mountPage('/products', routes);
+    const badgeOf = (name: string) =>
+      wrapper
+        .findAll('.list__row')
+        .find((r) => r.find('.list__name').text().includes(name))!
+        .find('.depletion-badge');
+    expect(badgeOf('32 天').text()).toBe(STATUS.remainingStale);
+    expect(badgeOf('31 天').text()).toBe(STATUS.remainingStale);
+    expect(badgeOf('30 天').exists()).toBe(false);
+  });
+
+  it('即將耗盡＋久未更新：標籤維持「即將耗盡」，第二行開頭加上更新日', async () => {
+    seed([
+      product({
+        id: 'p',
+        ...tracked,
+        remaining_quantity: 1.1,
+        remaining_updated_at: at('2026-09-30'),
+      }),
+    ]);
+    const { wrapper } = await mountPage('/products', routes);
+    expect(wrapper.find('.depletion-badge').text()).toBe(STATUS.soon);
+    expect(wrapper.find('.list__sub').text()).toBe('9/30 更新 · 剩 1.1 包 · 預計 11/2（剩 1 天）');
   });
 });
 

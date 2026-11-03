@@ -97,8 +97,18 @@ const PERIOD_LABEL = { monthly: '每月', weekly: '每週' } as const;
  * - 即將耗盡 / 正常：「剩 2 包 · 預計 11/8（剩 6 天）」，當天用完寫「（今天）」
  * - 未設定剩餘數量：「每月用 2 包」
  * - 未設定消耗速率：「計價單位：片」（有剩餘數量時前面加「剩 N 包 · 」）
+ * - task 7.8：已耗盡 / 即將耗盡又久未更新時，開頭加「9/30 更新 · 」提醒數字可能不準
+ *   （右側標籤只放一個，急迫狀態優先；使用者選擇）
  */
 export function productSummary(view: ProductView): string {
+  const urgent = view.status === 'depleted' || view.status === 'soon';
+  const text = summaryBody(view);
+  return view.stale && urgent && view.remainingUpdatedAt
+    ? `${formatMonthDay(view.remainingUpdatedAt)} 更新 · ${text}`
+    : text;
+}
+
+function summaryBody(view: ProductView): string {
   const unit = view.record.consumption_unit;
   const qty = (n: number) => (unit ? `${formatQuantity(n)} ${unit}` : formatQuantity(n));
   const remaining = view.remaining === null ? null : `剩 ${qty(view.remaining)}`;

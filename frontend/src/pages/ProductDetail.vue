@@ -5,7 +5,8 @@
   - 三個資訊塊：剩餘數量、預計用完、歷史均價（含幾筆記錄）
   - 備註與「更新剩餘數量與消耗設定」入口（task 7.6）
   - 購買記錄由新到舊，每筆附新增者頭像
-  - 價格趨勢圖於 task 10.2 加入；久未更新提醒（STATUS-008）於 task 7.8 加入
+  - 久未更新（STATUS-008，task 7.8）：資訊塊下方提示列，緊鄰更新按鈕；剩餘數量第二行改寫「上次更新 M/D」
+  - 價格趨勢圖於 task 10.2 加入
 -->
 <template>
   <q-page class="page">
@@ -53,7 +54,10 @@
               <template v-else>未設定</template>
             </span>
             <span v-if="view.remainingUpdatedAt" class="stat__sub">
-              {{ formatShortDate(view.remainingUpdatedAt, today) }} 更新
+              <template v-if="view.stale">
+                上次更新 {{ formatShortDate(view.remainingUpdatedAt, today) }}
+              </template>
+              <template v-else>{{ formatShortDate(view.remainingUpdatedAt, today) }} 更新</template>
             </span>
           </div>
 
@@ -76,6 +80,16 @@
               <template v-else>{{ purchases.length ? STATUS.cannotCalculate : '—' }}</template>
             </span>
           </div>
+        </div>
+
+        <div v-if="view.stale && view.remainingUpdatedAt" class="stale-note" role="note">
+          <AppIcon name="alert" :size="18" class="stale-note__icon" />
+          <span>
+            <span class="stale-note__title">{{ STATUS.remainingStale }}</span>
+            <span class="stale-note__text">
+              上次更新 {{ formatShortDate(view.remainingUpdatedAt, today) }}，按下方按鈕確認目前數量
+            </span>
+          </span>
         </div>
 
         <p v-if="view.record.consumption_note" class="product__note">
@@ -402,6 +416,32 @@ watch(productId, load);
 
 .stat__sub {
   font-size: 12px;
+}
+
+.stale-note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: var(--status-neutral-bg);
+  color: var(--status-neutral-ink);
+  border-radius: var(--radius-inner);
+  padding: 12px 14px;
+  line-height: 1.5;
+}
+
+.stale-note__icon {
+  flex: none;
+  margin-top: 2px;
+}
+
+.stale-note__title {
+  display: block;
+  font-size: 14px;
+}
+
+.stale-note__text {
+  display: block;
+  font-size: 13px;
 }
 
 .product__note {

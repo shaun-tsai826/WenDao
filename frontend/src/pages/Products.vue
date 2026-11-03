@@ -4,7 +4,7 @@
   - 依急迫程度排序：已耗盡 → 即將耗盡 → 未設定剩餘數量 → 正常 → 未設定消耗速率
   - 每列：分類圖塊、品牌＋品名、第二行（剩餘數量與預計用完日）、狀態標籤（DepletionBadge）
   - 上方依分類篩選，放不下時換行；選擇記在網址 ?category=<id>（從商品詳情按上一頁會回到原本的篩選）
-  - 久未更新提醒（STATUS-008）在 task 7.8 加入
+  - 久未更新（STATUS-008，task 7.8）：沒有急迫狀態時右側標籤改為 STATUS-008；急迫時第二行開頭加更新日
 -->
 <template>
   <q-page class="page">
@@ -68,7 +68,7 @@
           <span class="list__name">{{ view.record.brand }} {{ view.record.name }}</span>
           <span class="list__sub">{{ productSummary(view) }}</span>
         </span>
-        <DepletionBadge :status="view.status" />
+        <DepletionBadge :status="view.status" :stale="view.stale" />
       </router-link>
     </section>
   </q-page>

@@ -206,7 +206,7 @@ describe('productSummary：商品列表第二行', () => {
         remaining_quantity: 1,
         remaining_updated_at: '2026-10-01 00:00:00.000Z',
       }),
-    ).toBe('剩 1 包 · 10/31 已用完');
+    ).toBe('10/1 更新 · 剩 1 包 · 10/31 已用完'); // 10/1 更新距今 31 天，也算久未更新（task 7.8）
   });
 
   it('今天用完：顯示「今天」而不是「剩 0 天」', () => {
@@ -291,5 +291,50 @@ describe('depletionPreview：即時預估用完日', () => {
     expect(depletionPreview(2, null, 'monthly', TODAY_EDIT)).toBeNull();
     expect(depletionPreview(2, 0, 'monthly', TODAY_EDIT)).toBeNull();
     expect(depletionPreview(-1, 4, 'monthly', TODAY_EDIT)).toBeNull();
+  });
+});
+
+// task 7.8：急迫狀態＋久未更新時，第二行開頭加上更新日，提醒數字可能不準（使用者選擇）
+describe('productSummary：久未更新', () => {
+  const view = (over: Partial<ProductRecord>) => toProductView(product(over), TODAY);
+
+  it('即將耗盡＋久未更新（9/30 更新，距今 32 天）→ 開頭加「9/30 更新 · 」', () => {
+    // 剩 1.1 包、每月 1 包 → 33 天 → 11/2（剩 1 天）
+    expect(
+      productSummary(
+        view({
+          consumption_rate: 1,
+          consumption_period: 'monthly',
+          remaining_quantity: 1.1,
+          remaining_updated_at: '2026-09-30 00:00:00.000Z',
+        }),
+      ),
+    ).toBe('9/30 更新 · 剩 1.1 包 · 預計 11/2（剩 1 天）');
+  });
+
+  it('已耗盡＋久未更新 → 也加上更新日', () => {
+    expect(
+      productSummary(
+        view({
+          consumption_rate: 1,
+          consumption_period: 'monthly',
+          remaining_quantity: 0.5,
+          remaining_updated_at: '2026-09-01 00:00:00.000Z',
+        }),
+      ),
+    ).toBe('9/1 更新 · 剩 0.5 包 · 9/16 已用完');
+  });
+
+  it('正常＋久未更新 → 不加（右側標籤已經是 STATUS-008）', () => {
+    expect(
+      productSummary(
+        view({
+          consumption_rate: 1,
+          consumption_period: 'monthly',
+          remaining_quantity: 3,
+          remaining_updated_at: '2026-09-30 00:00:00.000Z',
+        }),
+      ),
+    ).toBe('剩 3 包 · 預計 12/29（剩 58 天）');
   });
 });
