@@ -2,10 +2,13 @@
 import { describe, it, expect } from 'vitest';
 import {
   formatAmount,
+  formatCreatedAt,
+  formatLongDate,
   formatShortDate,
   formatUnitPrice,
   purchaseAmountLine,
   historicalAverageOf,
+  priceComparisonOf,
   toPurchaseView,
 } from '@/lib/purchaseView';
 import { personInitial, personTone } from '@/lib/personTone';
@@ -115,5 +118,83 @@ describe('purchaseAmountLine', () => {
     expect(purchaseAmountLine(toPurchaseView(record({ quantity: 2, unit_price: 30 })), '顆')).toBe(
       '2 顆 · 30.0000 元/顆',
     );
+  });
+});
+
+describe('formatLongDate / formatCreatedAt（購買記錄詳情，task 8.5）', () => {
+  it('購入日期寫完整年月日與星期：2026/10/31（六）', () => {
+    expect(formatLongDate('2026-10-31')).toBe('2026/10/31（六）');
+    expect(formatLongDate('2026-11-02')).toBe('2026/11/2（一）');
+  });
+
+  it('新增時間轉成裝置本地時間（Asia/Taipei）；今年只寫月/日', () => {
+    // 資料庫存 UTC：13:03Z = 台北 21:03
+    expect(formatCreatedAt('2026-10-31 13:03:00.000Z', '2026-11-03')).toBe('10/31 21:03');
+    // UTC 跨日：10/31 17:05Z = 台北 11/1 01:05
+    expect(formatCreatedAt('2026-10-31 17:05:00.000Z', '2026-11-03')).toBe('11/1 01:05');
+    expect(formatCreatedAt('2025-12-31 01:00:00.000Z', '2026-11-03')).toBe('2025/12/31 09:00');
+  });
+
+  it('新增時間格式不對時回傳空字串', () => {
+    expect(formatCreatedAt('', '2026-11-03')).toBe('');
+  });
+});
+
+describe('priceComparisonOf（AC-8.9、8.10，設計稿 Pur-Detail）', () => {
+  const view = (id: string, unitPrice: number, quantity = 1200) =>
+    toPurchaseView(record({ id, unit_price: unitPrice, quantity }));
+  // 設計稿：0.4992、0.4575、0.5242 → 歷史均價 0.4936
+  const history = [view('r-1', 0.4992), view('r-2', 0.4575), view('r-3', 0.5242)];
+
+  it('高於：每單位差額、百分比、歷史均價用了幾筆（含這一筆）', () => {
+    expect(priceComparisonOf(history[0]!, history, '抽')).toEqual({
+      kind: 'higher',
+      title: '比歷史均價高',
+      detail: '每抽多 0.0056 元（+1.1%）',
+      basis: '歷史均價 0.4936 元/抽 · 3 筆，含這一筆',
+    });
+  });
+
+  it('低於：用減號（−）寫百分比', () => {
+    expect(priceComparisonOf(history[1]!, history, '抽')).toMatchObject({
+      kind: 'lower',
+      title: '比歷史均價低',
+      detail: '每抽少 0.0361 元（−7.3%）',
+    });
+  });
+
+  it('相同：只有這一筆時，歷史均價就是它自己', () => {
+    const only = [view('r-1', 0.4992)];
+    expect(priceComparisonOf(only[0]!, only, '抽')).toEqual({
+      kind: 'equal',
+      title: '和歷史均價相同',
+      detail: '',
+      basis: '歷史均價 0.4992 元/抽 · 1 筆，含這一筆',
+    });
+  });
+
+  it('差很少時百分比寫「不到 0.1%」，不寫 +0.0%', () => {
+    const list = [view('a', 5.0001), view('b', 4.9999), view('c', 5)];
+    expect(priceComparisonOf(list[0]!, list, '顆').detail).toBe('每顆多 0.0001 元（不到 0.1%）');
+  });
+
+  it('這筆沒有填數量 → STATUS-006 無法比較，寫出原因；其他筆的均價照樣列出（不含這一筆）', () => {
+    const missing = view('r-4', 0, 0);
+    expect(priceComparisonOf(missing, [...history, missing], '抽')).toEqual({
+      kind: 'na',
+      title: STATUS.cannotCompare,
+      detail: '這筆沒有填數量',
+      basis: '歷史均價 0.4936 元/抽 · 3 筆',
+    });
+  });
+
+  it('所有記錄都沒有數量 → 無法比較，不顯示歷史均價', () => {
+    const missing = view('r-4', 0, 0);
+    expect(priceComparisonOf(missing, [missing], '抽')).toEqual({
+      kind: 'na',
+      title: STATUS.cannotCompare,
+      detail: '這筆沒有填數量',
+      basis: '',
+    });
   });
 });

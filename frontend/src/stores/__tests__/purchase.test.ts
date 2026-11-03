@@ -556,3 +556,46 @@ describe('fetchRecentStores', () => {
     expect(store.recentStores).toEqual([]);
   });
 });
+
+// task 8.5：購買記錄詳情
+describe('fetchRecord（購買記錄詳情）', () => {
+  it('依 id 取得一筆記錄', async () => {
+    seed();
+    const store = usePurchaseStore();
+    const record = await store.fetchRecord('r-new');
+    expect(record).toMatchObject({ id: 'r-new', product: 'p-spring', total_price: 599 });
+  });
+
+  it('找不到（404，可能已被刪除）→ null，不丟錯誤', async () => {
+    seed();
+    const store = usePurchaseStore();
+    expect(await store.fetchRecord('r-gone')).toBeNull();
+  });
+
+  it('連不上伺服器 → 丟出錯誤（畫面顯示 ERR-014，不是「找不到」）', async () => {
+    const fake = seed();
+    fake.failNext(0, { collection: 'purchase_records' });
+    const store = usePurchaseStore();
+    await expect(store.fetchRecord('r-new')).rejects.toSatisfy(
+      (err) => apiErrorMessage(err) === ERR.networkError,
+    );
+  });
+});
+
+describe('fetchFieldValues（購買記錄的自訂欄位值）', () => {
+  it('只取這一筆記錄的欄位值', async () => {
+    installFakePocketBase({
+      purchase_record_field_values: [
+        { id: 'v1', purchase_record: 'r-new', custom_field: 'f-sheets', field_value: '100' },
+        { id: 'v2', purchase_record: 'r-old', custom_field: 'f-sheets', field_value: '90' },
+        { id: 'v3', purchase_record: 'r-new', custom_field: 'f-packs', field_value: '12' },
+      ],
+    });
+    const store = usePurchaseStore();
+    const values = await store.fetchFieldValues('r-new');
+    expect(values.map((v) => [v.custom_field, v.field_value])).toEqual([
+      ['f-sheets', '100'],
+      ['f-packs', '12'],
+    ]);
+  });
+});

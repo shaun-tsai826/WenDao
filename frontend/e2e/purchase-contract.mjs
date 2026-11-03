@@ -71,6 +71,14 @@ try {
 const missing = await add(prodB.id, '2026-10-03', { quantity: 0, unit_price: 0 });
 check('quantity 0 / unit_price 0 可以寫入', missing.quantity === 0 && missing.unit_price === 0);
 
+// 7. getOne 找不到記錄 → 404（task 8.5：fakePocketBase 的 getOne 與 store.fetchRecord 依此判斷「已被刪除」）
+try {
+  await pb.collection('purchase_records').getOne('doesnotexist123');
+  check('getOne 找不到 → 404', false, '居然找到了');
+} catch (err) {
+  check('getOne 找不到 → 404', err.status === 404, String(err.status));
+}
+
 // 收尾：刪掉這支腳本建立的資料
 for (const r of await pb.collection('purchase_records').getFullList({ filter: mine })) await pb.collection('purchase_records').delete(r.id);
 for (const p of [prodA, prodB]) await pb.collection('products').delete(p.id);

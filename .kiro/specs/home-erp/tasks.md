@@ -319,7 +319,7 @@
     - **存檔成功後，前端跳出 QDialog 詢問「是否更新此商品的剩餘數量？」（CONFIRM-002）**，預先帶入目前的剩餘數量（尚未設定時留空），使用者修改後手動儲存，更新 products 的 remaining_quantity 與 remaining_updated_at
     - _對應：REQ-4, AC-4.3, AC-4.4, AC-4.6, REQ-5, AC-5.1, AC-5.2, AC-5.3, AC-5.4, AC-5.5, AC-5.10, AC-5.11, REQ-6, AC-6.1, REQ-7, AC-7.13_
 
-  - [ ] 8.5 實作 PurchaseDetail 頁面
+  - [x] 8.5 實作 PurchaseDetail 頁面
     - 顯示單筆記錄詳情（含新增者名稱 expand.user.name 與新增時間 created）、單位均價、自訂欄位值
     - 顯示當次單位均價與歷史均價比較結果（高於/低於/等於）；當次或歷史均價為 null 時顯示 STATUS-006「無法比較」
     - _對應：REQ-5, AC-5.6, REQ-6, AC-6.2, AC-6.5, REQ-8, AC-8.9, AC-8.10_

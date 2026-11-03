@@ -1,6 +1,7 @@
 // usePurchaseStore：購買記錄
 // - task 7.5：fetchByProduct、fetchUsers（商品詳情用）
 // - task 8.1：fetchRecords、createRecord、updateRecord、deleteRecord
+// - task 8.5：fetchRecord、fetchFieldValues（購買記錄詳情；8.6 編輯頁也會用到）
 //
 // 規則（REQ-4、REQ-5、REQ-6、REQ-8）：
 // - 存檔前用 lib/purchaseForm.ts 檢查（必填 ERR-009、總價 ERR-010、未來日期 ERR-011、組成欄位 ERR-008），
@@ -10,6 +11,7 @@
 // - 自訂欄位值存在 purchase_record_field_values（EAV）；新增時寫到一半失敗會刪掉剛建立的記錄
 // - 日期存成 'YYYY-MM-DD 00:00:00.000Z'；日期區間包含結束日當天（AC-8.6），結束早於開始 → ERR-012（AC-8.7）
 import { defineStore, acceptHMRUpdate } from 'pinia';
+import { ClientResponseError } from 'pocketbase';
 import pb from '@/lib/pocketbase';
 import { ERR } from '@/constants/messages';
 import { localToday } from '@/composables/dates';
@@ -89,6 +91,23 @@ export const usePurchaseStore = defineStore('purchase', {
         sort: SORT,
       });
       return records.map(toPurchaseView);
+    },
+
+    /** 一筆購買記錄（詳情頁）；找不到（404，可能已被刪除）回傳 null，其他錯誤照樣丟出 */
+    async fetchRecord(id: string): Promise<PurchaseRecordRecord | null> {
+      try {
+        return await pb.collection('purchase_records').getOne<PurchaseRecordRecord>(id);
+      } catch (err) {
+        if (err instanceof ClientResponseError && err.status === 404) return null;
+        throw err;
+      }
+    },
+
+    /** 一筆購買記錄的自訂欄位值（EAV） */
+    async fetchFieldValues(recordId: string): Promise<FieldValueRecord[]> {
+      return pb.collection('purchase_record_field_values').getFullList<FieldValueRecord>({
+        filter: pb.filter('purchase_record = {:id}', { id: recordId }),
+      });
     },
 
     /** 取得家庭成員名單（只需要 id 與名稱；API Rule 允許已登入者 List） */

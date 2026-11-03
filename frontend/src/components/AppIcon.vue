@@ -35,7 +35,11 @@ export type IconName =
   | 'eye-off'
   | 'alert'
   | 'up'
-  | 'down';
+  | 'down'
+  | 'arrow-up'
+  | 'arrow-down'
+  | 'equal'
+  | 'not-comparable';
 
 const ICONS: Record<IconName, string[]> = {
   home: ['M3.5 10 11 4l7.5 6v8a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1z'],
@@ -55,6 +59,11 @@ const ICONS: Record<IconName, string[]> = {
   ],
   up: ['m5 13.5 6-6 6 6'],
   down: ['m5 8.5 6 6 6-6'],
+  // 價格比較（task 8.5，設計稿 Pur-Detail）：高於、低於、相同、無法比較
+  'arrow-up': ['M11 17V5', 'm6 10 5-5 5 5'],
+  'arrow-down': ['M11 5v12', 'm6 12 5 5 5-5'],
+  equal: ['M5 9h12', 'M5 13h12'],
+  'not-comparable': ['M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0z', 'M8 11h6'],
   alert: ['M19.5 11a8.5 8.5 0 1 1-17 0 8.5 8.5 0 0 1 17 0z', 'M11 6.5V12', 'M11 15.2v.01'],
 };
 

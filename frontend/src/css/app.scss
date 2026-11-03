@@ -22,6 +22,10 @@
   --status-neutral-bg: #eef1f4;
   --status-neutral-ink: #3a3d40;
 
+  // 價格比較（task 8.5）：比歷史均價低用綠色（同分類色第 5 組）；高於用 --status-soon-*、相同用 --status-neutral-*
+  --price-lower-bg: #e3f4dc;
+  --price-lower-ink: #24501a;
+
   // 使用者代表色（頭像）
   --person-1-bg: #dcf1ff;
   --person-1-ink: #0a3a80;

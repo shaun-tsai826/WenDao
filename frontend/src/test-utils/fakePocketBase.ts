@@ -6,6 +6,7 @@
 //   expect(fake.rows('categories')).toHaveLength(2);
 //
 // 模擬的範圍只到 store 會用到的部分：
+// - getOne（找不到 → 404，task 8.5）
 // - getFullList / getList（filter 支援 `欄位 運算子 "值"`，運算子 = != >= <= > <，用 && 串接；
 //   欄位可沿著關聯往下找，例如 `product.category`（task 8.1）；sort 支援逗號分隔欄位，- 表示反向）
 // - create / update / delete
@@ -19,7 +20,7 @@ import pb from '@/lib/pocketbase';
 
 type Row = Record<string, unknown> & { id: string };
 type Tables = Record<string, Row[]>;
-type Method = 'getFullList' | 'getList' | 'create' | 'update' | 'delete';
+type Method = 'getOne' | 'getFullList' | 'getList' | 'create' | 'update' | 'delete';
 type ListOptions = { filter?: string; sort?: string };
 
 /** 每張表的 unique 欄位組合（與 migrations 一致） */
@@ -165,6 +166,13 @@ export function installFakePocketBase(initial: Partial<Tables> = {}) {
 
   function service(name: string) {
     return {
+      getOne: vi.fn((id: string) =>
+        call(name, 'getOne', [id], () => {
+          const row = table(name).find((r) => r.id === id);
+          if (!row) throw httpError(404);
+          return { ...row };
+        }),
+      ),
       getFullList: vi.fn((options: ListOptions = {}) =>
         call(name, 'getFullList', [options], () =>
           sortRows(table(name).filter(parseFilter(options.filter, lookup)), options.sort).map(
