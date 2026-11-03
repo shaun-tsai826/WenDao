@@ -7,6 +7,7 @@
   - 數量組成欄位離開時檢查：有填但不大於 0 → ERR-008 顯示在該欄位下方（沒填不算錯，數量當 0）
   - 頁面送出時算出的錯誤由 errors 傳入，同樣顯示在欄位下方
   - leading 插槽：沒有包裝規格的分類，把「數量」欄位放在同一個格線的最前面（設計稿 Pur-New-Qty）
+  - footer 插槽：格線下方、同一張卡片裡（例如沒有包裝規格時的說明文字；task 8.4）
   v-model 的值是「自訂欄位 id → 文字」，與 lib/purchaseForm.ts 的 fieldValues 相同
 -->
 <template>
@@ -42,6 +43,7 @@
         </span>
       </div>
     </div>
+    <slot name="footer" />
   </section>
 </template>
 

@@ -268,3 +268,21 @@ describe('deleteField（AC-4.8、4.9）', () => {
     expect(store.fields).toHaveLength(3);
   });
 });
+
+// task 8.4：新增購買記錄表單只需要欄位本身（不查使用狀況、不改 store 的狀態）
+describe('listFields', () => {
+  it('回傳分類的欄位（依顯示順序），不查使用狀況、不改 store 的 fields', async () => {
+    const fake = installFakePocketBase({
+      custom_fields: [
+        { id: 'b', category: 'c', field_name: '包數', display_order: 2 },
+        { id: 'a', category: 'c', field_name: '抽數', display_order: 1 },
+        { id: 'x', category: 'other', field_name: '別的', display_order: 1 },
+      ],
+    });
+    const store = useCustomFieldStore();
+    const fields = await store.listFields('c');
+    expect(fields.map((f) => f.id)).toEqual(['a', 'b']);
+    expect(store.fields).toEqual([]);
+    expect(fake.calls.some((c) => c.collection === 'purchase_record_field_values')).toBe(false);
+  });
+});

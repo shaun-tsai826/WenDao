@@ -103,6 +103,23 @@ export const useProductStore = defineStore('product', {
       }
     },
 
+    /**
+     * 只更新剩餘數量（task 8.4：新增購買記錄後的對話框，AC-7.13）。
+     * 數量與更新日一起寫入（更新日 = 今天）；null = 不追蹤，兩個一起清空。消耗設定不變。
+     */
+    async updateRemaining(id: string, remaining: number | null): Promise<ProductRecord> {
+      if (remaining !== null && (!Number.isFinite(remaining) || remaining < 0)) {
+        throw new ValidationError(ERR.remainingNegative);
+      }
+      const updated = await pb.collection('products').update<ProductRecord>(id, {
+        remaining_quantity: remaining ?? 0,
+        remaining_updated_at: remaining === null ? '' : `${localToday()} 00:00:00.000Z`,
+      });
+      const index = this.products.findIndex((p) => p.id === id);
+      if (index >= 0) this.products[index] = updated;
+      return updated;
+    },
+
     /** 更新消耗設定與剩餘數量（AC-7.1、7.8～7.11） */
     async updateProduct(id: string, input: ConsumptionInput): Promise<ProductRecord> {
       const remaining = input.remaining_quantity;

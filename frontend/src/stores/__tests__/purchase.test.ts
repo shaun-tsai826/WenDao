@@ -518,3 +518,41 @@ describe('task 8.1', () => {
     });
   });
 });
+
+// task 8.4：新增購買記錄的「常去的地點」按鈕（使用者同意提案 1）
+describe('fetchRecentStores', () => {
+  const at = (n: number) => `2026-10-${String(n).padStart(2, '0')} 00:00:00.000Z`;
+
+  it('以前用過的地點，最近用的在前、不重複、去掉前後空白，最多 6 個', async () => {
+    const stores = [
+      '全聯',
+      ' 蝦皮 ',
+      '全聯',
+      '家樂福',
+      '',
+      '市場',
+      '好市多',
+      '屈臣氏',
+      '康是美',
+      '全聯',
+    ];
+    installFakePocketBase({
+      purchase_records: stores.map((store, i) => ({
+        id: `r${i}`,
+        store,
+        purchase_date: at(i + 1),
+        created: at(i + 1),
+      })),
+    });
+    const store = usePurchaseStore();
+    await store.fetchRecentStores();
+    expect(store.recentStores).toEqual(['全聯', '康是美', '屈臣氏', '好市多', '市場', '家樂福']);
+  });
+
+  it('還沒有記錄 → 空陣列', async () => {
+    installFakePocketBase({});
+    const store = usePurchaseStore();
+    await store.fetchRecentStores();
+    expect(store.recentStores).toEqual([]);
+  });
+});

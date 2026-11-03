@@ -31,6 +31,9 @@ export interface PurchaseFilters {
   endDate?: string; // YYYY-MM-DD（包含當天）
 }
 
+/** 「常去的地點」按鈕最多幾個（設計稿 Pur-New） */
+export const RECENT_STORES_MAX = 6;
+
 /** 同一天的記錄：後建立的在前 */
 const SORT = '-purchase_date,-created';
 
@@ -65,6 +68,8 @@ export const usePurchaseStore = defineStore('purchase', {
     loading: false,
     /** 家庭成員（購買記錄的新增者），依建立順序 */
     users: [] as Pick<UserRecord, 'id' | 'name'>[],
+    /** 常去的地點（最近用過的在前，最多 RECENT_STORES_MAX 個；task 8.4） */
+    recentStores: [] as string[],
   }),
 
   getters: {
@@ -91,6 +96,18 @@ export const usePurchaseStore = defineStore('purchase', {
       this.users = await pb
         .collection('users')
         .getFullList<UserRecord>({ sort: 'created,id', fields: 'id,name' });
+    },
+
+    /** 常去的地點：最近 100 筆記錄用過的地點，最近用的在前、不重複（使用者同意提案 1） */
+    async fetchRecentStores(): Promise<void> {
+      const { items } = await pb
+        .collection('purchase_records')
+        .getList<Pick<PurchaseRecordRecord, 'store'>>(1, 100, {
+          sort: '-created',
+          fields: 'store',
+        });
+      const stores = items.map((r) => r.store.trim()).filter(Boolean);
+      this.recentStores = [...new Set(stores)].slice(0, RECENT_STORES_MAX);
     },
 
     /** 購買記錄列表：可依分類與日期區間篩選，依購入日期由新至舊（AC-8.1、8.5、8.6、8.7） */

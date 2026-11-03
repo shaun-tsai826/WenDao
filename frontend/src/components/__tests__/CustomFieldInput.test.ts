@@ -125,6 +125,17 @@ describe('畫面（AC-4.5）', () => {
   });
 });
 
+describe('footer 插槽（task 8.4）', () => {
+  it('放在欄位格線下方、同一張卡片裡（沒有包裝規格時的說明文字）', () => {
+    const w = render(
+      { fields: [ORIGIN], title: '數量與其他資訊' },
+      { footer: () => h('p', { class: 'note' }, '說明') },
+    );
+    const section = w.find('section').element;
+    expect(section.lastElementChild?.classList.contains('note')).toBe(true);
+  });
+});
+
 describe('輸入（v-model）', () => {
   it('數字欄位輸入時整理成數字：去掉文字、全形轉半形', async () => {
     const w = render({ modelValue: { 'f-packs': '12' } });

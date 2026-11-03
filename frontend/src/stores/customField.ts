@@ -82,6 +82,17 @@ export const useCustomFieldStore = defineStore('customField', {
       }
     },
 
+    /**
+     * 只取分類的欄位（依顯示順序），不查使用狀況、不改 store 的狀態。
+     * 給新增 / 編輯購買記錄的表單用（task 8.4）；分類編輯頁用 fetchFields。
+     */
+    async listFields(categoryId: string): Promise<CustomFieldRecord[]> {
+      return pb.collection('custom_fields').getFullList<CustomFieldRecord>({
+        filter: pb.filter('category = {:c}', { c: categoryId }),
+        sort: 'display_order,created',
+      });
+    },
+
     /** 新增欄位（AC-4.1、4.2、4.7），排在最後 */
     async createField(categoryId: string, input: CustomFieldInput): Promise<CustomFieldRecord> {
       const name = normalizeName(input.field_name);

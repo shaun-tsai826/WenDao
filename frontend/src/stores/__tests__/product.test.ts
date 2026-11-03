@@ -349,3 +349,58 @@ describe('updateProduct：消耗設定與剩餘數量（AC-7.1、7.8～7.11）',
     expect(store.getById('p-spring')?.consumption_rate).toBe(4);
   });
 });
+
+// task 8.4：新增購買記錄後的對話框只更新剩餘數量（AC-7.13），不動消耗設定
+describe('updateRemaining（AC-7.13）', () => {
+  it('寫入剩餘數量與今天的更新日；消耗設定不變', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 2, 9, 0));
+    const fake = installFakePocketBase({
+      products: [
+        {
+          id: 'p',
+          consumption_rate: 4,
+          consumption_period: 'monthly',
+          consumption_unit: '包',
+          remaining_quantity: 3,
+          remaining_updated_at: '2026-10-01 00:00:00.000Z',
+        },
+      ],
+    });
+    const store = useProductStore();
+    await store.fetchProducts();
+    await store.updateRemaining('p', 15);
+    expect(fake.rows('products')[0]).toMatchObject({
+      remaining_quantity: 15,
+      remaining_updated_at: '2026-11-02 00:00:00.000Z',
+      consumption_rate: 4,
+      consumption_unit: '包',
+    });
+    expect(fake.calls.find((c) => c.method === 'update')!.args[1]).toEqual({
+      remaining_quantity: 15,
+      remaining_updated_at: '2026-11-02 00:00:00.000Z',
+    });
+    expect(store.getById('p')!.remaining_quantity).toBe(15);
+  });
+
+  it('null → 不追蹤（數量與更新日一起清空）', async () => {
+    const fake = installFakePocketBase({
+      products: [
+        { id: 'p', remaining_quantity: 3, remaining_updated_at: '2026-10-01 00:00:00.000Z' },
+      ],
+    });
+    await useProductStore().updateRemaining('p', null);
+    expect(fake.rows('products')[0]).toMatchObject({
+      remaining_quantity: 0,
+      remaining_updated_at: '',
+    });
+  });
+
+  it.each([-1, Number.NaN])('剩餘數量 %s → ERR-015，不寫入', async (value) => {
+    const fake = installFakePocketBase({ products: [{ id: 'p' }] });
+    expect(await errorOf(useProductStore().updateRemaining('p', value))).toBe(
+      ERR.remainingNegative,
+    );
+    expect(fake.calls.some((c) => c.method === 'update')).toBe(false);
+  });
+});

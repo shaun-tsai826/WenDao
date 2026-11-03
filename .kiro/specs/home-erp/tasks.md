@@ -314,7 +314,7 @@
     - 顯示所有購買記錄（日期、購買地點、商品名稱、分類、數量、總價、單位均價、新增者），按日期新→舊；分類篩選、日期區間篩選；結束日期早於開始日期顯示 ERR-012
     - _對應：REQ-8, AC-8.1, AC-8.3, AC-8.5, AC-8.6, AC-8.7_
 
-  - [ ] 8.4 實作 PurchaseNew 頁面
+  - [x] 8.4 實作 PurchaseNew 頁面
     - 必填欄位（購入日期、購買地點、商品、總價）；動態自訂欄位（CustomFieldInput）；前端計算 quantity 與 unit_price 預覽；未填必填欄位顯示 ERR-009、總價 <= 0 顯示 ERR-010（且不顯示 ERR-009）、未來日期顯示 ERR-011；成功顯示 MSG-004
     - **存檔成功後，前端跳出 QDialog 詢問「是否更新此商品的剩餘數量？」（CONFIRM-002）**，預先帶入目前的剩餘數量（尚未設定時留空），使用者修改後手動儲存，更新 products 的 remaining_quantity 與 remaining_updated_at
     - _對應：REQ-4, AC-4.3, AC-4.4, AC-4.6, REQ-5, AC-5.1, AC-5.2, AC-5.3, AC-5.4, AC-5.5, AC-5.10, AC-5.11, REQ-6, AC-6.1, REQ-7, AC-7.13_
