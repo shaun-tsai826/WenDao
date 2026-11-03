@@ -306,7 +306,7 @@
     - 日期區間篩選使用 `pb.filter()` 安全組字串，包含結束日當天
     - _對應：REQ-5, AC-5.1, AC-5.6, AC-5.7, REQ-6, AC-6.1, REQ-8, AC-8.1_
 
-  - [ ] 8.2 實作 CustomFieldInput 動態自訂欄位元件
+  - [x] 8.2 實作 CustomFieldInput 動態自訂欄位元件
     - 依商品所屬分類的 custom_fields 動態渲染輸入欄位；數量組成欄位輸入 <= 0 顯示 ERR-008
     - _對應：REQ-4, AC-4.5, AC-4.6_
 
