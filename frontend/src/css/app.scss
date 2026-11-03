@@ -26,6 +26,9 @@
   --price-lower-bg: #e3f4dc;
   --price-lower-ink: #24501a;
 
+  // 危險操作（刪除按鈕紅底、紅字；同 quasar.variables.scss 的 $negative，對白 5.9:1）
+  --danger: #c41c29;
+
   // 使用者代表色（頭像）
   --person-1-bg: #dcf1ff;
   --person-1-ink: #0a3a80;

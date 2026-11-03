@@ -7,7 +7,8 @@
   - 總數量與單位均價（缺失時「未填」/ STATUS-001「無法計算」）
   - 價格比較：圖示＋文字＋顏色（高於↑琥珀、低於↓綠、相同＝灰、無法比較灰＋原因），
     另寫每單位差額與百分比、歷史均價用了幾筆（含這一筆）
-  - 底部「編輯這筆記錄」（task 8.6）；「刪除這筆記錄」於 task 8.7 加入
+  - 底部「編輯這筆記錄」（task 8.6）、「刪除這筆記錄」（紅字，task 8.7）：
+    CONFIRM-001 對話框寫出是哪一筆 → 刪除 → MSG-006 → 回購買記錄列表（保留篩選）；失敗時提示錯誤、留在詳情
 -->
 <template>
   <q-page class="page">
@@ -116,6 +117,9 @@
         <router-link :to="`/purchases/${view.record.id}/edit`" class="edit-link">
           編輯這筆記錄
         </router-link>
+        <button type="button" class="delete-button" :disabled="busy" @click="remove">
+          {{ deleting ? '刪除中…' : '刪除這筆記錄' }}
+        </button>
       </div>
     </template>
   </q-page>
@@ -125,11 +129,12 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AppIcon, { type IconName } from '@/components/AppIcon.vue';
-import { STATUS } from '@/constants/messages';
+import { MSG, STATUS } from '@/constants/messages';
 import { localToday } from '@/composables/dates';
 import type { PriceComparison } from '@/composables/usePriceComparison';
 import { apiErrorMessage } from '@/lib/errors';
 import { categoryLabel, categoryTone } from '@/lib/categoryTone';
+import { confirmDeleteRecord, notifyError, notifySuccess } from '@/lib/feedback';
 import { personInitial, personTone } from '@/lib/personTone';
 import {
   formatAmount,
@@ -137,6 +142,7 @@ import {
   formatLongDate,
   formatUnitPrice,
   priceComparisonOf,
+  purchaseSummary,
   toPurchaseView,
   type PurchaseView,
 } from '@/lib/purchaseView';
@@ -162,6 +168,10 @@ const purchaseStore = usePurchaseStore();
 
 const loading = ref(true);
 const loadError = ref('');
+/** 確認對話框開著或刪除進行中（停用按鈕，避免重複開對話框、重複送出） */
+const busy = ref(false);
+/** 已按「刪除」、等待伺服器回應（按鈕寫「刪除中…」；對話框還開著時不寫，以免誤會已經在刪） */
+const deleting = ref(false);
 const today = ref(localToday());
 const record = ref<PurchaseRecordRecord | null>(null);
 /** 同一商品的全部購買記錄（含這一筆），算歷史均價用（AC-8.4） */
@@ -206,6 +216,26 @@ const fieldTiles = computed(() =>
 const comparison = computed(() =>
   view.value ? priceComparisonOf(view.value, history.value, unit.value) : null,
 );
+
+/** 刪除這筆記錄（AC-5.8、5.9）：先確認，刪除後回列表 */
+async function remove() {
+  const current = view.value;
+  if (!current || busy.value) return;
+  busy.value = true;
+  try {
+    const name = product.value ? `${product.value.brand} ${product.value.name}` : '';
+    if (!(await confirmDeleteRecord(purchaseSummary(current, name, today.value)))) return;
+    deleting.value = true;
+    await purchaseStore.deleteRecord(current.record.id);
+    notifySuccess(MSG.recordDeleted);
+    await router.replace(backTo);
+  } catch (err) {
+    notifyError(apiErrorMessage(err));
+  } finally {
+    busy.value = false;
+    deleting.value = false;
+  }
+}
 
 async function load() {
   loading.value = true;
@@ -542,6 +572,27 @@ watch(recordId, load);
   &:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+  }
+}
+
+.delete-button {
+  min-height: 48px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--danger);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--danger);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: progress;
   }
 }
 

@@ -148,3 +148,16 @@ export function priceComparisonOf(
   }
   return { kind, title: COMPARISON_TITLE[kind], detail, basis };
 }
+
+/**
+ * 一筆記錄的簡短說明「10/31 全聯 · 春風 抽取式衛生紙 · 599 元」（刪除確認寫出是哪一筆，task 8.7）。
+ * 沒有地點或商品名稱時略過那一段。
+ */
+export function purchaseSummary(view: PurchaseView, productName: string, today: DateOnly): string {
+  const when = [formatShortDate(view.date, today), view.record.store.trim()]
+    .filter(Boolean)
+    .join(' ');
+  return [when, productName, `${formatAmount(view.record.total_price)} 元`]
+    .filter(Boolean)
+    .join(' · ');
+}

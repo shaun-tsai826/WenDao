@@ -1,7 +1,8 @@
-// 操作回饋：底部提示與刪除確認（task 6.2）、更新剩餘數量對話框（task 8.4）
+// 操作回饋：底部提示與刪除確認（task 6.2）、更新剩餘數量對話框（task 8.4）、刪除購買記錄確認（task 8.7）
 // 頁面一律透過這裡顯示，文字一律來自 constants/messages.ts。
 // 測試時可以用 vi.spyOn 換掉，不必真的彈出 Quasar 元件。
 import { Dialog, Notify } from 'quasar';
+import DeleteRecordDialog from '@/components/DeleteRecordDialog.vue';
 import RemainingDialog from '@/components/RemainingDialog.vue';
 
 /** 成功提示（例如 MSG-001「分類建立成功」） */
@@ -56,6 +57,20 @@ export interface RemainingDialogOptions {
 export function askUpdateRemaining(options: RemainingDialogOptions): Promise<boolean> {
   return new Promise((resolve) => {
     Dialog.create({ component: RemainingDialog, componentProps: { ...options } })
+      .onOk(() => resolve(true))
+      .onCancel(() => resolve(false))
+      .onDismiss(() => resolve(false));
+  });
+}
+
+/**
+ * 刪除購買記錄前確認（CONFIRM-001，設計稿 Pur-Delete）。
+ * @param summary 是哪一筆（lib/purchaseView.ts 的 purchaseSummary）
+ * 按「刪除」回傳 true；按「取消」、點背景或 Esc 回傳 false。
+ */
+export function confirmDeleteRecord(summary: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    Dialog.create({ component: DeleteRecordDialog, componentProps: { summary } })
       .onOk(() => resolve(true))
       .onCancel(() => resolve(false))
       .onDismiss(() => resolve(false));

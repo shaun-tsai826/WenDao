@@ -9,6 +9,7 @@ import {
   purchaseAmountLine,
   historicalAverageOf,
   priceComparisonOf,
+  purchaseSummary,
   toPurchaseView,
 } from '@/lib/purchaseView';
 import { personInitial, personTone } from '@/lib/personTone';
@@ -196,5 +197,22 @@ describe('priceComparisonOf（AC-8.9、8.10，設計稿 Pur-Detail）', () => {
       detail: '這筆沒有填數量',
       basis: '',
     });
+  });
+});
+
+describe('purchaseSummary（刪除確認寫出是哪一筆，task 8.7）', () => {
+  it('「10/31 全聯 · 春風 抽取式衛生紙 · 599 元」；不是今年時加上年份', () => {
+    const view = toPurchaseView(record({ purchase_date: '2026-10-31 00:00:00.000Z' }));
+    expect(purchaseSummary(view, '春風 抽取式衛生紙', '2026-11-03')).toBe(
+      '10/31 全聯 · 春風 抽取式衛生紙 · 599 元',
+    );
+    expect(purchaseSummary(view, '春風 抽取式衛生紙', '2027-01-02')).toBe(
+      '2026/10/31 全聯 · 春風 抽取式衛生紙 · 599 元',
+    );
+  });
+
+  it('總價加千分位；沒有地點或商品名稱時略過那一段', () => {
+    const view = toPurchaseView(record({ store: '', total_price: 1299 }));
+    expect(purchaseSummary(view, '', '2026-11-03')).toBe('10/20 · 1,299 元');
   });
 });

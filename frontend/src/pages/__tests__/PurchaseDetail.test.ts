@@ -5,7 +5,9 @@ import { flushPromises } from '@vue/test-utils';
 import PurchaseDetail from '@/pages/PurchaseDetail.vue';
 import { installFakePocketBase } from '@/test-utils/fakePocketBase';
 import { mountPage, stubPage } from '@/test-utils/mountPage';
-import { ERR, STATUS } from '@/constants/messages';
+import { usePurchaseStore } from '@/stores/purchase';
+import { ERR, MSG, STATUS } from '@/constants/messages';
+import * as feedback from '@/lib/feedback';
 import { personTone } from '@/lib/personTone';
 import type { PurchaseRecordRecord } from '@/types/models';
 
@@ -301,6 +303,122 @@ describe('返回、找不到、載入失敗', () => {
     const page = await mountPage('/purchases/r-1', routes);
     expect(text(page, '[role=alert]')).toContain(ERR.serverError);
     expect(page.wrapper.find('.compare').exists()).toBe(false);
+  });
+});
+
+// task 8.7：刪除確認（REQ-5 / AC-5.8、5.9，設計稿 Pur-Delete）
+describe('刪除這筆記錄（AC-5.8、5.9）', () => {
+  let confirm: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    confirm = vi.spyOn(feedback, 'confirmDeleteRecord').mockResolvedValue(true);
+    vi.spyOn(feedback, 'notifySuccess').mockImplementation(() => undefined);
+    vi.spyOn(feedback, 'notifyError').mockImplementation(() => undefined);
+  });
+
+  const deleteButton = (page: Page) =>
+    page.wrapper.findAll('button').find((b) => b.text() === '刪除這筆記錄')!;
+
+  it('底部有「刪除這筆記錄」（紅字按鈕，在編輯下方）', async () => {
+    seed();
+    const page = await mountPage('/purchases/r-1', routes);
+    expect(deleteButton(page).exists()).toBe(true);
+    expect(deleteButton(page).classes()).toContain('delete-button');
+  });
+
+  it('點了先跳 CONFIRM-001，寫出是哪一筆（日期 地點 · 商品 · 總價）', async () => {
+    seed();
+    const page = await mountPage('/purchases/r-1', routes);
+    confirm.mockResolvedValue(false);
+    await deleteButton(page).trigger('click');
+    await flushPromises();
+    expect(confirm).toHaveBeenCalledWith('10/31 全聯 · 春風 抽取式衛生紙 · 599 元');
+  });
+
+  it('BDD：按「取消」→ 不刪除，留在詳情', async () => {
+    const fake = seed();
+    confirm.mockResolvedValue(false);
+    const page = await mountPage('/purchases/r-1', routes);
+    await deleteButton(page).trigger('click');
+    await flushPromises();
+    expect(fake.rows('purchase_records').some((r) => r.id === 'r-1')).toBe(true);
+    expect(feedback.notifySuccess).not.toHaveBeenCalled();
+    expect(page.router.currentRoute.value.path).toBe('/purchases/r-1');
+  });
+
+  it('BDD：按「刪除」→ 刪除記錄與它的欄位值、顯示 MSG-006、回到購買記錄列表', async () => {
+    const fake = seed();
+    const page = await mountPage('/purchases/r-1', routes);
+    await deleteButton(page).trigger('click');
+    await flushPromises();
+    expect(fake.rows('purchase_records').some((r) => r.id === 'r-1')).toBe(false);
+    expect(fake.rows('purchase_record_field_values').some((v) => v.purchase_record === 'r-1')).toBe(
+      false,
+    );
+    // 別筆記錄不受影響
+    expect(fake.rows('purchase_records').map((r) => r.id)).toEqual(['r-2', 'r-3', 'r-other']);
+    expect(feedback.notifySuccess).toHaveBeenCalledWith(MSG.recordDeleted);
+    expect(page.router.currentRoute.value.path).toBe('/purchases');
+  });
+
+  it('從篩選過的列表進來 → 刪除後回到同一個篩選', async () => {
+    seed();
+    const page = await mountPage('/purchases?category=c-tissue', routes);
+    await page.router.push({
+      path: '/purchases/r-1',
+      state: { back: '/purchases?category=c-tissue' },
+    });
+    await flushPromises();
+    await deleteButton(page).trigger('click');
+    await flushPromises();
+    expect(page.router.currentRoute.value.fullPath).toBe('/purchases?category=c-tissue');
+  });
+
+  it('按了「刪除」、等待伺服器回應時：按鈕顯示「刪除中…」', async () => {
+    seed();
+    const page = await mountPage('/purchases/r-1', routes);
+    const button = page.wrapper.find('button.delete-button');
+    // 讓刪除請求先卡住，模擬網路較慢
+    let release!: () => void;
+    const remove = vi
+      .spyOn(usePurchaseStore(page.pinia), 'deleteRecord')
+      .mockImplementation(() => new Promise<void>((r) => (release = r)));
+    await button.trigger('click');
+    await flushPromises();
+    expect(remove).toHaveBeenCalledWith('r-1');
+    expect(button.text()).toBe('刪除中…');
+    release();
+    await flushPromises();
+    expect(page.router.currentRoute.value.path).toBe('/purchases');
+  });
+
+  it('連不上伺服器 → 提示 ERR-014，記錄還在、留在詳情，可以再按一次', async () => {
+    const fake = seed();
+    fake.failNext(0, { collection: 'purchase_records', method: 'delete' });
+    const page = await mountPage('/purchases/r-1', routes);
+    await deleteButton(page).trigger('click');
+    await flushPromises();
+    expect(feedback.notifyError).toHaveBeenCalledWith(ERR.networkError);
+    expect(fake.rows('purchase_records').some((r) => r.id === 'r-1')).toBe(true);
+    expect(page.router.currentRoute.value.path).toBe('/purchases/r-1');
+    expect(deleteButton(page).attributes('disabled')).toBeUndefined();
+  });
+
+  it('確認對話框開著時：按鈕停用、連點也不會開第二個對話框', async () => {
+    seed();
+    let release!: (ok: boolean) => void;
+    confirm.mockReturnValue(new Promise<boolean>((r) => (release = r)));
+    const page = await mountPage('/purchases/r-1', routes);
+    const button = page.wrapper.find('button.delete-button');
+    // 手機上快速連點兩下：第二下發生在畫面更新（按鈕停用）之前
+    (button.element as HTMLButtonElement).click();
+    (button.element as HTMLButtonElement).click();
+    await flushPromises();
+    expect(confirm).toHaveBeenCalledTimes(1);
+    // 對話框開著（還沒按刪除）：按鈕停用，但不寫「刪除中…」（e2e 截圖發現的誤導）
+    expect(button.text()).toBe('刪除這筆記錄');
+    expect(button.attributes('disabled')).toBeDefined();
+    release(false);
+    await flushPromises();
   });
 });
 
