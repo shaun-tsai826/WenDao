@@ -72,6 +72,7 @@ describe('登入頁', () => {
   it('上方顯示 App 名稱「溫叨Pantry」', async () => {
     const { wrapper } = await mountLogin();
     expect(wrapper.find('.login__name').text()).toBe(APP_NAME);
+    expect(wrapper.find('.login__brand svg.brand-logo').exists()).toBe(true);
   });
 
   it('有 Email、密碼欄位與登入按鈕，支援密碼管理工具自動填入', async () => {

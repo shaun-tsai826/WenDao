@@ -8,7 +8,7 @@
 <template>
   <div class="login">
     <div class="login__brand">
-      <span class="login__mark" aria-hidden="true">家</span>
+      <BrandLogo class="login__mark" />
       <span class="login__name">{{ APP_NAME }}</span>
       <span class="login__tagline">家裡用品的購買記錄與補貨提醒</span>
     </div>
@@ -85,6 +85,7 @@ import { APP_NAME } from '@/constants/app';
 import { nextTick, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import AppIcon from '@/components/AppIcon.vue';
+import BrandLogo from '@/components/BrandLogo.vue';
 import { ERR } from '@/constants/messages';
 import { loginErrorMessage, useAuthStore } from '@/stores/auth';
 
@@ -147,17 +148,11 @@ async function submit() {
   padding-bottom: 28px;
 }
 
+// 門牌 Logo（寬高比 140:96）
 .login__mark {
-  width: 64px;
+  width: 94px;
   height: 64px;
   margin-bottom: 8px;
-  border-radius: var(--radius-card);
-  background: var(--accent);
-  color: #ffffff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32px;
 }
 
 .login__name {

@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v6.3（2026-11-03）
-> 變更摘要：v6.3 App 更名「家庭ERP」→「溫叨Pantry」（程式、PWA、規格、文件）；requirements v1.4、design v3.8、tasks v1.7。
+> 版本：v6.4（2026-11-03）
+> 變更摘要：v6.4 Logo A（台北市門牌 5888）定稿：BrandLogo 元件、App / 分頁圖示產生器；design.md v3.9。
+> v6.3 App 更名「家庭ERP」→「溫叨Pantry」（程式、PWA、規格、文件）；requirements v1.4、design v3.8、tasks v1.7。
 > v6.2 購買記錄設計稿確認（8 張），使用者同意 4 項提案；尚未寫入 design.md。
 > v6.1 K-16 已回寫 design.md v3.7；刪除未使用的 stores/notImplemented.ts（使用者同意）。
 > v6.0 task 8.1（usePurchaseStore）完成；fakePocketBase 擴充；新增契約測試 e2e purchase-contract；新增 K-16（待使用者同意回寫）。
@@ -73,7 +74,7 @@
 | 文件 | 版本 |
 |---|---|
 | requirements.md | v1.4 |
-| design.md | v3.8 |
+| design.md | v3.9 |
 | tasks.md | v1.7（勾選狀態持續更新） |
 | BDD.md | v1.1 |
 | review-notes.md | v1.2 |
@@ -137,6 +138,7 @@
 | 2026-11-03 | **task 8.1**：`usePurchaseStore` 的 fetchRecords（分類 `product.category`、日期區間含結束日當天、結束早於開始 ERR-012、新到舊、同日後建立在前；getter `views`）、createRecord（前端算 quantity / unit_price，缺失寫 0；新增者 = 登入者；EAV 寫到一半失敗會刪掉剛建立的記錄；資料庫擋下總價 → ERR-010）、updateRecord（重算、新增者不變、EAV 同步：改了更新 / 清空刪除 / 新填新增 / 換商品刪除舊值）、deleteRecord（cascade）。新增 `lib/purchaseForm.ts`（validatePurchase、computePurchase、fieldValuesToSave，8.4 / 8.6 頁面共用）與 `FieldsValidationError`（每個欄位各自的訊息，AC-5.3）。`fakePocketBase` 擴充：比較運算子 >= <= > <、關聯欄位 `product.category`、cascade 刪除（附 5 項自身測試）。移除 task 2.5 的「尚未實作」骨架測試 2 項。新增 54 項測試，全專案 539 項；6 種故意改壞皆被抓到。**新增契約測試** `e2e/purchase-contract.mjs`：用同樣的 SDK 查詢對真正的 PocketBase 驗證 fake 的假設，7 項全部符合；**發現** PocketBase 的 created 只到毫秒，連續建立可能同一毫秒而排序不定（實際使用不影響，腳本已間隔 20ms） | — |
 | 2026-11-03 | **購買記錄設計稿**：ui-ux-pro-max 查表單 / 篩選 / 對話框 UX 規則後，設計稿新增「購買記錄（task 8）」一排 8 張：Pur-List（分類＋日期篩選）、Pur-List-Range（ERR-012）、Pur-New（有包裝規格，即 8.2 CustomFieldInput）、Pur-New-Error（欄位下方錯誤＋上方錯誤摘要）、Pur-New-Qty（沒有包裝規格，直接輸入數量、文字欄位）、Pur-Remain（CONFIRM-002 對話框）、Pur-Detail（價格比較，圖示＋文字＋顏色）、Pur-Delete（CONFIRM-001）。使用者確認並同意 4 項提案（見重要決定紀錄）。**尚未寫入 design.md**（回到 8.2 時先寫） | 設計稿 Pur-* |
 | 2026-11-03 | **App 更名（使用者決定）**：「家庭ERP」→「溫叨Pantry」；不能用中文的地方用「WenDaoPantry」（全小寫時 wendaopantry）。新增 `src/constants/app.ts`（APP_NAME、APP_NAME_ASCII），頂欄與登入頁改用常數；`package.json` productName、PWA manifest name / short_name 改名，並以 `constants/__tests__/app.test.ts` 檢查設定檔與常數一致。規格：requirements.md 76 處「家庭ERP系統」→「溫叨Pantry系統」、design.md、tasks.md；launchd 設定改為 `com.wendaopantry.pocketbase`（尚未安裝）；README、frontend/README、setup-frontend、setup-pocketbase 同步。依使用者同意**不改**：規格資料夾 `.kiro/specs/home-erp/`、`package.json` name `wendao-frontend`、說明文字「家庭用品管理系統」、過去進度紀錄裡的舊名稱。新增 5 項測試，全專案 544 項；e2e 全部通過，正式 build 的分頁標題與 manifest 已是新名稱。Logo（選 A 經典門牌）與設計稿更新另外進行 | requirements v1.4、design v3.8、tasks v1.7 |
+| 2026-11-03 | **Logo A 定稿**：數字用 Barlow Condensed SemiBold（SIL OFL 1.1，從 Google Fonts 官方 GitHub 下載）的外框；`brand/extract-digits.py`（fontTools，暫時 venv 安裝）取出路徑 → `brand/digits.json`；`brand/build-icons.mjs` 產生 SVG 原始檔、`src/components/brandPaths.ts`、PWA / iOS / maskable（縮 0.78 倍在安全範圍）/ monochrome / 分頁 PNG 與 favicon.ico（無頭 Chrome 繪製），並自動跑 prettier。新增 `BrandLogo.vue`（plate / header、裝飾用 aria-hidden 或 label 時 role=img），頂欄與登入頁換掉「家」字標記。新增 5 項測試，全專案 548 項；e2e 全部通過。16px 分頁圖示仍難辨認數字（尺寸限制） | design.md v3.9、`frontend/brand/README.md` v1.0 |
 
 ## task 7.7 測試對照
 

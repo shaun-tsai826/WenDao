@@ -1,7 +1,8 @@
 # Design Document
 
-> 版本：v3.8（2026-11-03）
-> 變更摘要：v3.8 App 更名「家庭ERP」→「溫叨Pantry」（使用者決定）：manifest name / short_name、頂欄名稱、launchd 設定 com.wendaopantry.pocketbase；畫面上的名稱集中在 constants/app.ts。
+> 版本：v3.9（2026-11-03）
+> 變更摘要：v3.9 Logo A 定稿（台北市門牌 5888，使用者選定）：頂欄與登入頁改用 BrandLogo 元件，App 圖示、瀏覽器分頁圖示由 frontend/brand/build-icons.mjs 產生。
+> v3.8 變更摘要：v3.8 App 更名「家庭ERP」→「溫叨Pantry」（使用者決定）：manifest name / short_name、頂欄名稱、launchd 設定 com.wendaopantry.pocketbase；畫面上的名稱集中在 constants/app.ts。
 > v3.7 變更摘要：v3.7 回寫 K-16（使用者同意）：usePurchaseStore 依 task 8.1 實作更新——不使用 expand、檢查與計算拆到 lib/purchaseForm.ts、FieldsValidationError、PurchaseFormData 欄位、日期篩選字串、新增失敗時刪除記錄。
 > v3.6 變更摘要：v3.6 久未更新（STATUS-008）的顯示方式（使用者決定，task 7.8）：列表每列只放一個標籤，已耗盡 / 即將耗盡優先，兩者都有時第二行開頭加「M/D 更新」；詳情頁在資訊塊下方放提示列，緊鄰更新按鈕。
 > v3.5 變更摘要：v3.5 新增商品頁（使用者決定）：建立成功後進入新商品的詳情頁；分類預設留空「請選擇分類」，沒選顯示 ERR-009（從篩選過的商品列表進來時預先選好該分類）。
@@ -879,6 +880,13 @@ graph LR
 
 **使用者代表色**（頭像淡色底，色相相差 60 度以上）：第 1 位 `#dcf1ff` / `#0a3a80`，第 2 位 `#fde7ee` / `#7a1f44`。頭像內放名稱的**最後一個字**（老皮 →「皮」、阿寶 →「寶」）。
 
+#### 品牌 Logo（v3.9，2026-11-03 使用者選定 Logo A）
+
+- **Logo A 經典門牌**：以台北市門牌為基底，藍底 `#1d5fd6`、內側白色細框、白色數字「5888」一行排開（白字對比 5.6:1）。
+- 數字字型 Barlow Condensed SemiBold（SIL OFL 1.1），只取外框做成 SVG 路徑，畫面不載入此字型。
+- 元件 `src/components/BrandLogo.vue`：`variant="plate"`（預設，登入頁 94×64）、`variant="header"`（頂欄 44×30，框線加粗、數字放大）；旁邊有文字名稱時為裝飾（`aria-hidden`），單獨出現時傳 `label` 改為 `role="img"`。
+- App 圖示、iOS 圖示、maskable（門牌縮 0.78 倍在安全範圍內）、monochrome、瀏覽器分頁圖示、favicon.ico 皆由 `frontend/brand/build-icons.mjs` 從 `brand/digits.json` 產生（說明見 `frontend/brand/README.md`）。
+
 #### 字體
 
 - 字體：**Huninn 粉圓體**（Google Fonts，只有 400 一種粗細），備用字體 `'PingFang TC', 'Noto Sans TC', sans-serif`。
@@ -911,7 +919,7 @@ graph LR
 
 #### 元件
 
-- **頂欄（MainLayout）**：左邊是品牌標記（藍底白字「家」、圓角 10px）加「溫叨Pantry」（名稱集中在 `src/constants/app.ts`）；右邊是使用者頭像、名稱和「登出」文字按鈕（AC-1.5）。**所有頁面（含子頁）頂欄都一樣**，不可拿掉使用者資訊。
+- **頂欄（MainLayout）**：左邊是門牌 Logo（`BrandLogo variant="header"`，44×30）加「溫叨Pantry」（名稱集中在 `src/constants/app.ts`）；右邊是使用者頭像、名稱和「登出」文字按鈕（AC-1.5）。**所有頁面（含子頁）頂欄都一樣**，不可拿掉使用者資訊。
 - **子頁返回列**：新增、編輯、詳情等子頁在內容區最上方放「返回箭頭（44×44）+ 頁面標題（20px h1）」。
 - **底部導覽列**：4 個項目：首頁、購買記錄、商品、分類。每個項目是 22px 線條圖示加 12px 文字；目前所在的頁面用 `--accent` 顏色標示，其他用 `--muted`。手機與桌機都使用底部導覽列（家庭用、主要用手機）。
 - **卡片**：白底、圓角 20px、**沒有陰影也沒有外框**，靠和淺灰底色的差異區分出來。

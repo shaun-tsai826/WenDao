@@ -1,7 +1,7 @@
 <!--
   MainLayout：功能頁共用的外框（task 2.6，AC-1.5）
   design.md「UI 設計規範 › 元件」：
-  - 頂欄：品牌標記 + App 名稱（constants/app.ts）；右邊頭像 + 使用者名稱 +「登出」（task 5.4 接上登出）
+  - 頂欄：門牌 Logo（BrandLogo，Logo A）+ App 名稱（constants/app.ts）；右邊頭像 + 使用者名稱 +「登出」（task 5.4 接上登出）
   - 底部導覽列：首頁、購買記錄、商品、分類（目前頁用 --accent）
 -->
 <template>
@@ -9,7 +9,7 @@
     <q-header class="app-header">
       <div class="app-header__inner">
         <router-link to="/" class="brand" :aria-label="`${APP_NAME} 首頁`">
-          <span class="brand__mark" aria-hidden="true">家</span>
+          <BrandLogo variant="header" class="brand__mark" />
           <span class="brand__name">{{ APP_NAME }}</span>
         </router-link>
 
@@ -48,6 +48,7 @@ import { APP_NAME } from '@/constants/app';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AppIcon, { type IconName } from '@/components/AppIcon.vue';
+import BrandLogo from '@/components/BrandLogo.vue';
 import { useAuthStore } from '@/stores/auth';
 
 const NAV_ITEMS: { to: string; label: string; icon: IconName }[] = [
@@ -104,16 +105,10 @@ function isActive(to: string): boolean {
   min-height: 44px;
 }
 
+// 門牌 Logo（寬高比 140:96）
 .brand__mark {
-  width: 30px;
+  width: 44px;
   height: 30px;
-  border-radius: var(--radius-control);
-  background: var(--accent);
-  color: #ffffff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
 }
 
 .brand__name {

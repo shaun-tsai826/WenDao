@@ -59,6 +59,11 @@ describe('MainLayout', () => {
     const brand = w.find('a.brand');
     expect(brand.attributes('aria-label')).toBe(`${APP_NAME} 首頁`);
     expect(brand.attributes('href')).toBe('/');
+    // Logo A 門牌（裝飾用，名稱已由連結的 aria-label 提供）
+    const logo = brand.find('svg.brand-logo');
+    expect(logo.exists()).toBe(true);
+    expect(logo.attributes('aria-hidden')).toBe('true');
+    expect(brand.text()).not.toContain('家');
   });
 
   it('右上角顯示使用者名稱、頭像（名稱最後一字）與登出按鈕（AC-1.5）', async () => {
