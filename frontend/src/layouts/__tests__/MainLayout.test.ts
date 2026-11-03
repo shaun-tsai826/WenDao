@@ -6,6 +6,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { h } from 'vue';
 import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import MainLayout from '@/layouts/MainLayout.vue';
+import { APP_NAME } from '@/constants/app';
 import { useAuthStore } from '@/stores/auth';
 import pb from '@/lib/pocketbase';
 import type { UserRecord } from '@/types/models';
@@ -52,6 +53,14 @@ beforeEach(() => {
 });
 
 describe('MainLayout', () => {
+  it('左上角顯示 App 名稱「溫叨Pantry」，品牌連結回首頁', async () => {
+    const { wrapper: w } = await mountAt('/products');
+    expect(w.find('.brand__name').text()).toBe(APP_NAME);
+    const brand = w.find('a.brand');
+    expect(brand.attributes('aria-label')).toBe(`${APP_NAME} 首頁`);
+    expect(brand.attributes('href')).toBe('/');
+  });
+
   it('右上角顯示使用者名稱、頭像（名稱最後一字）與登出按鈕（AC-1.5）', async () => {
     const { wrapper: w } = await mountAt('/');
     expect(w.find('.user__name').text()).toBe('老皮');

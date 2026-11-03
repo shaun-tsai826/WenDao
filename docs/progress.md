@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v6.2（2026-11-03）
-> 變更摘要：v6.2 購買記錄設計稿確認（8 張），使用者同意 4 項提案；尚未寫入 design.md。
+> 版本：v6.3（2026-11-03）
+> 變更摘要：v6.3 App 更名「家庭ERP」→「溫叨Pantry」（程式、PWA、規格、文件）；requirements v1.4、design v3.8、tasks v1.7。
+> v6.2 購買記錄設計稿確認（8 張），使用者同意 4 項提案；尚未寫入 design.md。
 > v6.1 K-16 已回寫 design.md v3.7；刪除未使用的 stores/notImplemented.ts（使用者同意）。
 > v6.0 task 8.1（usePurchaseStore）完成；fakePocketBase 擴充；新增契約測試 e2e purchase-contract；新增 K-16（待使用者同意回寫）。
 > v5.9 task 7.8（久未更新提醒）完成，task 7（商品管理）全部完成；design.md v3.6；新增 e2e stale。
@@ -71,9 +72,9 @@
 
 | 文件 | 版本 |
 |---|---|
-| requirements.md | v1.3 |
-| design.md | v3.7 |
-| tasks.md | v1.6（勾選狀態持續更新） |
+| requirements.md | v1.4 |
+| design.md | v3.8 |
+| tasks.md | v1.7（勾選狀態持續更新） |
 | BDD.md | v1.1 |
 | review-notes.md | v1.2 |
 
@@ -135,6 +136,7 @@
 | 2026-11-03 | **task 7.8**：久未更新提醒（AC-7.14，使用者選擇顯示方式）。`DepletionBadge` 新增 `stale`：每列只放一個標籤，已耗盡 / 即將耗盡優先，否則 STATUS-008（灰色 12px）；`productSummary` 在急迫＋久未更新時開頭加「M/D 更新 · 」；商品詳情剩餘數量寫「上次更新 M/D」並在更新按鈕上方加提示列。新增 14 項測試（含 BDD 32 天、30 / 31 天邊界），3 項舊測試因資料本身距今 31～32 天而更新預期；全專案 490 項；4 種故意改壞皆被抓到。e2e `stale.mjs` 8 步驟（含「數字不改直接儲存 → 提醒消失」）。**e2e 發現**：一般 CSS 的 `<style>` 裡用了 `//` 註解，Vitest 不處理樣式所以沒抓到，正式 build 才失敗 → 改 `/* */`。**task 7（商品管理）全部完成** | design.md v3.6 |
 | 2026-11-03 | **task 8.1**：`usePurchaseStore` 的 fetchRecords（分類 `product.category`、日期區間含結束日當天、結束早於開始 ERR-012、新到舊、同日後建立在前；getter `views`）、createRecord（前端算 quantity / unit_price，缺失寫 0；新增者 = 登入者；EAV 寫到一半失敗會刪掉剛建立的記錄；資料庫擋下總價 → ERR-010）、updateRecord（重算、新增者不變、EAV 同步：改了更新 / 清空刪除 / 新填新增 / 換商品刪除舊值）、deleteRecord（cascade）。新增 `lib/purchaseForm.ts`（validatePurchase、computePurchase、fieldValuesToSave，8.4 / 8.6 頁面共用）與 `FieldsValidationError`（每個欄位各自的訊息，AC-5.3）。`fakePocketBase` 擴充：比較運算子 >= <= > <、關聯欄位 `product.category`、cascade 刪除（附 5 項自身測試）。移除 task 2.5 的「尚未實作」骨架測試 2 項。新增 54 項測試，全專案 539 項；6 種故意改壞皆被抓到。**新增契約測試** `e2e/purchase-contract.mjs`：用同樣的 SDK 查詢對真正的 PocketBase 驗證 fake 的假設，7 項全部符合；**發現** PocketBase 的 created 只到毫秒，連續建立可能同一毫秒而排序不定（實際使用不影響，腳本已間隔 20ms） | — |
 | 2026-11-03 | **購買記錄設計稿**：ui-ux-pro-max 查表單 / 篩選 / 對話框 UX 規則後，設計稿新增「購買記錄（task 8）」一排 8 張：Pur-List（分類＋日期篩選）、Pur-List-Range（ERR-012）、Pur-New（有包裝規格，即 8.2 CustomFieldInput）、Pur-New-Error（欄位下方錯誤＋上方錯誤摘要）、Pur-New-Qty（沒有包裝規格，直接輸入數量、文字欄位）、Pur-Remain（CONFIRM-002 對話框）、Pur-Detail（價格比較，圖示＋文字＋顏色）、Pur-Delete（CONFIRM-001）。使用者確認並同意 4 項提案（見重要決定紀錄）。**尚未寫入 design.md**（回到 8.2 時先寫） | 設計稿 Pur-* |
+| 2026-11-03 | **App 更名（使用者決定）**：「家庭ERP」→「溫叨Pantry」；不能用中文的地方用「WenDaoPantry」（全小寫時 wendaopantry）。新增 `src/constants/app.ts`（APP_NAME、APP_NAME_ASCII），頂欄與登入頁改用常數；`package.json` productName、PWA manifest name / short_name 改名，並以 `constants/__tests__/app.test.ts` 檢查設定檔與常數一致。規格：requirements.md 76 處「家庭ERP系統」→「溫叨Pantry系統」、design.md、tasks.md；launchd 設定改為 `com.wendaopantry.pocketbase`（尚未安裝）；README、frontend/README、setup-frontend、setup-pocketbase 同步。依使用者同意**不改**：規格資料夾 `.kiro/specs/home-erp/`、`package.json` name `wendao-frontend`、說明文字「家庭用品管理系統」、過去進度紀錄裡的舊名稱。新增 5 項測試，全專案 544 項；e2e 全部通過，正式 build 的分頁標題與 manifest 已是新名稱。Logo（選 A 經典門牌）與設計稿更新另外進行 | requirements v1.4、design v3.8、tasks v1.7 |
 
 ## task 7.7 測試對照
 
@@ -176,6 +178,7 @@
 | 正式環境 PocketBase 網址 | 使用者決定用相對路徑 `/`（前端放在 pb_public，與 API 同網址），不把 Tailscale 主機名稱寫進 repo | task 2.2 |
 | 路由 | 使用者決定：功能頁**嵌套在 MainLayout 下**、**history 模式**（不帶 #）、刪除範例頁。頁面檔名維持 design.md 的單字名稱，ESLint 只對 `src/pages/` 關閉 multi-word 規則 | task 2.4 |
 | 剩餘數量更新日 | 使用者同意：只要儲存時剩餘數量有值（即使數字沒變），更新日就設為當天——按儲存即代表確認目前數量，「久未更新」提醒跟著消失 | task 7.1 |
+| App 名稱 | 使用者決定：中文「溫叨Pantry」、英文識別名「WenDaoPantry」（全小寫 wendaopantry）；Logo 採 A 經典門牌（藍底白框、5888 橫排）；規格資料夾 home-erp 不改名 | 2026-11-03 |
 | 購買記錄設計 | 使用者同意 4 項：(1) 購買地點附「常去的地點」按鈕（以前用過的地點）；(2) 存檔後回到購買記錄列表、顯示 MSG-004，再跳出 CONFIRM-002；(3) 價格比較另外顯示差額與百分比、歷史均價用了幾筆；(4) 送出失敗時表單上方加錯誤摘要（連到各欄位），欄位下方錯誤保留。編輯頁沿用新增頁表單 | 購買記錄設計稿 |
 | 購買記錄讀取提前 | 使用者決定：7.5 需要依商品讀取購買記錄，`fetchByProduct`、`fetchUsers` 在 7.5 先做，8.1 只剩其餘 actions | task 7.5 |
 | 久未更新顯示 | 使用者決定：列表每列一個標籤（急迫狀態優先，兩者都有時第二行加更新日）；詳情頁在資訊塊下方放提示列，緊鄰更新按鈕 | task 7.8 |

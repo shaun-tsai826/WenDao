@@ -1,7 +1,8 @@
-# WenDao — home-erp 家庭用品管理 ERP
+# WenDao — 溫叨Pantry 家庭用品管理
 
-> 版本：v1.2（2026-11-01）
-> 變更摘要：v1.2 frontend/ 已由 task 2.1 建立，新增前端文件連結。
+> 版本：v1.3（2026-11-03）
+> 變更摘要：v1.3 App 更名「家庭ERP」→「溫叨Pantry」（英文識別名 WenDaoPantry）；規格資料夾仍為 `.kiro/specs/home-erp/`。
+> v1.2 frontend/ 已由 task 2.1 建立，新增前端文件連結。
 > v1.1 新增 docs/specs 捷徑說明。
 > v1.0（2026-10-31）初次建立，說明資料夾結構與協作流程。
 

@@ -1,16 +1,16 @@
 <!--
   MainLayout：功能頁共用的外框（task 2.6，AC-1.5）
   design.md「UI 設計規範 › 元件」：
-  - 頂欄：品牌標記 +「家庭ERP」；右邊頭像 + 使用者名稱 +「登出」（task 5.4 接上登出）
+  - 頂欄：品牌標記 + App 名稱（constants/app.ts）；右邊頭像 + 使用者名稱 +「登出」（task 5.4 接上登出）
   - 底部導覽列：首頁、購買記錄、商品、分類（目前頁用 --accent）
 -->
 <template>
   <q-layout view="hHh lpR fFf" class="main-layout">
     <q-header class="app-header">
       <div class="app-header__inner">
-        <router-link to="/" class="brand" aria-label="家庭ERP 首頁">
+        <router-link to="/" class="brand" :aria-label="`${APP_NAME} 首頁`">
           <span class="brand__mark" aria-hidden="true">家</span>
-          <span class="brand__name">家庭ERP</span>
+          <span class="brand__name">{{ APP_NAME }}</span>
         </router-link>
 
         <div class="user">
@@ -44,6 +44,7 @@
 </template>
 
 <script setup lang="ts">
+import { APP_NAME } from '@/constants/app';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AppIcon, { type IconName } from '@/components/AppIcon.vue';

@@ -1,7 +1,8 @@
 # 前端環境建置教學（setup-frontend.md）
 
-> 版本：v1.7（2026-11-02）
-> 變更摘要：v1.7 新增 e2e 驗證（frontend/e2e/run.sh）。
+> 版本：v1.8（2026-11-03）
+> 變更摘要：v1.8 App 更名為「溫叨Pantry」：第 4 節的 --product 改為新名稱，並註明當初用的是舊名稱。
+> v1.7 新增 e2e 驗證（frontend/e2e/run.sh）。
 > v1.6 測試改用 @quasar/vite-plugin 載入真正的 Quasar 元件、新增 setup 檔；e2e 要用真實滑鼠鍵盤事件。
 > v1.5 測試清單更新到 task 6.6（287 項）；說明測試工具 fakePocketBase / mountPage。
 > v1.4 測試清單更新到 task 5.5（207 項）。
@@ -66,12 +67,14 @@ cd ~/Projects/WenDao
 npm init -y quasar@5.0.35 frontend -- \
   --template app \
   --preset typescript --preset sass --preset eslint --preset pinia \
-  --name wendao-frontend --product "家庭ERP" \
+  --name wendao-frontend --product "溫叨Pantry" \
   --no-git --install --defaults
 
 cd frontend
 npx quasar mode add pwa
 ```
+
+> 2026-11-01 建立時用的是舊名稱「家庭ERP」，2026-11-03 改名為「溫叨Pantry」（`package.json` 的 `productName`、`src-pwa/manifest.json` 的 `name` / `short_name`）。畫面上的名稱集中在 `src/constants/app.ts`。
 
 | 參數 | 意思 |
 |---|---|

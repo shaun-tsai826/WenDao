@@ -1,4 +1,4 @@
-# 家庭ERP (wendao-frontend)
+# 溫叨Pantry (wendao-frontend)
 
 ## Install the dependencies
 

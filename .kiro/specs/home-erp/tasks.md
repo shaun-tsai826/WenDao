@@ -1,7 +1,8 @@
 # Implementation Plan: home-erp 家庭用品管理 ERP
 
-> 版本：v1.6（2026-11-02）
-> 變更摘要：v1.6 7.5 需要依商品讀取購買記錄，usePurchaseStore 的讀取（fetchByProduct、fetchUsers）提前在 7.5 實作，8.1 只剩其餘 actions（使用者同意）。
+> 版本：v1.7（2026-11-03）
+> 變更摘要：v1.7 launchd 設定檔改名 com.wendaopantry.pocketbase.plist（App 更名為溫叨Pantry，使用者決定）。
+> v1.6 變更摘要：v1.6 7.5 需要依商品讀取購買記錄，usePurchaseStore 的讀取（fetchByProduct、fetchUsers）提前在 7.5 實作，8.1 只剩其餘 actions（使用者同意）。
 > v1.5 變更摘要：v1.5 回寫 K-15（使用者同意）：整合測試以 fakePocketBase 取代 MSW，12.1 改為整理 fakePocketBase 與 e2e 腳本。
 > v1.4 分類管理設計稿確認（使用者同意）：6.4 刪除分類改在編輯分類頁並先確認（CONFIRM-003）；6.5 刪除欄位先確認（CONFIRM-004）、已使用欄位提前鎖定型別與計算方式。
 > v1.3 依實作結果回寫 K-1、K-2、K-8、K-9（經使用者同意）：1.2 users 改為修改系統預設 Collection；1.8 使用者改為手動建立；2.1 的 `quasar.config.js` 改為 `quasar.config.ts` 與 `src-pwa/manifest.json`；2.2 的 `build.env` 改為 `build.defineEnv`，正式環境網址改為 `/`；1.3 的 required 依 PocketBase 語意調整（K-2）。
@@ -397,7 +398,7 @@
 
 - [ ] 13. 部署設定檔案建立
   - [ ] 13.1 建立 launchd plist 設定檔、前端部署腳本與 tailscale serve 設定步驟
-    - 建立 `deploy/com.homeerp.pocketbase.plist`（PocketBase 常駐執行、開機自動啟動、RunAtLoad、KeepAlive）
+    - 建立 `deploy/com.wendaopantry.pocketbase.plist`（PocketBase 常駐執行、開機自動啟動、RunAtLoad、KeepAlive）
     - PocketBase binary 路徑：`/Users/cooqle/Projects/WenDao/backend/pocketbase`，WorkingDirectory：`/Users/cooqle/Projects/WenDao/backend`
     - 建立前端 build 部署腳本：`npm run build` 後將 `dist/` 複製到 `backend/pb_public/`
     - 撰寫 `tailscale serve` 設定步驟至 `deploy/README.md`，包含：啟用 MagicDNS、啟用 HTTPS Certificates、執行 `tailscale serve https / http://localhost:8090`

@@ -9,7 +9,7 @@
   <div class="login">
     <div class="login__brand">
       <span class="login__mark" aria-hidden="true">家</span>
-      <span class="login__name">家庭ERP</span>
+      <span class="login__name">{{ APP_NAME }}</span>
       <span class="login__tagline">家裡用品的購買記錄與補貨提醒</span>
     </div>
 
@@ -81,6 +81,7 @@
 </template>
 
 <script setup lang="ts">
+import { APP_NAME } from '@/constants/app';
 import { nextTick, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import AppIcon from '@/components/AppIcon.vue';
