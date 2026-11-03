@@ -300,7 +300,7 @@
     - _對應：REQ-7, AC-7.14_
 
 - [ ] 8. 購買記錄頁面
-  - [ ] 8.1 實作 usePurchaseStore
+  - [x] 8.1 實作 usePurchaseStore
     - （fetchByProduct、fetchUsers 已於 7.5 完成）fetchRecords（支援分類/日期區間篩選、按日期降序）、createRecord（前端計算 quantity 與 unit_price 後寫入，含 EAV 值寫入）、updateRecord、deleteRecord
     - 日期區間篩選使用 `pb.filter()` 安全組字串，包含結束日當天
     - _對應：REQ-5, AC-5.1, AC-5.6, AC-5.7, REQ-6, AC-6.1, REQ-8, AC-8.1_

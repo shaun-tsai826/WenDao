@@ -6,9 +6,11 @@
 //   expect(fake.rows('categories')).toHaveLength(2);
 //
 // 模擬的範圍只到 store 會用到的部分：
-// - getFullList / getList（filter 支援 `欄位 = "值"`、`欄位 != "值"`，用 && 串接；sort 支援逗號分隔欄位，- 表示反向）
+// - getFullList / getList（filter 支援 `欄位 運算子 "值"`，運算子 = != >= <= > <，用 && 串接；
+//   欄位可沿著關聯往下找，例如 `product.category`（task 8.1）；sort 支援逗號分隔欄位，- 表示反向）
 // - create / update / delete
-// - 資料庫規則：unique 欄位重複 → 400 validation_not_unique；被 Restrict 關聯的資料不能刪 → 400
+// - 資料庫規則：unique 欄位重複 → 400 validation_not_unique；被 Restrict 關聯的資料不能刪 → 400；
+//   Cascade 關聯的資料跟著刪除（task 8.1）
 // - fake.failNext(status, where?)：下一次（符合條件的）呼叫丟出錯誤；where.data 可指定欄位錯誤（例如 UNIQUE）
 //   status 0 = 連不上伺服器、500 = 伺服器錯誤、400 = 被資料庫拒絕
 import { vi } from 'vitest';
@@ -36,18 +38,58 @@ const RESTRICT: Record<string, [string, string][]> = {
   users: [['purchase_records', 'user']],
 };
 
+/** Cascade 關聯：刪除某表的資料時，連帶刪除「參照它的表.欄位」（與 migrations 的 cascadeDelete 一致） */
+const CASCADE: Record<string, [string, string][]> = {
+  categories: [['custom_fields', 'category']],
+  purchase_records: [['purchase_record_field_values', 'purchase_record']],
+};
+
+/** 關聯欄位 → 它指向的表（filter 的 `product.category` 用來往下找） */
+const RELATION_TABLE: Record<string, string> = {
+  product: 'products',
+  category: 'categories',
+  user: 'users',
+  purchase_record: 'purchase_records',
+  custom_field: 'custom_fields',
+};
+
 /** 欄位值轉成文字比較（字串原樣，其他型別用 JSON） */
 const toText = (v: unknown): string => (typeof v === 'string' ? v : JSON.stringify(v ?? ''));
 
-function parseFilter(filter: string | undefined): (row: Row) => boolean {
+/** 比較兩個文字（PocketBase 對日期字串也是這樣比：'YYYY-MM-DD HH:mm:ss.sssZ' 的字典順序 = 時間順序） */
+const COMPARE: Record<string, (a: string, b: string) => boolean> = {
+  '=': (a, b) => a === b,
+  '!=': (a, b) => a !== b,
+  '>=': (a, b) => a >= b,
+  '<=': (a, b) => a <= b,
+  '>': (a, b) => a > b,
+  '<': (a, b) => a < b,
+};
+
+/**
+ * @param lookup 依「表名 + id」找一筆資料，用來解析 `product.category` 這種關聯欄位
+ */
+function parseFilter(
+  filter: string | undefined,
+  lookup: (table: string, id: unknown) => Row | undefined,
+): (row: Row) => boolean {
   if (!filter) return () => true;
   const conditions = filter.split('&&').map((part) => {
-    const m = /^(\w+)\s*(=|!=)\s*"((?:\\.|[^"\\])*)"$/.exec(part.trim());
+    const m = /^([\w.]+)\s*(!=|>=|<=|=|>|<)\s*"((?:\\.|[^"\\])*)"$/.exec(part.trim());
     if (!m) throw new Error(`fakePocketBase 不支援這個 filter：${part}`);
-    const field = m[1]!;
-    const op = m[2]!;
+    const path = m[1]!.split('.');
+    const compare = COMPARE[m[2]!]!;
     const value = m[3]!.replace(/\\(.)/g, '$1');
-    return (row: Row) => (toText(row[field]) === value) === (op === '=');
+    return (row: Row) => {
+      // 沿著關聯往下找：product.category → 先找 products 裡的那筆商品，再取它的 category
+      let current: Row | undefined = row;
+      for (const field of path.slice(0, -1)) {
+        const target = RELATION_TABLE[field];
+        if (!target) throw new Error(`fakePocketBase 不認得關聯欄位：${field}`);
+        current = lookup(target, current?.[field]);
+      }
+      return current !== undefined && compare(toText(current[path.at(-1)!]), value);
+    };
   });
   return (row) => conditions.every((c) => c(row));
 }
@@ -84,6 +126,7 @@ export function installFakePocketBase(initial: Partial<Tables> = {}) {
   const calls: { collection: string; method: Method; args: unknown[] }[] = [];
 
   const table = (name: string) => (tables[name] ??= []);
+  const lookup = (name: string, id: unknown) => table(name).find((r) => r.id === id);
   const stamp = () => `2026-11-02 00:00:${String(clock++).padStart(2, '0')}.000Z`;
   for (const [name, rows] of Object.entries(initial)) {
     tables[name] = (rows ?? []).map((r) => ({ created: stamp(), ...r }));
@@ -124,14 +167,19 @@ export function installFakePocketBase(initial: Partial<Tables> = {}) {
     return {
       getFullList: vi.fn((options: ListOptions = {}) =>
         call(name, 'getFullList', [options], () =>
-          sortRows(table(name).filter(parseFilter(options.filter)), options.sort).map((r) => ({
-            ...r,
-          })),
+          sortRows(table(name).filter(parseFilter(options.filter, lookup)), options.sort).map(
+            (r) => ({
+              ...r,
+            }),
+          ),
         ),
       ),
       getList: vi.fn((page: number, perPage: number, options: ListOptions = {}) =>
         call(name, 'getList', [page, perPage, options], () => {
-          const all = sortRows(table(name).filter(parseFilter(options.filter)), options.sort);
+          const all = sortRows(
+            table(name).filter(parseFilter(options.filter, lookup)),
+            options.sort,
+          );
           const items = all.slice((page - 1) * perPage, page * perPage).map((r) => ({ ...r }));
           return {
             page,
@@ -168,6 +216,9 @@ export function installFakePocketBase(initial: Partial<Tables> = {}) {
             if (table(refTable).some((r) => r[refField] === id)) throw httpError(400);
           }
           table(name).splice(index, 1);
+          for (const [refTable, refField] of CASCADE[name] ?? []) {
+            tables[refTable] = table(refTable).filter((r) => r[refField] !== id);
+          }
           return true;
         }),
       ),

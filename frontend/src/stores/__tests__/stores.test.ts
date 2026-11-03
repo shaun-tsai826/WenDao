@@ -83,11 +83,5 @@ describe('資料 stores 骨架', () => {
     expect(p.getById('p2')?.id).toBe('p2');
     expect(usePurchaseStore().getById('x')).toBeUndefined();
   });
-
-  it.each([
-    ['fetchRecords', '8.1', () => usePurchaseStore().fetchRecords()],
-    ['deleteRecord', '8.1', () => usePurchaseStore().deleteRecord('x')],
-  ])('尚未實作的 %s 會丟出指向 task %s 的錯誤', (action, task, call) => {
-    expect(call).toThrow(`${action} 尚未實作（task ${task}）`);
-  });
+  // 「尚未實作」的檢查已移除：所有骨架 action 都在 task 6.1、7.1、8.1 實作完成
 });

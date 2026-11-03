@@ -22,6 +22,24 @@ export class DuplicateProductError extends ValidationError {
 }
 
 /**
+ * 表單有多個欄位不符合規則（task 8.1，AC-5.3「在未填寫的欄位旁顯示」）。
+ * fieldErrors：欄位 → 訊息，頁面把訊息顯示在各自的欄位旁；message 是第一個錯誤（給只顯示一行的地方用）。
+ */
+export class FieldsValidationError extends ValidationError {
+  constructor(public readonly fieldErrors: Record<string, string>) {
+    super(Object.values(fieldErrors)[0] ?? '');
+    this.name = 'FieldsValidationError';
+  }
+}
+
+/** PocketBase 回傳「某欄位不符合規則」（400 且該欄位有錯誤代碼，例如 total_price 低於 min） */
+export function hasFieldError(err: unknown, field: string): boolean {
+  if (!(err instanceof ClientResponseError) || err.status !== 400) return false;
+  const data = err.response?.data as Record<string, unknown> | undefined;
+  return Boolean(data?.[field]);
+}
+
+/**
  * 把任何錯誤轉成要顯示的訊息：
  * - ValidationError → 它自己的訊息
  * - 連不上伺服器（status 0，例如沒開 Tailscale）→ ERR-014
