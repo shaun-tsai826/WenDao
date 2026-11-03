@@ -1,7 +1,8 @@
 # 前端環境建置教學（setup-frontend.md）
 
-> 版本：v1.8（2026-11-03）
-> 變更摘要：v1.8 App 更名為「溫叨Pantry」：第 4 節的 --product 改為新名稱，並註明當初用的是舊名稱。
+> 版本：v1.9（2026-11-03）
+> 變更摘要：v1.9 新增第 9 節「在手機上測試（家裡 Wi-Fi）」與相關疑難排解；第 8 節 e2e 腳本清單更新。
+> v1.8 App 更名為「溫叨Pantry」：第 4 節的 --product 改為新名稱，並註明當初用的是舊名稱。
 > v1.7 新增 e2e 驗證（frontend/e2e/run.sh）。
 > v1.6 測試改用 @quasar/vite-plugin 載入真正的 Quasar 元件、新增 setup 檔；e2e 要用真實滑鼠鍵盤事件。
 > v1.5 測試清單更新到 task 6.6（287 項）；說明測試工具 fakePocketBase / mountPage。
@@ -189,13 +190,69 @@ npm run test:watch    # 改檔案時自動重跑（開發時開著）
 
 ```bash
 cd ~/Projects/WenDao/frontend
-./e2e/run.sh                       # 全部（login、categories、custom-field-sheet、logout）
+./e2e/run.sh                       # 全部腳本（清單見 e2e/run.sh 的 SCRIPTS）
 ./e2e/run.sh custom-field-sheet    # 只跑一支
 ```
 
 - 會先 `quasar build -m pwa`，再開一個**臨時** PocketBase（port 8099，跑完自動刪除，不碰正式資料），用 migrations 建好種子資料，加測試帳號 `alice@family.home`。
 - 腳本用 Chrome DevTools Protocol 送出**真實的滑鼠與鍵盤事件**，輸出每個步驟的結果；截圖在 `e2e/.shots/`（不進 git）。
 - 需要：已下載 `backend/pocketbase`、已安裝 Google Chrome、Node 22 以上。
+
+## 9. 在手機上測試（家裡 Wi-Fi）
+
+想在 iPhone 上看實際畫面、試日期選擇器之類的操作時用這個方法。正式的外網存取（HTTPS）是 task 13 用 Tailscale 部署，這裡先用家裡的 Wi-Fi。
+
+**原理**：讓 PocketBase 同時提供「建置好的前端畫面」與 API，並開放給家裡的 Wi-Fi 連線；手機用 Safari 連到這台 Mac 的 IP。
+
+```text
+iPhone Safari ──家裡 Wi-Fi──► Mac 的 IP:8090 ──► 前端畫面（frontend/dist/pwa）
+                                            └──► PocketBase API 與資料（backend/pb_data）
+```
+
+### 9.1 步驟
+
+1. **建置最新的前端**（程式有改過才需要）：
+
+   ```bash
+   cd ~/Projects/WenDao/frontend
+   npx quasar build -m pwa
+   ```
+
+2. **停掉平常的 PocketBase**：到正在跑 PocketBase 的終端機視窗按 `Ctrl + C`。
+
+3. **重新啟動：開放給區域網路，並提供前端畫面**：
+
+   ```bash
+   cd ~/Projects/WenDao/backend
+   ./pocketbase serve --http=0.0.0.0:8090 --publicDir=../frontend/dist/pwa
+   ```
+
+   - `0.0.0.0`：所有網路介面都接受連線（平常的 `127.0.0.1` 只有這台 Mac 自己連得到）。
+   - `--publicDir`：讓 PocketBase 直接提供 `dist/pwa` 裡的畫面，不需要複製到 `pb_public`。
+
+4. **查這台 Mac 的 IP**（Wi-Fi 可能是 en0 或 en1，所以兩個都試）：
+
+   ```bash
+   ipconfig getifaddr en0 || ipconfig getifaddr en1
+   ```
+
+   會得到像 `192.168.x.x` 的位址。換網路或重開機後可能會變，每次測試前都查一次。
+
+5. **iPhone 連上同一個 Wi-Fi**，用 Safari 開 `http://<上一步的 IP>:8090`，用自己的帳號登入。
+
+6. **測完改回平常的設定**：按 `Ctrl + C` 停掉，再用原本的方式啟動：
+
+   ```bash
+   ./pocketbase serve --http=127.0.0.1:8090
+   ```
+
+### 9.2 要注意的地方
+
+- **用的是真實資料**：手機上新增、修改的內容會直接存進 `backend/pb_data`，和平常是同一份。
+- **測試期間，家裡 Wi-Fi 上的其他裝置也連得到登入頁**：公開註冊已關閉（task 1.7），沒有帳密登不進去；測完仍請照第 6 步改回 `127.0.0.1`。
+- **這是 HTTP 不是 HTTPS**：畫面與操作都能測；PWA 的離線功能、加入主畫面後像 App 一樣全螢幕開啟，要等 task 13 的 HTTPS（Tailscale）才會完整運作。
+- **為什麼不用 `quasar dev`（開發伺服器）**：開發模式的前端會連 `http://localhost:8090`（第 6 節），在手機上 `localhost` 指的是手機自己，會連不到資料。用 PocketBase 提供建置好的畫面，前端與 API 在同一個網址（`VITE_POCKETBASE_URL = /`），就不會有這個問題。
+- 2026-11-03 已在 Mac 上用區域網路 IP 驗證：首頁、`/purchases` 這類網址（history 路由）、API 都回應 200，分頁標題是「溫叨Pantry」。
 
 ## 疑難排解
 
@@ -210,4 +267,9 @@ cd ~/Projects/WenDao/frontend
 | 測試出現 `The SSR server build was installed without an ssrContext` | 測試沒有用到 Quasar 的瀏覽器版本 | 確認 `vitest.config.ts` 的 alias 有 `/^quasar$/ → quasar/dist/quasar.client.js` |
 | `npm audit` 顯示十幾個 moderate 漏洞 | 都在 ESLint 相關的**開發工具**裡（minimatch），不會打包進 App | 用 `npm audit --omit=dev` 檢查正式會用到的套件（應為 0）。不要執行 `npm audit fix --force`，它會把 ESLint 降到很舊的版本 |
 | 安裝時出現 `npm warn install-scripts` | npm 11 預設不執行套件的安裝腳本（`@parcel/watcher`、`fsevents`） | 目前不影響開發與建置，不用處理 |
+| 手機開 `http://<IP>:8090` 一直轉圈或「無法連接伺服器」 | 手機和 Mac 不在同一個 Wi-Fi、IP 換了，或 PocketBase 還綁在 `127.0.0.1` | 確認同一個 Wi-Fi；重新查 IP（第 9 節第 4 步）；確認啟動時用的是 `--http=0.0.0.0:8090` |
+| 手機看得到登入頁，但登入後畫面空白或出現連線錯誤 | 用了 `quasar dev` 的網址（port 9000），前端去連手機自己的 `localhost:8090` | 改用第 9 節的方式：PocketBase 加 `--publicDir`，網址用 port 8090 |
+| 第 9 節啟動時出現 `bind: address already in use` | 平常的 PocketBase 還在跑 | 先到那個視窗按 `Ctrl + C`；找不到視窗時用 `lsof -i :8090` 查出程式再關掉 |
+| 打開 macOS 防火牆後手機連不到 | 防火牆擋下外部連線 | 系統設定 → 網路 → 防火牆 → 選項，允許 `pocketbase` 接收連入連線 |
+| 手機上看到的是舊畫面 | `dist/pwa` 不是最新的建置，或 Safari 快取 | 重新執行第 9 節第 1 步；Safari 重新整理（必要時 設定 → Safari → 清除瀏覽紀錄與網站資料） |
 | 改了 manifest，手機上卻沒變 | 舊的 service worker 還在快取舊檔案 | 瀏覽器開發者工具 → Application → Service Workers → Unregister，再重新整理 |

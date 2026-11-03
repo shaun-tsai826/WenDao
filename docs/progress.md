@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v6.7（2026-11-03）
-> 變更摘要：v6.7 task 8.3（購買記錄列表）完成；新增 e2e purchases。
+> 版本：v6.8（2026-11-03）
+> 變更摘要：v6.8 setup-frontend.md v1.9 新增「在手機上測試（家裡 Wi-Fi）」；待使用者回家後在手機上測試。
+> v6.7 task 8.3（購買記錄列表）完成；新增 e2e purchases。
 > v6.6 task 8.2（CustomFieldInput）完成。
 > v6.5 購買記錄設計寫入 design.md v4.0。
 > v6.4 Logo A（台北市門牌 5888）定稿：BrandLogo 元件、App / 分頁圖示產生器；design.md v3.9。
@@ -142,6 +143,7 @@
 | 2026-11-03 | **購買記錄設計稿**：ui-ux-pro-max 查表單 / 篩選 / 對話框 UX 規則後，設計稿新增「購買記錄（task 8）」一排 8 張：Pur-List（分類＋日期篩選）、Pur-List-Range（ERR-012）、Pur-New（有包裝規格，即 8.2 CustomFieldInput）、Pur-New-Error（欄位下方錯誤＋上方錯誤摘要）、Pur-New-Qty（沒有包裝規格，直接輸入數量、文字欄位）、Pur-Remain（CONFIRM-002 對話框）、Pur-Detail（價格比較，圖示＋文字＋顏色）、Pur-Delete（CONFIRM-001）。使用者確認並同意 4 項提案（見重要決定紀錄）。已寫入 design.md v4.0「購買記錄」段落 | 設計稿 Pur-*、design.md v4.0 |
 | 2026-11-03 | **task 8.2**：`components/CustomFieldInput.vue`（依 display_order 三欄並排；數字欄位 inputmode=decimal、輸入時整理成數字且不收負號；文字欄位原樣；每欄標示「算數量 / 只記錄」；數量組成欄位離開時檢查，有填但不大於 0 → ERR-008 顯示在欄位下方（aria-invalid、aria-describedby），沒填不算錯；頁面送出的錯誤由 errors 傳入；leading 插槽給沒有包裝規格的分類放「數量」；v-model 為「欄位 id → 文字」，與 lib/purchaseForm.ts 的 fieldValues 相同）。新增 17 項測試，全專案 565 項；5 種故意改壞皆被抓到。元件還沒有頁面使用，**e2e（真實滑鼠鍵盤）與截圖比對留到 task 8.4** | — |
 | 2026-11-03 | **task 8.3**：`pages/Purchases.vue`（依設計稿 Pur-List / Pur-List-Range：新到舊；每列新增者頭像、商品、「日期 · 地點 · 分類」、「數量 · 單位均價」、總價；分類按鈕＋開始 / 結束日期（含當天）；結束早於開始 → ERR-012 在結束日期下方、清單維持上一次結果；篩選記在網址 ?category=&start=&end=（replace，沿用商品列表的做法），網址上不合法的值當作沒有篩選；沒有記錄 / 篩選後沒有記錄＋清除篩選；載入失敗重試）。`lib/purchaseView.ts` 新增 `purchaseAmountLine`，商品詳情改用它（共用）。新增 24 項測試，全專案 589 項；5 種故意改壞皆被抓到。e2e `purchases.mjs`（真實滑鼠＋鍵盤輸入日期，Chrome 繁中語系）10 步驟通過。**e2e 發現並修正**：用鍵盤打日期時年份可打成 5～6 位數（如 202610-03-01）並寫進網址 → 日期欄位加 min 2000-01-01 / max 9999-12-31（Chrome 依 max 限制年份 4 位），頁面忽略格式不對的值（先寫回歸測試）。另外：這次 e2e 前沒先跑 typecheck / lint，正式 build 才抓到 exactOptionalPropertyTypes 與多餘型別斷言 → 已修正，之後依「單元測試 → lint → typecheck → e2e」順序 | — |
+| 2026-11-03 | **在手機上測試的方法**：PocketBase 用 `--http=0.0.0.0:8090 --publicDir=../frontend/dist/pwa` 同時提供建置好的前端與 API，iPhone 連家裡 Wi-Fi 開 `http://<Mac IP>:8090`；已在 Mac 上用區域網路 IP 驗證首頁、history 路由、API 皆 200（尚未用實機測試）。整理進 setup-frontend.md 第 9 節＋疑難排解 5 項 | `docs/setup-frontend.md` v1.9 |
 | 2026-11-03 | **App 更名（使用者決定）**：「家庭ERP」→「溫叨Pantry」；不能用中文的地方用「WenDaoPantry」（全小寫時 wendaopantry）。新增 `src/constants/app.ts`（APP_NAME、APP_NAME_ASCII），頂欄與登入頁改用常數；`package.json` productName、PWA manifest name / short_name 改名，並以 `constants/__tests__/app.test.ts` 檢查設定檔與常數一致。規格：requirements.md 76 處「家庭ERP系統」→「溫叨Pantry系統」、design.md、tasks.md；launchd 設定改為 `com.wendaopantry.pocketbase`（尚未安裝）；README、frontend/README、setup-frontend、setup-pocketbase 同步。依使用者同意**不改**：規格資料夾 `.kiro/specs/home-erp/`、`package.json` name `wendao-frontend`、說明文字「家庭用品管理系統」、過去進度紀錄裡的舊名稱。新增 5 項測試，全專案 544 項；e2e 全部通過，正式 build 的分頁標題與 manifest 已是新名稱。Logo（選 A 經典門牌）與設計稿更新另外進行 | requirements v1.4、design v3.8、tasks v1.7 |
 | 2026-11-03 | **Logo A 定稿**：數字用 Barlow Condensed SemiBold（SIL OFL 1.1，從 Google Fonts 官方 GitHub 下載）的外框；`brand/extract-digits.py`（fontTools，暫時 venv 安裝）取出路徑 → `brand/digits.json`；`brand/build-icons.mjs` 產生 SVG 原始檔、`src/components/brandPaths.ts`、PWA / iOS / maskable（縮 0.78 倍在安全範圍）/ monochrome / 分頁 PNG 與 favicon.ico（無頭 Chrome 繪製），並自動跑 prettier。新增 `BrandLogo.vue`（plate / header、裝飾用 aria-hidden 或 label 時 role=img），頂欄與登入頁換掉「家」字標記。新增 5 項測試，全專案 548 項；e2e 全部通過。16px 分頁圖示仍難辨認數字（尺寸限制） | design.md v3.9、`frontend/brand/README.md` v1.0 |
 | 2026-11-03 | **設計稿更名與換 Logo**：設計稿標題改為「溫叨Pantry 設計稿」；採用的 16 張畫板（B-Home、登入 2 張、Cat-List、商品 4 張、購買記錄 8 張）頂欄與登入頁換上門牌 Logo（上傳 brand/svg/logo-header.svg、logo.svg 為素材）與新名稱。A、C 風格提案（Main、C-Home 等）保留舊樣子作為紀錄 | 設計稿 |
@@ -245,6 +247,7 @@ git pull
 
 ### 目前位置（2026-11-02）
 
+- **待使用者回家後在 iPhone 上測試**（步驟見 `docs/setup-frontend.md` 第 9 節）：購買記錄的日期選擇器與 ERR-012 換行、商品頁操作、新門牌 Logo；結果回報後再決定要不要調整。
 - 已完成：task 1～7、8.1～8.3；購買記錄設計稿已確認（設計稿 Pur-*，design.md v4.0「購買記錄」）。**下一步：task 8.4 PurchaseNew**（設計稿 Pur-New / Pur-New-Error / Pur-New-Qty / Pur-Remain；用 CustomFieldInput 與 lib/purchaseForm.ts；補 CustomFieldInput 的 e2e）。新增 / 編輯頁直接用 `lib/purchaseForm.ts` 做即時檢查與數量預覽。
 - 商品頁設計稿已確認：設計稿最下面一排 Prod-List / Prod-New / Prod-Detail / Prod-Edit（https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf ；本機原始檔在 `.design-canvas/`，不進 git）。
 - 沒有待使用者決定的事項。
