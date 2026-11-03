@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v5.9（2026-11-03）
-> 變更摘要：v5.9 task 7.8（久未更新提醒）完成，task 7（商品管理）全部完成；design.md v3.6；新增 e2e stale。
+> 版本：v6.0（2026-11-03）
+> 變更摘要：v6.0 task 8.1（usePurchaseStore）完成；fakePocketBase 擴充；新增契約測試 e2e purchase-contract；新增 K-16（待使用者同意回寫）。
+> v5.9 task 7.8（久未更新提醒）完成，task 7（商品管理）全部完成；design.md v3.6；新增 e2e stale。
 > v5.8 task 7.7（商品管理測試）完成：對照清單、補 9 項邊界測試、vitest 固定時區 Asia/Taipei。
 > v5.7 新增商品頁分類改為預設留空（使用者決定，design.md v3.5）。
 > v5.6 task 7.6（更新消耗設定頁）完成；新增 e2e product-edit。
@@ -54,13 +55,13 @@
 
 ## 目前階段
 
-**實作中。** task 1（環境建置）全部完成；**task 1～7 完成**，下一步是 task 8.1（usePurchaseStore 其餘 actions）。commit 前執行 `npm test`（目前 490 項）。
+**實作中。** task 1（環境建置）全部完成；**task 1～7、8.1 完成**，下一步是 task 8.2 起的購買記錄頁面（**先做設計稿**）。commit 前執行 `npm test`（目前 539 項）。
 
 > **2026-11-01 起短期內不使用 Kiro**：規格需要修改時，由 Claude Code 先問使用者、同意後直接改（含版本號與變更摘要）。
 > **task 2.6 之前**：先用已安裝的設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿（儀表板、新增購買記錄），使用者選定後整理成 UI 設計規範寫進規格。
 
 ```
-規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（task 7 完成，下一步 8.1）
+規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（8.1 完成，下一步 8.2 前先做設計稿）
   (完成)       (完成)          (完成)            (完成)        ◄ 目前在這裡
 ```
 
@@ -130,6 +131,7 @@
 | 2026-11-03 | **task 7.4 追加（使用者決定）**：新增商品頁分類預設留空「請選擇分類」（灰色提示字），沒選送出顯示 ERR-009 並加一行「請在上方選擇分類」、標紅框並聚焦分類選單；從篩選過的列表進來仍預先選好；建立後進入詳情頁維持不變。另修正：連線錯誤時焦點不再跳到分類選單。全專案 468 項；e2e product-new 12 步驟通過。發現 `lint:check` 的檔案範圍不含 `.mjs`（e2e 腳本不受排版檢查，維持原狀） | design.md v3.5 |
 | 2026-11-03 | **task 7.7**：對照清單逐項確認（見下方「task 7.7 測試對照」），7 個情境在 store 與頁面兩層都已涵蓋；STATUS-008 的判斷（30 / 31 / 32 天）已在 `productView.test.ts`，畫面顯示的測試隨 task 7.8 撰寫。補 9 項邊界測試：數字沒變也更新日期（store + 頁面）、清晨 00:30 / 深夜 23:59 儲存記成本地當天、剩餘數量 -0.01 / NaN / 無限大 → ERR-015、品牌只有全形空白 → ERR-005。`vitest.config.ts` 固定 `TZ=Asia/Taipei`（外部設 TZ=UTC 也得到相同結果）。全專案 476 項；4 種故意改壞皆被抓到 | — |
 | 2026-11-03 | **task 7.8**：久未更新提醒（AC-7.14，使用者選擇顯示方式）。`DepletionBadge` 新增 `stale`：每列只放一個標籤，已耗盡 / 即將耗盡優先，否則 STATUS-008（灰色 12px）；`productSummary` 在急迫＋久未更新時開頭加「M/D 更新 · 」；商品詳情剩餘數量寫「上次更新 M/D」並在更新按鈕上方加提示列。新增 14 項測試（含 BDD 32 天、30 / 31 天邊界），3 項舊測試因資料本身距今 31～32 天而更新預期；全專案 490 項；4 種故意改壞皆被抓到。e2e `stale.mjs` 8 步驟（含「數字不改直接儲存 → 提醒消失」）。**e2e 發現**：一般 CSS 的 `<style>` 裡用了 `//` 註解，Vitest 不處理樣式所以沒抓到，正式 build 才失敗 → 改 `/* */`。**task 7（商品管理）全部完成** | design.md v3.6 |
+| 2026-11-03 | **task 8.1**：`usePurchaseStore` 的 fetchRecords（分類 `product.category`、日期區間含結束日當天、結束早於開始 ERR-012、新到舊、同日後建立在前；getter `views`）、createRecord（前端算 quantity / unit_price，缺失寫 0；新增者 = 登入者；EAV 寫到一半失敗會刪掉剛建立的記錄；資料庫擋下總價 → ERR-010）、updateRecord（重算、新增者不變、EAV 同步：改了更新 / 清空刪除 / 新填新增 / 換商品刪除舊值）、deleteRecord（cascade）。新增 `lib/purchaseForm.ts`（validatePurchase、computePurchase、fieldValuesToSave，8.4 / 8.6 頁面共用）與 `FieldsValidationError`（每個欄位各自的訊息，AC-5.3）。`fakePocketBase` 擴充：比較運算子 >= <= > <、關聯欄位 `product.category`、cascade 刪除（附 5 項自身測試）。移除 task 2.5 的「尚未實作」骨架測試 2 項。新增 54 項測試，全專案 539 項；6 種故意改壞皆被抓到。**新增契約測試** `e2e/purchase-contract.mjs`：用同樣的 SDK 查詢對真正的 PocketBase 驗證 fake 的假設，7 項全部符合；**發現** PocketBase 的 created 只到毫秒，連續建立可能同一毫秒而排序不定（實際使用不影響，腳本已間隔 20ms） | — |
 
 ## task 7.7 測試對照
 
@@ -146,7 +148,7 @@
 
 ## 待辦（依順序）
 
-1. **[Claude Code]** task 8（購買記錄頁面）：8.1 usePurchaseStore 其餘 actions（fetchByProduct、fetchUsers 已於 7.5 完成），接著 8.2 起的頁面。
+1. **[Claude Code]** task 8.2 起的購買記錄頁面：**先用設計 skills 做設計稿**（購買記錄列表、新增 / 編輯、詳情），使用者確認後再實作。
 3. 之後依 `tasks.md` 順序，一次做一個 task → 勾選 `[x]` → commit（message 帶 task 編號）。
 
 ## 重要決定紀錄
@@ -212,6 +214,7 @@
 | K-13 | task 2.5 | **（已回寫 v2.7）** design.md 的 useAuthStore：state 初始值改為空（user: null、token: ''），由 `syncFromPb()` 從 SDK 複製（token 過期視為未登入）；boot 呼叫 `syncFromPb()` 並註冊 `pb.authStore.onChange`；新增 `src/types/models.ts` 存放 6 張表的型別（資料庫原始值） |
 | K-14 | task 6.4 | **（已回寫 design.md v3.1）** design.md「UI 設計規範 › 元件 › 頂欄」寫「子頁的頂欄改成返回箭頭 + 頁面標題」，會拿掉右上角使用者名稱與登出，與 AC-1.5「已登入時右上角顯示使用者名稱與登出」衝突。實作改為：頂欄維持不變，子頁在內容區上方放「返回箭頭 + 頁面標題（20px h1）」 |
 | K-15 | task 6.6 | **（已回寫 design.md v3.1、tasks.md v1.5）** tasks.md 6.6（及後續整合測試）寫「MSW 回傳 400」；實作改用自製的 `test-utils/fakePocketBase.ts`（記憶體假資料庫，模擬 UNIQUE / Restrict / 連線錯誤），不另裝 MSW。重要流程另以無頭 Chrome 對正式 build 做 e2e |
+| K-16 | task 8.1 | **（待使用者同意）** design.md 的 usePurchaseStore 範例：不用 `expand: 'product,product.category,user'`，商品、分類、新增者由頁面對照已載入的清單（沿用 7.5）；檢查與計算拆到 `lib/purchaseForm.ts`（頁面共用），不通過丟出 `FieldsValidationError`（欄位 → 訊息）；`PurchaseFormData` 加上 `customFields`（商品所屬分類的欄位定義）、`totalPrice` 可為 null、`fieldValues` 為文字；日期篩選改為 `purchase_date >= 'YYYY-MM-DD 00:00:00.000Z'`、`<= 'YYYY-MM-DD 23:59:59.999Z'`（用 `pb.filter()`）；排序 `-purchase_date,-created`；新增時欄位值寫入失敗會刪除剛建立的記錄 |
 | K-7 | task 1.6 | purchase_record_field_values 同 K-3，改為 `(purchase_record, custom_field)` UNIQUE INDEX + 前端保證 |
 
 ## 下次接手時
@@ -227,9 +230,9 @@ git pull
 
 ### 目前位置（2026-11-02）
 
-- 已完成：task 1～7。**下一步：task 8.1 usePurchaseStore**（fetchRecords 篩選、createRecord 含 EAV、updateRecord、deleteRecord）。task 8 的頁面（購買記錄列表、新增 / 編輯）還沒有設計稿，8.2 前要先做設計稿請使用者確認。
+- 已完成：task 1～7、8.1。**下一步：task 8.2 起的購買記錄頁面**，還沒有設計稿，要先做設計稿請使用者確認（購買記錄列表、新增 / 編輯、詳情）。新增 / 編輯頁直接用 `lib/purchaseForm.ts` 做即時檢查與數量預覽。
 - 商品頁設計稿已確認：設計稿最下面一排 Prod-List / Prod-New / Prod-Detail / Prod-Edit（https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf ；本機原始檔在 `.design-canvas/`，不進 git）。
-- 沒有待使用者決定的事項。
+- 待使用者決定：(1) K-16 是否回寫 design.md；(2) `stores/notImplemented.ts` 已沒有程式使用，是否刪除。
 
 ### 工作慣例（Claude Code 接手時照做）
 
@@ -237,7 +240,7 @@ git pull
 2. **新畫面先做設計稿**：先呼叫設計 skills（ui-ux-pro-max、taste-skill），依 design.md「UI 設計規範」做稿放到設計稿，使用者確認後才實作。
 3. **規格有落差**：先停下來列「問題＋建議（含推薦選項）」問使用者（選擇題），同意後才改 design.md / tasks.md，並升版號、寫變更摘要。暫停使用 Kiro。
 4. **驗證三層**：
-   - `cd frontend && npm test`（Vitest，目前 490 項）、`npm run lint:check`、`npm run typecheck`
+   - `cd frontend && npm test`（Vitest，目前 539 項）、`npm run lint:check`、`npm run typecheck`
    - 故意改壞關鍵程式確認測試抓得到（**先備份檔案**，不要用 `git checkout` 還原未 commit 的修改）
    - `./e2e/run.sh`（正式 build + 臨時 PocketBase + 無頭 Chrome，**真實滑鼠鍵盤事件**；手機寬 390）。新頁面要在 `frontend/e2e/` 加腳本
 5. **修 bug**：先寫會失敗的回歸測試，再修正。
