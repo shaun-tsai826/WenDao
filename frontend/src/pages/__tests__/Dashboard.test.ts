@@ -153,6 +153,22 @@ describe('有需要補貨的商品（設計稿 Dash，AC-7.6）', () => {
   });
 });
 
+// task 9.2 對照補上：久未更新（STATUS-008，AC-7.14）的急迫商品在首頁的樣子與商品列表相同
+describe('task 9.2 補充：久未更新的急迫商品', () => {
+  it('剩餘數量 32 天沒更新又已耗盡 → 第二行開頭「10/2 更新 · 」，標籤只放「已耗盡」', async () => {
+    seed([
+      product('p-old', '白蘭', '洗衣精補充包', {
+        remaining_quantity: 1,
+        remaining_updated_at: '2026-10-02 00:00:00.000Z',
+      }), // 10/3 用完，10/2 更新（距今 32 天）
+    ]);
+    const page = await mountPage('/', routes);
+    const row = page.wrapper.find('.reminders .list__row');
+    expect(row.find('.list__sub').text()).toBe('10/2 更新 · 剩 1 包 · 10/3 已用完');
+    expect(row.findAll('.depletion-badge').map((b) => b.text())).toEqual([STATUS.depleted]);
+  });
+});
+
 describe('沒有需要補貨（設計稿 Dash-Clear）', () => {
   it('摘要寫 0 項（白底），清單位置寫說明與下一個預計用完', async () => {
     seed([DISH, PASTE, SPONGE]);
