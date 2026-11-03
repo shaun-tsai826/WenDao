@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v6.1（2026-11-03）
-> 變更摘要：v6.1 K-16 已回寫 design.md v3.7；刪除未使用的 stores/notImplemented.ts（使用者同意）。
+> 版本：v6.2（2026-11-03）
+> 變更摘要：v6.2 購買記錄設計稿確認（8 張），使用者同意 4 項提案；尚未寫入 design.md。
+> v6.1 K-16 已回寫 design.md v3.7；刪除未使用的 stores/notImplemented.ts（使用者同意）。
 > v6.0 task 8.1（usePurchaseStore）完成；fakePocketBase 擴充；新增契約測試 e2e purchase-contract；新增 K-16（待使用者同意回寫）。
 > v5.9 task 7.8（久未更新提醒）完成，task 7（商品管理）全部完成；design.md v3.6；新增 e2e stale。
 > v5.8 task 7.7（商品管理測試）完成：對照清單、補 9 項邊界測試、vitest 固定時區 Asia/Taipei。
@@ -133,6 +134,7 @@
 | 2026-11-03 | **task 7.7**：對照清單逐項確認（見下方「task 7.7 測試對照」），7 個情境在 store 與頁面兩層都已涵蓋；STATUS-008 的判斷（30 / 31 / 32 天）已在 `productView.test.ts`，畫面顯示的測試隨 task 7.8 撰寫。補 9 項邊界測試：數字沒變也更新日期（store + 頁面）、清晨 00:30 / 深夜 23:59 儲存記成本地當天、剩餘數量 -0.01 / NaN / 無限大 → ERR-015、品牌只有全形空白 → ERR-005。`vitest.config.ts` 固定 `TZ=Asia/Taipei`（外部設 TZ=UTC 也得到相同結果）。全專案 476 項；4 種故意改壞皆被抓到 | — |
 | 2026-11-03 | **task 7.8**：久未更新提醒（AC-7.14，使用者選擇顯示方式）。`DepletionBadge` 新增 `stale`：每列只放一個標籤，已耗盡 / 即將耗盡優先，否則 STATUS-008（灰色 12px）；`productSummary` 在急迫＋久未更新時開頭加「M/D 更新 · 」；商品詳情剩餘數量寫「上次更新 M/D」並在更新按鈕上方加提示列。新增 14 項測試（含 BDD 32 天、30 / 31 天邊界），3 項舊測試因資料本身距今 31～32 天而更新預期；全專案 490 項；4 種故意改壞皆被抓到。e2e `stale.mjs` 8 步驟（含「數字不改直接儲存 → 提醒消失」）。**e2e 發現**：一般 CSS 的 `<style>` 裡用了 `//` 註解，Vitest 不處理樣式所以沒抓到，正式 build 才失敗 → 改 `/* */`。**task 7（商品管理）全部完成** | design.md v3.6 |
 | 2026-11-03 | **task 8.1**：`usePurchaseStore` 的 fetchRecords（分類 `product.category`、日期區間含結束日當天、結束早於開始 ERR-012、新到舊、同日後建立在前；getter `views`）、createRecord（前端算 quantity / unit_price，缺失寫 0；新增者 = 登入者；EAV 寫到一半失敗會刪掉剛建立的記錄；資料庫擋下總價 → ERR-010）、updateRecord（重算、新增者不變、EAV 同步：改了更新 / 清空刪除 / 新填新增 / 換商品刪除舊值）、deleteRecord（cascade）。新增 `lib/purchaseForm.ts`（validatePurchase、computePurchase、fieldValuesToSave，8.4 / 8.6 頁面共用）與 `FieldsValidationError`（每個欄位各自的訊息，AC-5.3）。`fakePocketBase` 擴充：比較運算子 >= <= > <、關聯欄位 `product.category`、cascade 刪除（附 5 項自身測試）。移除 task 2.5 的「尚未實作」骨架測試 2 項。新增 54 項測試，全專案 539 項；6 種故意改壞皆被抓到。**新增契約測試** `e2e/purchase-contract.mjs`：用同樣的 SDK 查詢對真正的 PocketBase 驗證 fake 的假設，7 項全部符合；**發現** PocketBase 的 created 只到毫秒，連續建立可能同一毫秒而排序不定（實際使用不影響，腳本已間隔 20ms） | — |
+| 2026-11-03 | **購買記錄設計稿**：ui-ux-pro-max 查表單 / 篩選 / 對話框 UX 規則後，設計稿新增「購買記錄（task 8）」一排 8 張：Pur-List（分類＋日期篩選）、Pur-List-Range（ERR-012）、Pur-New（有包裝規格，即 8.2 CustomFieldInput）、Pur-New-Error（欄位下方錯誤＋上方錯誤摘要）、Pur-New-Qty（沒有包裝規格，直接輸入數量、文字欄位）、Pur-Remain（CONFIRM-002 對話框）、Pur-Detail（價格比較，圖示＋文字＋顏色）、Pur-Delete（CONFIRM-001）。使用者確認並同意 4 項提案（見重要決定紀錄）。**尚未寫入 design.md**（回到 8.2 時先寫） | 設計稿 Pur-* |
 
 ## task 7.7 測試對照
 
@@ -149,7 +151,7 @@
 
 ## 待辦（依順序）
 
-1. **[Claude Code]** task 8.2 起的購買記錄頁面：**先用設計 skills 做設計稿**（購買記錄列表、新增 / 編輯、詳情），使用者確認後再實作。
+1. **[Claude Code]** 購買記錄設計寫進 design.md → task 8.2 CustomFieldInput → 8.3～8.8（設計稿已確認）。
 3. 之後依 `tasks.md` 順序，一次做一個 task → 勾選 `[x]` → commit（message 帶 task 編號）。
 
 ## 重要決定紀錄
@@ -174,6 +176,7 @@
 | 正式環境 PocketBase 網址 | 使用者決定用相對路徑 `/`（前端放在 pb_public，與 API 同網址），不把 Tailscale 主機名稱寫進 repo | task 2.2 |
 | 路由 | 使用者決定：功能頁**嵌套在 MainLayout 下**、**history 模式**（不帶 #）、刪除範例頁。頁面檔名維持 design.md 的單字名稱，ESLint 只對 `src/pages/` 關閉 multi-word 規則 | task 2.4 |
 | 剩餘數量更新日 | 使用者同意：只要儲存時剩餘數量有值（即使數字沒變），更新日就設為當天——按儲存即代表確認目前數量，「久未更新」提醒跟著消失 | task 7.1 |
+| 購買記錄設計 | 使用者同意 4 項：(1) 購買地點附「常去的地點」按鈕（以前用過的地點）；(2) 存檔後回到購買記錄列表、顯示 MSG-004，再跳出 CONFIRM-002；(3) 價格比較另外顯示差額與百分比、歷史均價用了幾筆；(4) 送出失敗時表單上方加錯誤摘要（連到各欄位），欄位下方錯誤保留。編輯頁沿用新增頁表單 | 購買記錄設計稿 |
 | 購買記錄讀取提前 | 使用者決定：7.5 需要依商品讀取購買記錄，`fetchByProduct`、`fetchUsers` 在 7.5 先做，8.1 只剩其餘 actions | task 7.5 |
 | 久未更新顯示 | 使用者決定：列表每列一個標籤（急迫狀態優先，兩者都有時第二行加更新日）；詳情頁在資訊塊下方放提示列，緊鄰更新按鈕 | task 7.8 |
 | 新增商品的預設 | 使用者決定：建立成功後進入新商品詳情頁（1A）；分類預設留空、沒選顯示 ERR-009（2B，自己選比較不會建錯），從篩選過的列表進來時仍預先選好 | task 7.4 追加 |
@@ -231,7 +234,8 @@ git pull
 
 ### 目前位置（2026-11-02）
 
-- 已完成：task 1～7、8.1。**下一步：task 8.2 起的購買記錄頁面**，還沒有設計稿，要先做設計稿請使用者確認（購買記錄列表、新增 / 編輯、詳情）。新增 / 編輯頁直接用 `lib/purchaseForm.ts` 做即時檢查與數量預覽。
+- 已完成：task 1～7、8.1；購買記錄設計稿已確認（設計稿最下排 Pur-*）。**下一步：先把購買記錄設計（含 4 項提案）寫進 design.md，再做 task 8.2 CustomFieldInput**。新增 / 編輯頁直接用 `lib/purchaseForm.ts` 做即時檢查與數量預覽。
+- 使用者在 2026-11-03 表示要先另外做別的東西，task 8.2 暫停。
 - 商品頁設計稿已確認：設計稿最下面一排 Prod-List / Prod-New / Prod-Detail / Prod-Edit（https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf ；本機原始檔在 `.design-canvas/`，不進 git）。
 - 沒有待使用者決定的事項。
 
