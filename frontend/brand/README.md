@@ -10,15 +10,15 @@
 
 ## 檔案
 
-| 檔案 | 用途 |
-|---|---|
-| `extract-digits.py` | 從字型檔取出「5888」的外框路徑 → `digits.json`（只有要換字型或調整位置時才需要重跑） |
-| `digits.json` | 各用途的數字路徑（門牌、頂欄、App 圖示、瀏覽器分頁），**所有圖示的唯一來源** |
-| `build-icons.mjs` | 依 `digits.json` 產生下面所有檔案 |
-| `svg/*.svg` | 各用途的 SVG 原始檔（logo、logo-header、app-icon、app-icon-ios、app-icon-maskable、app-icon-monochrome、favicon、safari-pinned-tab） |
-| `../src/components/brandPaths.ts` | `BrandLogo.vue` 用的路徑（自動產生，不要手改） |
-| `../public/icons/*.png`、`../public/favicon.ico` | PWA、iOS、瀏覽器分頁用的圖示 |
-| `BarlowCondensed-OFL.txt` | 字型授權全文 |
+| 檔案                                             | 用途                                                                                                                                 |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `extract-digits.py`                              | 從字型檔取出「5888」的外框路徑 → `digits.json`（只有要換字型或調整位置時才需要重跑）                                                 |
+| `digits.json`                                    | 各用途的數字路徑（門牌、頂欄、App 圖示、瀏覽器分頁），**所有圖示的唯一來源**                                                         |
+| `build-icons.mjs`                                | 依 `digits.json` 產生下面所有檔案                                                                                                    |
+| `svg/*.svg`                                      | 各用途的 SVG 原始檔（logo、logo-header、app-icon、app-icon-ios、app-icon-maskable、app-icon-monochrome、favicon、safari-pinned-tab） |
+| `../src/components/brandPaths.ts`                | `BrandLogo.vue` 用的路徑（自動產生，不要手改）                                                                                       |
+| `../public/icons/*.png`、`../public/favicon.ico` | PWA、iOS、瀏覽器分頁用的圖示                                                                                                         |
+| `BarlowCondensed-OFL.txt`                        | 字型授權全文                                                                                                                         |
 
 ## 重新產生圖示
 
