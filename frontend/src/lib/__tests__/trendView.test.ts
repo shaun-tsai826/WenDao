@@ -59,6 +59,15 @@ describe('trendOf', () => {
     ]);
   });
 
+  // task 10.3 對照補上：沒有填購買地點時，提示框不留空白的「 · 」
+  it('沒有購買地點 → 提示框「10/20 · 比均價高 1.1%」', () => {
+    const views = [
+      record('r-3', '2026-10-20', 0.4992, { store: ' ' }),
+      ...VIEWS.slice(1).map((v) => v.record),
+    ].map(toPurchaseView);
+    expect(trendOf(views, '抽', TODAY).points.at(-1)!.note).toBe('10/20 · 比均價高 1.1%');
+  });
+
   it('無障礙說明寫出每一點與歷史均價', () => {
     expect(trendOf(VIEWS, '抽', TODAY).ariaLabel).toBe(
       '單位均價趨勢：7/12 0.5242、9/5 0.4575、10/20 0.4992 元/抽；歷史均價 0.4936 元/抽',
