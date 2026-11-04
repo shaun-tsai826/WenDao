@@ -8,6 +8,15 @@ import { mountPage, stubPage } from '@/test-utils/mountPage';
 import { ERR, STATUS } from '@/constants/messages';
 import { personTone } from '@/lib/personTone';
 import type { ProductRecord, PurchaseRecordRecord } from '@/types/models';
+import type { Trend } from '@/lib/trendView';
+
+// 趨勢圖的畫圖層（Chart.js）在 jsdom 畫不出來，換成假的；實際畫圖由 e2e product-trend 檢查
+const draw = vi.fn<(canvas: HTMLCanvasElement, trend: Trend) => { destroy: () => void }>(() => ({
+  destroy: () => undefined,
+}));
+vi.mock('@/lib/trendChart', () => ({
+  drawTrendChart: (...args: [HTMLCanvasElement, Trend]) => draw(...args),
+}));
 
 const routes = [
   { path: '/products', component: stubPage('list-page') },
@@ -314,6 +323,42 @@ describe('久未更新（AC-7.14，task 7.8）', () => {
     const page = await mountPage('/products/p-spring', routes);
     expect(page.wrapper.find('.stale-note').exists()).toBe(true);
     expect(page.wrapper.find('.product .depletion-badge').exists()).toBe(false); // 正常狀態不顯示
+  });
+});
+
+// task 10.2：價格趨勢圖（AC-8.8；design.md v4.4，設計稿 Prod-Trend）
+describe('單位均價趨勢圖（AC-8.8）', () => {
+  beforeEach(() => draw.mockClear());
+
+  it('放在商品卡與購買記錄之間；只畫這個商品、算得出單位均價的記錄', async () => {
+    seed();
+    const page = await mountPage('/products/p-spring', routes);
+    const cards = page.wrapper.findAll('section.card').map((c) => c.find('h2').text());
+    expect(cards).toEqual(['春風 抽取式衛生紙', '單位均價趨勢', '購買記錄（新到舊）']);
+    expect(page.wrapper.find('.trend__meta').text()).toBe('3 筆 · 元/抽');
+    expect(draw).toHaveBeenCalledTimes(1);
+    const trend = draw.mock.calls[0]![1];
+    // 舊到新：7/12 0.5242、9/5 0.4575、10/20 0.4992（其他商品 r-other 不畫）
+    expect(trend.points.map((p) => [p.label, p.y])).toEqual([
+      ['7/12', 0.5242],
+      ['9/5', 0.4575],
+      ['10/20', 0.4992],
+    ]);
+    // 參考線與資訊塊的歷史均價是同一個值
+    expect(trend.average).toBe(0.4936);
+  });
+
+  it('只有 1 筆 → STATUS-005「尚無足夠資料顯示趨勢圖」（使用者決定：少於 2 筆）', async () => {
+    seed([SPRING], [purchase({ id: 'r-1', purchase_date: '2026-10-20 00:00:00.000Z' })]);
+    const page = await mountPage('/products/p-spring', routes);
+    expect(page.wrapper.find('.trend [role=status]').text()).toContain(STATUS.notEnoughTrendData);
+    expect(draw).not.toHaveBeenCalled();
+  });
+
+  it('還沒有購買記錄 → 一樣顯示 STATUS-005（目前 0 筆）', async () => {
+    seed([SPRING], []);
+    const page = await mountPage('/products/p-spring', routes);
+    expect(page.wrapper.find('.trend__empty-text').text()).toContain('（目前 0 筆）');
   });
 });
 

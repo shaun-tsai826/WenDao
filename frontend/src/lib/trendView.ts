@@ -41,6 +41,31 @@ export interface Trend {
   ariaLabel: string;
   /** 橫軸刻度：距第一筆幾天 → 日期文字 */
   xLabel: (days: number) => string;
+  /** 橫軸範圍：左右各留一點，第一個與最後一個點不會被圖的邊界切掉 */
+  xMin: number;
+  xMax: number;
+  /** 橫軸刻度位置：放在購買日上，最多 X_TICKS_MAX 個（含第一筆與最後一筆） */
+  xTicks: number[];
+}
+
+/** 橫軸最多幾個刻度（手機寬度放得下的日期數） */
+const X_TICKS_MAX = 4;
+
+/** 從購買日（天數）中挑刻度：不重複、最多 X_TICKS_MAX 個、平均分布、含頭尾 */
+function pickTicks(days: number[]): number[] {
+  const unique = [...new Set(days)].sort((a, b) => a - b);
+  if (unique.length <= X_TICKS_MAX) return unique;
+  const first = unique[0]!;
+  const last = unique.at(-1)!;
+  const picked: number[] = [];
+  for (let k = 0; k < X_TICKS_MAX; k++) {
+    const target = first + ((last - first) * k) / (X_TICKS_MAX - 1);
+    const nearest = unique
+      .filter((d) => !picked.includes(d))
+      .reduce((best, d) => (Math.abs(d - target) < Math.abs(best - target) ? d : best));
+    picked.push(nearest);
+  }
+  return picked.sort((a, b) => a - b);
 }
 
 /** 提示框的比較文字：「比均價高 1.1%」「比均價低 7.3%」「和均價相同」「比均價高不到 0.1%」 */
@@ -76,6 +101,10 @@ export function trendOf(views: PurchaseView[], unit: string, today: DateOnly): T
     };
   });
 
+  const lastX = points.at(-1)?.x ?? 0;
+  // 左右各留範圍的 6%（至少 1 天），點的半徑才不會被切掉
+  const margin = Math.max(1, Math.round(lastX * 0.06));
+
   const list = points.map((p) => `${p.label} ${formatUnitPrice(p.y)}`).join('、');
   const avgText = average === null ? '' : `；歷史均價 ${formatUnitPrice(average)} 元/${unit}`;
   return {
@@ -85,5 +114,8 @@ export function trendOf(views: PurchaseView[], unit: string, today: DateOnly): T
     enough: points.length >= TREND_MIN_POINTS,
     ariaLabel: `單位均價趨勢：${list} 元/${unit}${avgText}`,
     xLabel,
+    xMin: -margin,
+    xMax: lastX + margin,
+    xTicks: pickTicks(points.map((p) => p.x)),
   };
 }

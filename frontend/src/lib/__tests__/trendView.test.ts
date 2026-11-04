@@ -111,6 +111,43 @@ describe('trendOf', () => {
   });
 });
 
+// e2e 截圖發現：第一個與最後一個點被圖的邊界切掉一半，中間刻度（8/31）不是購買日
+describe('橫軸範圍與刻度', () => {
+  it('左右各留 6% 的天數，第一個與最後一個點不會被切掉', () => {
+    const t = trendOf(VIEWS, '抽', TODAY);
+    expect(t.xMin).toBe(-6);
+    expect(t.xMax).toBe(106);
+  });
+
+  it('全部同一天（範圍 0）→ 左右各留 1 天', () => {
+    const views = [record('a', '2026-10-01', 0.5), record('b', '2026-10-01', 0.6)].map(
+      toPurchaseView,
+    );
+    const t = trendOf(views, '抽', TODAY);
+    expect([t.xMin, t.xMax]).toEqual([-1, 1]);
+    expect(t.xTicks).toEqual([0]);
+  });
+
+  it('刻度放在購買日上（不重複）', () => {
+    expect(trendOf(VIEWS, '抽', TODAY).xTicks).toEqual([0, 55, 100]);
+  });
+
+  it('購買日很多時最多 4 個刻度，一定包含第一筆與最後一筆', () => {
+    const days = [0, 3, 10, 20, 31, 40, 52, 60];
+    const views = days
+      .map((d, i) => record(`r${i}`, addDaysTo('2026-08-01', d), 0.5))
+      .reverse()
+      .map(toPurchaseView);
+    expect(trendOf(views, '抽', TODAY).xTicks).toEqual([0, 20, 40, 60]);
+  });
+});
+
+function addDaysTo(date: string, days: number): string {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 describe('comparisonShort（提示框的比較文字）', () => {
   it('高 / 低 / 相同 / 差很少', () => {
     expect(comparisonShort(0.4992, 0.4936)).toBe('比均價高 1.1%');

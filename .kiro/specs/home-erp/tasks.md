@@ -354,7 +354,7 @@
     - 無購買記錄（unit_price 全為 null）時顯示空狀態 STATUS-005「尚無足夠資料顯示趨勢圖」
     - _對應：REQ-8, AC-8.8_
 
-  - [ ] 10.2 整合 PriceTrendChart 至 ProductDetail 頁面
+  - [x] 10.2 整合 PriceTrendChart 至 ProductDetail 頁面
     - 在商品詳情頁顯示該商品單位均價的歷史趨勢圖
     - _對應：REQ-8, AC-8.8_
 

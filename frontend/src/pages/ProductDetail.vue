@@ -6,7 +6,7 @@
   - 備註與「更新剩餘數量與消耗設定」入口（task 7.6）
   - 購買記錄由新到舊，每筆附新增者頭像
   - 久未更新（STATUS-008，task 7.8）：資訊塊下方提示列，緊鄰更新按鈕；剩餘數量第二行改寫「上次更新 M/D」
-  - 價格趨勢圖於 task 10.2 加入
+  - 價格趨勢圖（task 10.2，AC-8.8）：商品卡與購買記錄之間，components/PriceTrendChart.vue（設計稿 Prod-Trend）
 -->
 <template>
   <q-page class="page">
@@ -100,6 +100,8 @@
         </router-link>
       </section>
 
+      <PriceTrendChart :purchases="purchases" :unit="view.record.unit" :today="today" />
+
       <section class="card purchases" aria-labelledby="purchases-title">
         <h2 id="purchases-title" class="purchases__title">購買記錄（新到舊）</h2>
         <p v-if="!purchases.length" class="state">還沒有購買記錄</p>
@@ -135,6 +137,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AppIcon from '@/components/AppIcon.vue';
 import DepletionBadge from '@/components/DepletionBadge.vue';
+import PriceTrendChart from '@/components/PriceTrendChart.vue';
 import { STATUS } from '@/constants/messages';
 import { localToday } from '@/composables/dates';
 import { apiErrorMessage } from '@/lib/errors';

@@ -40,7 +40,6 @@ export function drawTrendChart(canvas: HTMLCanvasElement, trend: Trend): TrendCh
   const min = Math.min(...values);
   const max = Math.max(...values);
   const pad = (max - min || max * 0.1 || 0.1) * 0.2;
-  const lastX = trend.points.at(-1)?.x ?? 0;
 
   // 歷史均價參考線：畫在價格線下面，左側標示數值
   const averageLine: Plugin<'line'> = {
@@ -56,16 +55,26 @@ export function drawTrendChart(canvas: HTMLCanvasElement, trend: Trend): TrendCh
       ctx.moveTo(chartArea.left, Math.round(y) + 0.5);
       ctx.lineTo(chartArea.right, Math.round(y) + 0.5);
       ctx.stroke();
-      ctx.fillStyle = neutralInk;
-      ctx.font = `12px ${font}`;
-      ctx.textBaseline = 'alphabetic';
+      ctx.restore();
+    },
+    // 標示在價格線畫完之後才寫，外圍描 3px 白邊：被價格線穿過時字仍看得清楚（e2e 截圖發現）
+    afterDatasetsDraw(chart) {
+      if (trend.average === null) return;
+      const { ctx, chartArea, scales } = chart;
+      const y = scales.y!.getPixelForValue(trend.average);
+      const text = `歷史均價 ${formatUnitPrice(trend.average)}`;
       // 標示放在線下方；太靠近底部時放到線上方
       const below = y + 16 < chartArea.bottom;
-      ctx.fillText(
-        `歷史均價 ${formatUnitPrice(trend.average)}`,
-        chartArea.left + 4,
-        below ? y + 15 : y - 5,
-      );
+      const ty = below ? y + 15 : y - 5;
+      ctx.save();
+      ctx.font = `12px ${font}`;
+      ctx.textBaseline = 'alphabetic';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = surface;
+      ctx.lineWidth = 3;
+      ctx.strokeText(text, chartArea.left + 4, ty);
+      ctx.fillStyle = neutralInk;
+      ctx.fillText(text, chartArea.left + 4, ty);
       ctx.restore();
     },
   };
@@ -101,8 +110,12 @@ export function drawTrendChart(canvas: HTMLCanvasElement, trend: Trend): TrendCh
       scales: {
         x: {
           type: 'linear',
-          min: 0,
-          max: Math.max(lastX, 1),
+          // 左右留邊（第一個與最後一個點不被切掉），刻度放在購買日上（trendView 算好）
+          min: trend.xMin,
+          max: trend.xMax,
+          afterBuildTicks: (scale) => {
+            scale.ticks = trend.xTicks.map((value) => ({ value }));
+          },
           grid: { display: false },
           border: { color: rule },
           ticks: {
