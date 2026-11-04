@@ -114,7 +114,7 @@ const COMPARISON_TITLE: Record<PriceComparison, string> = {
 };
 
 /** 差額占歷史均價的百分比：「+1.1%」「−7.3%」（用減號 −）；四捨五入後是 0 時寫「不到 0.1%」 */
-function formatPercent(diff: number, average: number): string {
+export function formatPercent(diff: number, average: number): string {
   const percent = Math.round((Math.abs(diff) / average) * 1000) / 10;
   if (percent === 0) return '不到 0.1%';
   return `${diff > 0 ? '+' : '−'}${percent.toFixed(1)}%`;
