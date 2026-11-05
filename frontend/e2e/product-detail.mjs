@@ -3,6 +3,7 @@
 import { spawn } from 'node:child_process';
 import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { check, ok, done, mdIn, shortIn, dbDateIn } from './check.mjs';
 const [,, base, outDir, w = '390', h = '844'] = process.argv;
 
 // ---- 1. 測試資料 ----
@@ -57,26 +58,42 @@ console.log(`畫面 ${w}x${h}`);
 await click('a[href="/products"]'); await sleep(1500);
 await clickText('[role=radio]', '衛生紙'); await sleep(500);
 await clickText('.list__row', '春風'); await sleep(1500);
-console.log('1 從衛生紙篩選點春風:', await path(), '|', await js(`document.querySelector('.product__name')?.textContent.trim()`), '|', await js(`document.querySelector('.product__meta')?.textContent.trim()`), '| 標籤:', await js(`document.querySelector('.product .depletion-badge')?.textContent.trim()`));
-console.log('2 資訊塊:', JSON.stringify(await all('.stat__label')), JSON.stringify(await all('.stat__value')), JSON.stringify(await all('.stat__sub')));
-console.log('3 備註:', await js(`document.querySelector('.product__note')?.textContent.trim()`));
-console.log('4 購買記錄（新到舊）:');
-for (const r of await js(`[...document.querySelectorAll('.purchase')].map(r => [r.querySelector('.avatar').textContent.trim() + '(' + r.querySelector('.avatar').title + ' ' + getComputedStyle(r.querySelector('.avatar')).backgroundColor + ')', r.querySelector('.purchase__when').textContent.trim().replace(/\\s+/g, ' '), r.querySelector('.purchase__detail').textContent.trim(), r.querySelector('.purchase__total').textContent.trim()].join('｜'))`)) console.log('   ', r);
+ok('1 從衛生紙篩選點春風 → 商品詳情', /^\/products\/\w+$/.test(await path()), await path());
+check('1 商品卡', [await js(`document.querySelector('.product__name')?.textContent.trim()`), await js(`document.querySelector('.product__meta')?.textContent.trim()`), await js(`document.querySelector('.product .depletion-badge')?.textContent.trim()`)], ['春風 抽取式衛生紙', '衛生紙 · 以「抽」計價 · 以「包」計算消耗', '即將耗盡']);
+// 9 天前剩 2 包、每月 4 包 → 15 天 → 6 天後用完
+check('2 資訊塊（AC-7.3、6.4）', [await all('.stat__label'), await all('.stat__value'), await all('.stat__sub')], [['剩餘數量', '預計用完', '歷史均價（3 筆）'], ['2 包', mdIn(6), '0.4936 元/抽'], [`${shortIn(-9)} 更新`, '剩 6 天 · 每月用 4 包']]);
+check('3 備註', await js(`document.querySelector('.product__note')?.textContent.trim()`), '備註：一年大約用 48 包，量販店特價時一次買一箱');
+const purchaseRows = await js(`[...document.querySelectorAll('.purchase')].map(r => [r.querySelector('.avatar').textContent.trim() + '(' + r.querySelector('.avatar').title + ' ' + getComputedStyle(r.querySelector('.avatar')).backgroundColor + ')', r.querySelector('.purchase__when').textContent.trim().replace(/\\s+/g, ' '), r.querySelector('.purchase__detail').textContent.trim(), r.querySelector('.purchase__total').textContent.trim()].join('｜'))`);
+// run.sh 的種子記錄固定在 2026-11-01，其他記錄以今天推算：依日期排成新到舊
+const seedOffset = Math.round((new Date(2026, 10, 1) - new Date(new Date().toDateString())) / 864e5);
+const ALICE = 'e(Alice rgb(220, 241, 255))', BOB = 'b(Bob rgb(253, 231, 238))';
+const expectedRows = [
+  [seedOffset, ALICE, '全聯', '1,200 抽 · 0.4992 元/抽', '599 元'],
+  [-40, BOB, '蝦皮', '1,200 抽 · 0.4575 元/抽', '549 元'],
+  [-90, ALICE, '家樂福', '1,200 抽 · 0.5242 元/抽', '629 元'],
+  [-120, BOB, '市場', '數量未填 · 無法計算', '100 元'],
+].sort((a, b) => b[0] - a[0]).map(([d, who, store, detail, total]) => `${who}｜${shortIn(d)} · ${store}｜${detail}｜${total}`);
+check('4 購買記錄新到舊、新增者頭像依使用者配色（AC-8.2）', purchaseRows, expectedRows);
+
 await shot('pdetail-1', true);
 
 await click('a[aria-label="返回商品"]'); await sleep(1500);
-console.log('5 按返回箭頭 → 回到同一篩選:', await path(), '| 篩選:', await js(`document.querySelector('[role=radio][aria-checked=true]')?.textContent.trim()`));
+const filtered = await path();
+ok('5 按返回箭頭 → 回到同一篩選的網址', /^\/products\?category=\w+$/.test(filtered), filtered);
+check('5 篩選仍是衛生紙', await js(`document.querySelector('[role=radio][aria-checked=true]')?.textContent.trim()`), '衛生紙');
 
 await clickText('.list__row', '春風'); await sleep(1500);
 await click('a.edit-link');
-console.log('6 按「更新剩餘數量與消耗設定」:', await path());
+ok('6 按「更新剩餘數量與消耗設定」→ 編輯頁', /^\/products\/\w+\/edit$/.test(await path()), await path());
 await send('Runtime.evaluate', { expression: 'history.back()' }); await sleep(1500);
 await send('Page.reload'); await sleep(2500);
-console.log('7 上一頁回詳情並重新整理:', await path(), '| 返回箭頭仍指向:', await js(`document.querySelector('a[aria-label="返回商品"]').getAttribute('href')`), '|', (await all('.purchase')).length, '筆');
+ok('7 上一頁回詳情並重新整理', /^\/products\/\w+$/.test(await path()), await path());
+check('7 返回箭頭仍指向同一篩選、記錄 4 筆', [await js(`document.querySelector('a[aria-label="返回商品"]').getAttribute('href')`), (await all('.purchase')).length], [filtered, 4]);
 
 await send('Page.navigate', { url: base + '/products/not-a-real-id' }); await sleep(2000);
-console.log('8 不存在的商品:', await js(`document.querySelector('.state')?.textContent.trim().replace(/\\s+/g, ' ')`), '| 返回箭頭:', await js(`document.querySelector('a[aria-label="返回商品"]').getAttribute('href')`));
+check('8 不存在的商品', [await js(`document.querySelector('.state')?.textContent.trim().replace(/\\s+/g, ' ')`), await js(`document.querySelector('a[aria-label="返回商品"]').getAttribute('href')`)], ['找不到這個商品，可能已被刪除。 回到商品列表', '/products']);
 
 await send('Page.navigate', { url: base + '/products/' + spring.id }); await sleep(2000);
-console.log('9 版面:', JSON.stringify(await js(`({ 沒有橫向捲動: document.documentElement.scrollWidth <= window.innerWidth, 預計用完區塊底色: getComputedStyle(document.querySelectorAll('.stat')[1]).backgroundColor, 歷史均價區塊底色: getComputedStyle(document.querySelectorAll('.stat')[2]).backgroundColor, 數字等寬: getComputedStyle(document.querySelector('.stat__value')).fontVariantNumeric })`)));
+check('9 版面', await js(`({ 沒有橫向捲動: document.documentElement.scrollWidth <= window.innerWidth, 預計用完區塊底色: getComputedStyle(document.querySelectorAll('.stat')[1]).backgroundColor, 歷史均價區塊底色: getComputedStyle(document.querySelectorAll('.stat')[2]).backgroundColor, 數字等寬: getComputedStyle(document.querySelector('.stat__value')).fontVariantNumeric })`), { 沒有橫向捲動: true, 預計用完區塊底色: 'rgb(255, 244, 220)', 歷史均價區塊底色: 'rgb(220, 241, 255)', 數字等寬: 'tabular-nums' });
 sock.close(); chrome.kill();
+done();

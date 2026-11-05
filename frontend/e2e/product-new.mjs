@@ -3,6 +3,7 @@
 import { spawn } from 'node:child_process';
 import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { check, ok, done, mdIn, shortIn, dbDateIn } from './check.mjs';
 const [,, base, outDir, w = '390', h = '844'] = process.argv;
 
 // ---- 1. 測試資料 ----
@@ -54,39 +55,42 @@ console.log(`畫面 ${w}x${h}`);
 await click('a[href="/products"]'); await sleep(1500);
 await clickText('[role=radio]', '衛生紙'); await sleep(500);
 await click('a.add-link'); await sleep(1500);
-console.log('1 從「衛生紙」篩選按新增商品:', await js('location.pathname'), '| 預選分類:', await js(`document.querySelector('#p-cat').selectedOptions[0].textContent.trim()`));
+check('1 從「衛生紙」篩選按新增商品 → 預選分類', [await js('location.pathname'), await js(`document.querySelector('#p-cat').selectedOptions[0].textContent.trim()`)], ['/products/new', '衛生紙']);
 await shot('pnew-1-empty');
 
 await click('button[type=submit]'); await sleep(800);
-console.log('2 什麼都沒填就送出:', await alert(), '| 紅框:', await invalid(), '| 焦點:', await focused());
+check('2 什麼都沒填就送出 → ERR-005、紅框、聚焦', [await alert(), await invalid(), await focused()], ['品牌與品名不可為空', 'p-brand,p-name', 'p-brand']);
 
 await click('#p-brand'); await typeText(' 春風 '); await click('#p-name'); await typeText('抽取式衛生紙'); await clickText('.unit-chip', '抽');
-console.log('3 點常用單位「抽」→ 計價單位:', await js(`document.querySelector('#p-unit').value`), '| 按鈕狀態:', await js(`document.querySelector('.unit-chip[aria-pressed=true]')?.textContent.trim()`));
+check('3 點常用單位「抽」', [await js(`document.querySelector('#p-unit').value`), await js(`document.querySelector('.unit-chip[aria-pressed=true]')?.textContent.trim()`)], ['抽', '抽']);
 await click('button[type=submit]'); await sleep(1000);
-console.log('4 「 春風 」＋抽取式衛生紙:', await alert(), '| 紅框:', await invalid());
+check('4 「 春風 」＋抽取式衛生紙 → ERR-007', [await alert(), await invalid()], ['此品牌與品名已存在於此分類 / 已有「春風 抽取式衛生紙」（大小寫、全半形不同也算同一個）', 'p-brand,p-name']);
 
 await setField('#p-brand', 'ＫＬＥＥＮＥＸ'); await setField('#p-name', '舒潔衛生紙');
 await click('button[type=submit]'); await sleep(1000);
-console.log('5 「ＫＬＥＥＮＥＸ」＋舒潔衛生紙:', await alert());
+check('5 「ＫＬＥＥＮＥＸ」＋舒潔衛生紙 → ERR-007（全形大寫也算重複）', await alert(), '此品牌與品名已存在於此分類 / 已有「Kleenex 舒潔衛生紙」（大小寫、全半形不同也算同一個）');
 await shot('pnew-2-duplicate');
 
 await setField('#p-brand', '春風'); await setField('#p-name', '平版衛生紙'); await setField('#p-unit', '');
 await click('button[type=submit]'); await sleep(1000);
-console.log('6 清空計價單位:', await alert(), '| 紅框:', await invalid(), '| 焦點:', await focused());
+check('6 清空計價單位 → ERR-006', [await alert(), await invalid(), await focused()], ['請設定計量單位', 'p-unit', 'p-unit']);
 
 await clickText('.unit-chip', '抽'); await click('#p-cunit'); await typeText('包');
-console.log('7 選回「抽」→ 計價單位紅框拿掉:', await invalid());
+check('7 選回「抽」→ 紅框拿掉', await invalid(), '（無）');
 await click('button[type=submit]'); await sleep(1500);
-console.log('8 送出 → 提示:', await js(`document.querySelector('.q-notification')?.textContent.trim()`), '| 網址:', await js('location.pathname'));
+check('8 送出 → MSG-003', await js(`document.querySelector('.q-notification')?.textContent.trim()`), '商品建立成功');
+ok('8 送出 → 進入新商品的詳情', /^\/products\/\w+$/.test(await js('location.pathname')), await js('location.pathname'));
 
 await send('Runtime.evaluate', { expression: 'history.back()' }); await sleep(1500);
-console.log('9 上一頁 → 回到列表（不是表單）:', await js('location.pathname + location.search'), '| 有平版衛生紙:', await js(`[...document.querySelectorAll('.list__name')].some(n => n.textContent.includes('平版衛生紙'))`));
+ok('9 上一頁 → 回到篩選過的列表（不是表單）', /^\/products\?category=\w+$/.test(await js('location.pathname + location.search')), await js('location.pathname + location.search'));
+check('9 列表有平版衛生紙', await js(`[...document.querySelectorAll('.list__name')].some(n => n.textContent.includes('平版衛生紙'))`), true);
 
 await send('Page.navigate', { url: base + '/products/new' }); await sleep(1500);
-console.log('10 從「全部」直接開新增頁 → 預設分類:', await js(`document.querySelector('#p-cat').selectedOptions[0].textContent.trim()`), '| 提示字顏色:', await js(`getComputedStyle(document.querySelector('#p-cat')).color`));
+check('10 從「全部」直接開新增頁 → 預設請選擇分類（灰字）', [await js(`document.querySelector('#p-cat').selectedOptions[0].textContent.trim()`), await js(`getComputedStyle(document.querySelector('#p-cat')).color`)], ['請選擇分類', 'rgb(92, 96, 100)']);
 await click('#p-brand'); await typeText('白蘭'); await click('#p-name'); await typeText('洗衣粉'); await clickText('.unit-chip', 'g');
 await click('button[type=submit]'); await sleep(1000);
-console.log('11 沒選分類就送出:', await alert(), '| 紅框:', await invalid(), '| 焦點:', await focused(), '| 網址:', await js('location.pathname'));
-console.log('12 版面:', JSON.stringify(await js(`({ 沒有橫向捲動: document.documentElement.scrollWidth <= window.innerWidth, 輸入框字級: getComputedStyle(document.querySelector('#p-brand')).fontSize })`)));
+check('11 沒選分類就送出 → ERR-009', [await alert(), await invalid(), await focused(), await js('location.pathname')], ['此欄位為必填 / 請在上方選擇分類', 'p-cat', 'p-cat', '/products/new']);
+check('12 版面', await js(`({ 沒有橫向捲動: document.documentElement.scrollWidth <= window.innerWidth, 輸入框字級: getComputedStyle(document.querySelector('#p-brand')).fontSize })`), { 沒有橫向捲動: true, 輸入框字級: '16px' });
 await shot('pnew-3-no-category');
 sock.close(); chrome.kill();
+done();

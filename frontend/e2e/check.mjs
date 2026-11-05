@@ -36,3 +36,26 @@ export function done() {
   console.log(failed ? `  ✗ ${passed + failed} 項中 ${failed} 項不符` : `  ✓ ${passed} 項全部符合`);
   process.exitCode = failed ? 1 : 0;
 }
+
+// ---- 以「今天」推算的日期（預期值用；與 App 的格式一致） ----
+const dayAt = (n) => {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return d;
+};
+const pad = (n) => String(n).padStart(2, '0');
+/** 今天 + n 天的「M/D」（App 的 formatMonthDay：一律不寫年份） */
+export const mdIn = (n) => {
+  const d = dayAt(n);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+};
+/** 今天 + n 天的「M/D」，不是今年時「YYYY/M/D」（App 的 formatShortDate） */
+export const shortIn = (n) => {
+  const d = dayAt(n);
+  return d.getFullYear() === new Date().getFullYear() ? mdIn(n) : `${d.getFullYear()}/${mdIn(n)}`;
+};
+/** 今天 + n 天的「YYYY-MM-DD 00:00:00.000Z」（資料庫的日期值） */
+export const dbDateIn = (n) => {
+  const d = dayAt(n);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} 00:00:00.000Z`;
+};

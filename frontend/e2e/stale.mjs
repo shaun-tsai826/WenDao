@@ -6,6 +6,7 @@
 import { spawn } from 'node:child_process';
 import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { check, ok, done, mdIn, shortIn, dbDateIn } from './check.mjs';
 const [,, base, outDir, w = '390', h = '844'] = process.argv;
 
 // ---- 1. 測試資料 ----
@@ -55,23 +56,25 @@ await click('#login-email'); await typeText('alice@family.home'); await click('#
 console.log(`畫面 ${w}x${h}（40 天前 ${md(ago(40))}、32 天前 ${md(ago(32))}、30 天前 ${md(ago(30))}）`);
 
 await click('a[href="/products"]'); await sleep(1500);
-console.log('1 列表：黑人 牙膏（正常、40 天）:', await row('牙膏'));
-console.log('2 列表：舒潔 盒裝面紙（即將耗盡、32 天）:', await row('盒裝面紙'));
-console.log('3 列表：白人 牙刷（正常、剛好 30 天）:', await row('牙刷'));
-console.log('4 標籤樣式:', JSON.stringify(await js(`(() => { const b = [...document.querySelectorAll('.depletion-badge')].find(b => b.dataset.status === 'stale'); const s = getComputedStyle(b); return { 字級: s.fontSize, 底色: s.backgroundColor, 單行: b.getBoundingClientRect().height < 30, 不超出卡片: b.getBoundingClientRect().right <= document.querySelector('.list').getBoundingClientRect().right }; })()`)));
+// 每月用 1 個：剩 3 條、40 天前更新 → 90 - 40 = 50 天後用完
+check('1 列表：黑人 牙膏（正常、40 天沒更新 → STATUS-008）', await row('牙膏'), `剩 3 條 · 預計 ${mdIn(50)}（剩 50 天）｜剩餘數量已久未更新`);
+check('2 列表：舒潔 盒裝面紙（即將耗盡、32 天 → 第二行加更新日、標籤放急迫狀態）', await row('盒裝面紙'), `${mdIn(-32)} 更新 · 剩 1.1 盒 · 預計 ${mdIn(1)}（剩 1 天）｜即將耗盡`);
+check('3 列表：白人 牙刷（剛好 30 天不算久未更新）', await row('牙刷'), `剩 3 支 · 預計 ${mdIn(60)}（剩 60 天）｜—`);
+check('4 STATUS-008 標籤樣式', await js(`(() => { const b = [...document.querySelectorAll('.depletion-badge')].find(b => b.dataset.status === 'stale'); const s = getComputedStyle(b); return { 字級: s.fontSize, 底色: s.backgroundColor, 單行: b.getBoundingClientRect().height < 30, 不超出卡片: b.getBoundingClientRect().right <= document.querySelector('.list').getBoundingClientRect().right }; })()`), { 字級: '12px', 底色: 'rgb(238, 241, 244)', 單行: true, 不超出卡片: true });
 await clickText('[role=radio]', '個人清潔'); await sleep(500);
 await shot('stale-1-list');
 
 await clickText('.list__row', '牙膏'); await sleep(1500);
-console.log('5 詳情：提示:', await note(), '| 剩餘數量第二行:', await js(`document.querySelector('.stat__sub').textContent.trim()`));
+check('5 詳情：提示列與剩餘數量第二行', [await note(), await js(`document.querySelector('.stat__sub').textContent.trim()`)], [`剩餘數量已久未更新 / 上次更新 ${shortIn(-40)}，按下方按鈕確認目前數量`, `上次更新 ${shortIn(-40)}`]);
 await shot('stale-2-detail');
 
 await click('a.edit-link'); await sleep(1500);
 await click('button[type=submit]'); await sleep(1800);
-console.log('6 數字不改直接儲存 → 回到:', await js('location.pathname'), '| 提示:', await note(), '| 剩餘數量第二行:', await js(`document.querySelector('.stat__sub').textContent.trim()`));
+check('6 數字不改直接儲存 → 提醒消失、記為今天更新', [await js('location.pathname'), await note(), await js(`document.querySelector('.stat__sub').textContent.trim()`)], [`/products/${paste.id}`, '（無）', `${shortIn(0)} 更新`]);
 
 await click('a[aria-label="返回商品"]'); await sleep(1500);
-console.log('7 回列表：黑人 牙膏:', await row('牙膏'));
+check('7 回列表：黑人 牙膏（從今天重算）', await row('牙膏'), `剩 3 條 · 預計 ${mdIn(90)}（剩 90 天）｜—`);
 const saved = await api(`/collections/products/records/${paste.id}`, null, token);
-console.log('8 資料庫：', saved.remaining_quantity, saved.remaining_updated_at, `（今天 ${at(new Date())}）`);
+check('8 資料庫：更新日是今天', [saved.remaining_quantity, saved.remaining_updated_at], [3, dbDateIn(0)]);
 sock.close(); chrome.kill();
+done();
