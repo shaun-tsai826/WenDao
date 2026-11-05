@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v8.8（2026-11-05）
-> 變更摘要：v8.8 未來版本清單新增「用相機掃描新增商品」（使用者提出）。
+> 版本：v8.9（2026-11-05）
+> 變更摘要：v8.9 交接整理：目前階段、流程圖、待辦、目前位置更新為「tasks.md 全部完成、待使用者部署與 iPhone 實測」。
+> v8.8 未來版本清單新增「用相機掃描新增商品」（使用者提出）。
 > v8.7 task 13（部署設定檔案）完成，**tasks.md 全部完成**；deploy/ 三個檔案；design.md v4.7、tasks.md v1.9。
 > v8.6 task 12.7（三種寬度的響應式 e2e）完成，task 12 全部完成；平板 / 桌機內容限制 640px、小按鈕加大可點範圍；design.md v4.6、tasks.md v1.8。
 > v8.5 task 12.2～12.6（整合測試對照）完成；新增「task 12.2～12.6 整合測試對照」一節。
@@ -83,14 +84,14 @@
 
 ## 目前階段
 
-**實作中。** task 1（環境建置）全部完成；**tasks.md 的 task 1～13 全部完成**。接下來是使用者照 `deploy/README.md` 親手部署，以及回報 iPhone 實測結果。commit 前執行 `npm test`（目前 740 項）。
+**實作完成，等待部署與實測。** **tasks.md 的 task 1～13 全部完成**（2026-11-05）。接下來是使用者照 `deploy/README.md` 親手部署，以及回報 iPhone 實測結果。commit 前執行 `npm test`（目前 740 項）。
 
 > **2026-11-01 起短期內不使用 Kiro**：規格需要修改時，由 Claude Code 先問使用者、同意後直接改（含版本號與變更摘要）。
 > **task 2.6 之前**：先用已安裝的設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿（儀表板、新增購買記錄），使用者選定後整理成 UI 設計規範寫進規格。
 
 ```
-規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作（11 完成，下一步 12）
-  (完成)       (完成)          (完成)            (完成)        ◄ 目前在這裡
+規格撰寫 ──► 規格審查 ──► Kiro 修正 + BDD ──► 第二輪審查 ──► 實作 ──► 部署與實測
+  (完成)       (完成)          (完成)            (完成)     (完成)   ◄ 目前在這裡（使用者親手）
 ```
 
 ## 規格文件（正本在 `.kiro/specs/home-erp/`，`docs/specs/` 是指向它的捷徑）
@@ -270,8 +271,10 @@ tasks.md 8.8 的每一項都對到自動化測試；「8.8 補」是這次補上
 
 ## 待辦（依順序）
 
-1. **[Claude Code]** task 9（儀表板與補貨提醒）：先做設計稿確認（儀表板只有 task 2.6 的風格提案 B-Home），再依序實作。
-3. 之後依 `tasks.md` 順序，一次做一個 task → 勾選 `[x]` → commit（message 帶 task 編號）。
+1. **[使用者]** 照 `deploy/README.md` 第 2～5 節親手部署：部署前端 → 安裝 launchd 服務 → 設定 Tailscale HTTPS → 手機加入主畫面。決定是否開啟 Mac mini 自動登入（README 第 3 節）。
+2. **[使用者]** 用 iPhone 實測並回報（清單見下方「目前位置」）。
+3. **[Claude Code]** 依回報修正（修 bug：先寫會失敗的回歸測試再修）。
+4. **[使用者決定]** 未來版本要不要做、先做哪一項（見「未來版本」：修改商品基本資料、用相機掃描新增商品）。要做時先寫規格（requirements / design / tasks）與設計稿，確認後才實作。
 
 ## 重要決定紀錄
 
@@ -357,14 +360,23 @@ git pull
 
 > 新電腦的 `backend/pocketbase` 與 `pb_data/` 不在 git 裡：執行檔請照 `docs/setup-pocketbase.md` 重新下載；資料庫要另外搬移或備份還原。前端套件：`cd frontend && npm install && (cd src-pwa && npm install)`。
 
-### 目前位置（2026-11-03）
+### 目前位置（2026-11-05）
 
-- **已完成**：task 1～7（環境、認證、分類、商品）、task 8（購買記錄：store、CustomFieldInput、列表、新增、詳情、編輯、刪除、測試對照）。
-- **下一步：使用者親手部署**（照 `deploy/README.md` 第 2～5 節：部署前端、安裝 launchd 服務、設定 Tailscale HTTPS、手機加入主畫面），以及 iPhone 實測（`docs/setup-frontend.md` 第 9 節的項目＋點趨勢圖、篩選按鈕的可點範圍）。使用者回報結果後再修正。另外決定是否開啟 Mac mini 自動登入（見 README 第 3 節）。
-- **待使用者回報**：回家後用 iPhone 測試（步驟見 `docs/setup-frontend.md` 第 9 節）：購買記錄的日期選擇器與 ERR-012 換行、新增購買記錄（商品選單、數字鍵盤、更新剩餘數量對話框）、商品頁操作、門牌 Logo。結果回報後再決定要不要調整。
-- **待回寫規格**：目前沒有（K-17～K-20 已於 2026-11-03 回寫 design.md v4.2）。
+- **已完成**：tasks.md 的 task 1～13 全部完成——環境、認證、分類、商品、購買記錄、儀表板、價格趨勢圖、整合測試、響應式、部署設定檔案。
+- **測試現況**：Vitest 740 項（`cd frontend && npm test`）；e2e 18 支腳本、自動判定（`./e2e/run.sh`，最後一行要是「✓ 18 支腳本全部符合」）。
+- **下一步：使用者親手部署**（`deploy/README.md`；`launchctl`、`tailscale serve` 不由 Claude Code 代為執行）。注意：先關掉手動開的 PocketBase（8090 會衝突）；LaunchAgent 是登入後才啟動。
+- **待使用者回報（iPhone 實測）**：
+  - 登入、首頁補貨提醒、商品頁、購買記錄列表的日期選擇器與 ERR-012 換行
+  - 新增購買記錄（商品選單、數字鍵盤、更新剩餘數量對話框）、編輯、刪除確認對話框
+  - 價格趨勢圖：點資料點的提示框好不好點、會不會被手指擋住；記錄多時會不會太擠
+  - 篩選按鈕、常用單位、常去地點的可點範圍（加大後有沒有誤點到隔壁）
+  - 門牌 Logo、加入主畫面後的圖示與名稱「溫叨@Pantry」（以前加過的要刪掉重加）
+  - 電腦瀏覽器的 640px 置中版面
+- **待回寫規格**：目前沒有（K-17～K-20 已回寫 design.md v4.2；task 12、13 的落差已回寫 design.md v4.7、tasks.md v1.9）。
+- **未來版本**：2 項（修改商品基本資料、用相機掃描新增商品），見「未來版本」。
 - App 名稱「溫叨@Pantry」（`src/constants/app.ts`），Logo A 門牌 5888（`frontend/brand/`）。
-- 設計稿：https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf （標題「溫叨@Pantry 設計稿」；購買記錄在 Pur-* 那排，Logo 在最下排；本機原始檔在 `.design-canvas/`，不進 git）。
+- 設計稿：https://claude.ai/artifact/NFoy16EUs8ZDTwa2uMQDSf （標題「溫叨@Pantry 設計稿」；購買記錄 Pur-*、首頁 Dash-*、趨勢圖 Prod-Trend* 各一排，Logo 在中間那排；本機原始檔在 `.design-canvas/`，不進 git；更新前先讀線上版本比對）。
+- 部署相關：`deploy/`（plist、`deploy-frontend.sh`、README）；`backend/pb_public/`、`backend/logs/` 是產生的，不進 git。
 
 ### 工作慣例（Claude Code 接手時照做）
 
