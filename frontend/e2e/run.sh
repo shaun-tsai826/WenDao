@@ -6,6 +6,7 @@
 #   ./e2e/run.sh custom-field-sheet # 只跑一支
 #
 # 每支腳本會拿到：網址、截圖資料夾、寬、高。截圖存在 e2e/.shots/（不進 git）。
+# 判定：每支腳本用 e2e/check.mjs 比對預期值，有一項不符該腳本就失敗；最後列出失敗的腳本，結束代碼 1。
 # 臨時資料庫用 migrations 建立（含種子資料），再加一個測試帳號 alice@family.home、
 # 一筆購買記錄（讓「抽數(單包)」欄位處於已被使用的狀態）。
 set -euo pipefail
@@ -47,7 +48,18 @@ curl -s -o /dev/null -X POST $B/collections/purchase_record_field_values/records
 
 SCRIPTS=("$@")
 [[ ${#SCRIPTS[@]} -eq 0 ]] && SCRIPTS=(purchase-contract login categories custom-field-sheet products product-new product-detail product-edit stale purchases purchase-new purchase-detail purchase-edit purchase-delete dashboard product-trend logout)
+# 每支腳本用 e2e/check.mjs 判定，有不符時以失敗結束；全部跑完再列出失敗的腳本（task 12.1）
+FAILED=()
 for name in "${SCRIPTS[@]}"; do
   echo "== $name"
-  node "$FRONTEND/e2e/$name.mjs" "http://127.0.0.1:${PORT}" "$SHOTS" 390 844 2>&1 | grep -v Warning
+  # grep 沒有輸出時會回傳 1，所以包起來；pipefail 讓結束代碼取自 node
+  if ! node "$FRONTEND/e2e/$name.mjs" "http://127.0.0.1:${PORT}" "$SHOTS" 390 844 2>&1 | { grep -v Warning || true; }; then
+    FAILED+=("$name")
+  fi
 done
+
+if [[ ${#FAILED[@]} -gt 0 ]]; then
+  echo "== ✗ 有 ${#FAILED[@]} 支腳本不符：${FAILED[*]}"
+  exit 1
+fi
+echo "== ✓ ${#SCRIPTS[@]} 支腳本全部符合"

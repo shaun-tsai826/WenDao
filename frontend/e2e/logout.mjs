@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { check, done } from './check.mjs';
 const [,, base, outDir] = process.argv;
 const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   ['--headless=new', '--remote-debugging-port=9335', '--user-data-dir=' + mkdtempSync(tmpdir() + '/chr-'), '--no-first-run', 'about:blank'], { stdio: 'ignore' });
@@ -18,13 +19,14 @@ await send('Page.navigate', { url: base + '/login' }); await sleep(2500);
 await type('#login-email', 'alice@family.home'); await type('#login-password', 'correct-password1');
 await js(`document.querySelector('button[type=submit]').click(); true`); await sleep(2000);
 await js(`document.querySelector('a[href="/products"]').click(); true`); await sleep(1000);
-console.log('1 登入後到商品頁 →', await js('location.pathname'), '| 右上角:', await js(`document.querySelector('.user__name')?.textContent`));
+check('1 登入後到商品頁', { 網址: await js('location.pathname'), 名稱: await js(`document.querySelector('.user__name')?.textContent`) }, { 網址: '/products', 名稱: 'Alice' });
 await js(`document.querySelector('button.user__logout').click(); true`); await sleep(1500);
-console.log('2 按登出 →', await js('location.pathname'), '| localStorage token:', await js(`localStorage.getItem('pocketbase_auth')`));
+check('2 按登出 → 登入頁、清掉 token', { 網址: await js('location.pathname'), token: await js(`localStorage.getItem('pocketbase_auth')`) }, { 網址: '/login', token: null });
 await js('history.back(); true'); await sleep(1500);
-console.log('3 按瀏覽器上一頁 →', await js('location.pathname'));
+check('3 按瀏覽器上一頁 → 仍在登入頁', await js('location.pathname'), '/login');
 await send('Page.navigate', { url: base + '/products' }); await sleep(2000);
-console.log('4 直接輸入網址 /products →', await js('location.pathname'));
+check('4 直接輸入網址 /products → 登入頁', await js('location.pathname'), '/login');
 await send('Page.reload'); await sleep(2000);
-console.log('5 重新整理 →', await js('location.pathname'));
+check('5 重新整理 → 登入頁', await js('location.pathname'), '/login');
 sock.close(); chrome.kill();
+done();

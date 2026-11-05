@@ -4,6 +4,7 @@
 //   4. 刪除購買記錄時 cascade 刪除欄位值  5. 總價低於 0.01 的錯誤格式  6. quantity 0 / unit_price 0 可寫入
 // 不開瀏覽器；結果每一行 ✓ / ✗，有 ✗ 時結束代碼為 1。
 import PocketBase from 'pocketbase';
+import { ok, done } from './check.mjs';
 
 const [,, base] = process.argv;
 const pb = new PocketBase(base);
@@ -11,11 +12,8 @@ pb.autoCancellation(false);
 await pb.collection('users').authWithPassword('alice@family.home', 'correct-password1');
 const me = pb.authStore.record.id;
 
-let failed = 0;
-const check = (label, ok, detail = '') => {
-  if (!ok) failed++;
-  console.log(`${ok ? '✓' : '✗'} ${label}${detail ? `：${detail}` : ''}`);
-};
+// 判定交給共用的 check.mjs（task 12.1）；這支的 check(說明, 條件, 不符時的細節)
+const check = ok;
 
 // ---- 測試資料（自己建立，名稱加上前綴，不影響其他腳本） ----
 const tag = `契約${Date.now() % 100000}`;
@@ -84,5 +82,4 @@ for (const r of await pb.collection('purchase_records').getFullList({ filter: mi
 for (const p of [prodA, prodB]) await pb.collection('products').delete(p.id);
 for (const c of [catA, catB]) await pb.collection('categories').delete(c.id); // custom_fields 會 cascade
 
-console.log(failed ? `✗ ${failed} 項不符` : '✓ 全部符合');
-process.exit(failed ? 1 : 0);
+done();

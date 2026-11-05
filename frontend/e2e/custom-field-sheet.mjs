@@ -2,6 +2,7 @@
 import { spawn } from 'node:child_process';
 import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { check, ok, done } from './check.mjs';
 const [,, base, outDir, w = '390', h = '844'] = process.argv;
 const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   ['--headless=new', '--remote-debugging-port=9338', '--user-data-dir=' + mkdtempSync(tmpdir() + '/chr-'), '--no-first-run', 'about:blank'], { stdio: 'ignore' });
@@ -27,16 +28,17 @@ await click('#login-email'); await typeText('alice@family.home'); await click('#
 await send('Page.navigate', { url: base + '/categories' }); await sleep(1500);
 await clickText('.list__row', '衛生紙'); await sleep(1200);
 console.log(`畫面 ${w}x${h}`);
-await click('.fields__add'); console.log('1 點新增欄位 → 面板開啟:', await open());
-await click('#field-name'); console.log('2 點名稱輸入框 → 面板仍開啟:', await open(), '| 焦點:', await js('document.activeElement.id'));
-await typeText('捲數'); console.log('3 打字 → 輸入框內容:', await js(`document.querySelector('#field-name').value`));
-await clickText('.choice__item', '文字'); await clickText('.choice__item', '只記錄'); console.log('4 點選文字、只記錄 → 面板仍開啟:', await open(), '| 選擇:', await js(`[...document.querySelectorAll('.sheet input:checked')].map(i => i.value).join(',')`));
-await click('.sheet__title'); console.log('5 點面板空白處 → 面板仍開啟:', await open());
+await click('.fields__add'); check('1 點新增欄位 → 面板開啟', await open(), true);
+await click('#field-name'); check('2 點名稱輸入框 → 面板仍開啟、焦點在名稱', [await open(), await js('document.activeElement.id')], [true, 'field-name']);
+await typeText('捲數'); check('3 打字 → 輸入框內容', await js(`document.querySelector('#field-name').value`), '捲數');
+await clickText('.choice__item', '文字'); await clickText('.choice__item', '只記錄'); check('4 點選文字、只記錄 → 面板仍開啟、選項正確', [await open(), await js(`[...document.querySelectorAll('.sheet input:checked')].map(i => i.value).join(',')`)], [true, 'text,false']);
+await click('.sheet__title'); check('5 點面板空白處 → 面板仍開啟', await open(), true);
 await shot('real-1-filled');
-await click('.sheet__save'); await sleep(800); console.log('6 按儲存 → 面板關閉:', !(await open()), '| 清單:', JSON.stringify(await names()));
+await click('.sheet__save'); await sleep(800); check('6 按儲存 → 面板關閉、清單多一筆', [!(await open()), await names()], [true, ['抽數(單包)｜數字/算數量', '層數｜數字/只記錄', '包數｜數字/算數量', '捲數｜文字/只記錄']]);
 await clickText('.fields__open', '層數'); await click('#field-name'); await selectAll(); await typeText('厚度'); await click('.sheet__save'); await sleep(800);
-console.log('7 改名層數→厚度:', JSON.stringify(await names()));
+check('7 改名層數→厚度', await names(), ['抽數(單包)｜數字/算數量', '厚度｜數字/只記錄', '包數｜數字/算數量', '捲數｜文字/只記錄']);
 await clickText('.fields__open', '抽數'); await click('.sheet [role=note]'); await click('.sheet__title');
-console.log('8 已使用欄位：點說明與標題 → 面板仍開啟:', await open(), '| 型別鎖定:', await js(`[...document.querySelectorAll('.sheet fieldset')].every(f => f.disabled)`));
-await clickAt(+w / 2, 40); await sleep(600); console.log('9 點面板外的背景 → 面板關閉:', !(await open()));
+check('8 已使用欄位：點說明與標題 → 面板仍開啟、型別鎖定', [await open(), await js(`[...document.querySelectorAll('.sheet fieldset')].every(f => f.disabled)`)], [true, true]);
+await clickAt(+w / 2, 40); await sleep(600); check('9 點面板外的背景 → 面板關閉', !(await open()), true);
 sock.close(); chrome.kill();
+done();
