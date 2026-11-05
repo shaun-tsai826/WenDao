@@ -366,7 +366,7 @@
   - 執行 `vitest --run` 確認各功能頁面單元測試與屬性測試通過，有問題時詢問使用者。
 
 - [ ] 12. 整合測試
-  - [ ] 12.1 整理整合測試工具（fakePocketBase）與 e2e 腳本
+  - [x] 12.1 整理整合測試工具（fakePocketBase）與 e2e 腳本
     - 以 `src/test-utils/fakePocketBase.ts` 模擬各 Collection 的 CRUD 與資料庫規則；e2e 以無頭 Chrome + 真實 PocketBase 執行
     - _對應：REQ-1 ~ REQ-8_
 

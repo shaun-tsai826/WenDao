@@ -5,6 +5,9 @@
 import { spawn } from 'node:child_process';
 import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { check, ok, done, mdIn, shortIn, dbDateIn } from './check.mjs';
+// 本腳本的購買日固定在 2026 年：今年只寫 M/D，其他年份寫 2026/M/D（App 的 formatShortDate）
+const d26 = (m, d) => (new Date().getFullYear() === 2026 ? `${m}/${d}` : `2026/${m}/${d}`);
 const [,, base, outDir, w = '390', h = '844'] = process.argv;
 
 // ---- 1. 測試資料（歷史均價：0.4992、0.4575、0.5242 → 0.4936；刪掉 0.5242 那筆 → 0.4784） ----
@@ -79,32 +82,34 @@ console.log(`畫面 ${w}x${h}`);
 await click('a[href="/purchases"]'); await sleep(1500);
 await clickText('[role=radio]', 'e2e刪除'); await sleep(1000);
 const listUrl = await js('decodeURIComponent(location.pathname + location.search)');
-console.log('1 篩選「e2e刪除」→', listUrl, '| 筆數:', await rows());
+ok('1 篩選「e2e刪除」→ 記在網址', /^\/purchases\?category=\w+$/.test(listUrl), listUrl);
+check('1 本分類 3 筆', await rows(), 3);
 await click(`a[href="/purchases/${target.id}"]`); await sleep(1500);
-console.log('  詳情的刪除按鈕:', JSON.stringify(await js(`(() => { const b = document.querySelector('button.delete-button'); return { 文字: b?.textContent.trim(), 字色: b && getComputedStyle(b).color, 高度: b && Math.round(b.getBoundingClientRect().height) }; })()`)));
+check('1 詳情的「刪除這筆記錄」（紅字、48px）', await js(`(() => { const b = document.querySelector('button.delete-button'); return { 文字: b?.textContent.trim(), 字色: b && getComputedStyle(b).color, 高度: b && Math.round(b.getBoundingClientRect().height) }; })()`), { 文字: '刪除這筆記錄', 字色: 'rgb(196, 28, 41)', 高度: 48 });
 
 await click('button.delete-button'); await sleep(900);
-console.log('2 點「刪除這筆記錄」→ 對話框:', JSON.stringify(await dialogInfo()));
+check('2 CONFIRM-001 對話框：寫出是哪一筆、焦點在取消（AC-5.8）', await dialogInfo(), { 標題: '確定要刪除此筆記錄嗎？', 說明: `${d26(7, 12)} 家樂福 · 春風 刪除測試紙 · 629 元／刪除後無法復原，商品的歷史均價會重新計算`, 焦點: '取消', 刪除鈕底色: 'rgb(196, 28, 41)' });
 await shot('pur-delete-1-dialog');
 
 await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
 await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
 await sleep(900);
-console.log('3 按 Esc → 對話框關閉:', (await dialogInfo()) === null, '|', await inDb(), '|', await js('location.pathname') === `/purchases/${target.id}` ? '留在詳情' : await js('location.pathname'));
+check('3 按 Esc → 關閉、不刪除、留在詳情', [(await dialogInfo()) === null, await inDb(), await js('location.pathname')], [true, '記錄 還在、欄位值 1 筆', `/purchases/${target.id}`]);
 
 await click('button.delete-button'); await sleep(900);
 await clickText('[role=alertdialog] button', '取消'); await sleep(900);
-console.log('4 按「取消」→ 對話框關閉:', (await dialogInfo()) === null, '|', await inDb());
+check('4 按「取消」→ 關閉、不刪除', [(await dialogInfo()) === null, await inDb()], [true, '記錄 還在、欄位值 1 筆']);
 
 await click('button.delete-button'); await sleep(900);
 await clickText('[role=alertdialog] button', '刪除'); await sleep(1500);
-console.log('5 按「刪除」→ 提示:', await toast(), '| 網址:', await js('decodeURIComponent(location.pathname + location.search)'), '| 回到同一個篩選:', (await js('decodeURIComponent(location.pathname + location.search)')) === listUrl, '| 筆數:', await rows());
-console.log('  資料庫:', await inDb());
+check('5 按「刪除」→ MSG-006、回到同一個篩選、少一筆（AC-5.9）', [await toast(), await js('decodeURIComponent(location.pathname + location.search)'), await rows()], ['記錄刪除成功', listUrl, 2]);
+check('5 資料庫：記錄與欄位值都刪除', await inDb(), '記錄 已刪除（404）、欄位值 0 筆');
 await shot('pur-delete-2-after');
 
 await send('Page.navigate', { url: `${base}/products/${prod.id}` }); await sleep(2500);
-console.log('6 商品詳情的歷史均價重算:', JSON.stringify(await js(`[...document.querySelectorAll('.stat--wide')].map(s => s.textContent.trim().replace(/\\s+/g, ' '))[0]`)));
+check('6 商品詳情的歷史均價重算', await js(`[...document.querySelectorAll('.stat--wide')].map(s => s.textContent.trim().replace(/\\s+/g, ' '))[0]`), '歷史均價（2 筆）0.4784 元/抽');
 
 await send('Page.navigate', { url: `${base}/purchases/${target.id}` }); await sleep(2500);
-console.log('7 再打開被刪除的記錄:', await js(`document.querySelector('.state')?.textContent.trim().replace(/\\s+/g, ' ')`));
+check('7 再打開被刪除的記錄', await js(`document.querySelector('.state')?.textContent.trim().replace(/\\s+/g, ' ')`), '找不到這筆記錄，可能已被刪除。 回到購買記錄');
 sock.close(); chrome.kill();
+done();

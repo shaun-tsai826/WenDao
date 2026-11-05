@@ -4,6 +4,7 @@
 import { spawn } from 'node:child_process';
 import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { check, ok, done, mdIn, shortIn, dbDateIn } from './check.mjs';
 const [,, base, outDir, w = '390', h = '844'] = process.argv;
 
 // ---- 1. 測試資料（設計稿的數字：0.4992、0.4575、0.5242 → 歷史均價 0.4936） ----
@@ -77,30 +78,34 @@ console.log(`畫面 ${w}x${h}`);
 await click('a[href="/purchases"]'); await sleep(1500);
 await clickText('[role=radio]', 'e2e詳情'); await sleep(1000);
 await click(`a[href="/purchases/${high.id}"]`); await sleep(1500);
-console.log('1 列表點 10/31 那筆 → 詳情（比歷史均價高）:', JSON.stringify(await detail(), null, 1));
-console.log('  版面:', JSON.stringify(await layout()));
+const d1 = await detail();
+// 新增時間是建立當下（本地時間）：只核對格式與日期
+ok('1 新增者與新增時間（AC-5.6）', new RegExp(`^eAlice· ${shortIn(0)} \\d\\d:\\d\\d 新增$`).test(d1.資訊[2]), d1.資訊[2]);
+check('1 列表點 10/31 那筆 → 詳情（比歷史均價高，AC-8.9）', { ...d1, 資訊: d1.資訊.slice(0, 2) }, { 網址: `/purchases/${high.id}`, 商品: '春風 詳情測試紙', 總價: '599 元', 資訊: ['2026/10/31（六）', '全聯'], 規格: ['抽數=100', '包數=12'], 數量與均價: ['1,200 抽', '0.4992 元/抽'], 比較: ['比歷史均價高', '每抽多 0.0056 元（+1.1%）', '歷史均價 0.4936 元/抽 · 3 筆，含這一筆'], 比較樣式: 'compare compare--higher', 比較底色: 'rgb(255, 244, 220)' });
+check('1 版面', await layout(), { 沒有橫向捲動: true, 編輯按鈕高度: 48 });
 await shot('pur-detail-1-higher');
 
 await click('a[aria-label="返回購買記錄"]'); await sleep(1200);
-console.log('2 返回箭頭 → 列表、篩選保留:', await js('decodeURIComponent(location.pathname + location.search)'));
+ok('2 返回箭頭 → 列表、篩選保留', /^\/purchases\?category=\w+$/.test(await js('decodeURIComponent(location.pathname + location.search)')), await js('location.search'));
 
 await click(`a[href="/purchases/${low.id}"]`); await sleep(1500);
 const d2 = await detail();
-console.log('3 9/05 那筆（比歷史均價低）:', JSON.stringify({ 比較: d2.比較, 樣式: d2.比較樣式, 底色: d2.比較底色 }));
+check('3 9/05 那筆（比歷史均價低：↓、綠色）', { 比較: d2.比較, 樣式: d2.比較樣式, 底色: d2.比較底色 }, { 比較: ['比歷史均價低', '每抽少 0.0361 元（−7.3%）', '歷史均價 0.4936 元/抽 · 3 筆，含這一筆'], 樣式: 'compare compare--lower', 底色: 'rgb(227, 244, 220)' });
 await shot('pur-detail-2-lower');
 
 await send('Page.navigate', { url: `${base}/purchases/${noQty.id}` }); await sleep(2500);
 const d3 = await detail();
-console.log('4 沒有數量那筆（直接打網址）:', JSON.stringify({ 數量與均價: d3.數量與均價, 比較: d3.比較, 規格數: d3.規格.length, 返回: await js(`document.querySelector('a[aria-label="返回購買記錄"]').getAttribute('href')`) }));
+check('4 沒有數量那筆 → STATUS-001、STATUS-006（AC-6.5、8.10）', { 數量與均價: d3.數量與均價, 比較: d3.比較, 規格數: d3.規格.length, 返回: await js(`document.querySelector('a[aria-label="返回購買記錄"]').getAttribute('href')`) }, { 數量與均價: ['未填', '無法計算'], 比較: ['無法比較', '這筆沒有填數量', '歷史均價 0.4936 元/抽 · 3 筆'], 規格數: 0, 返回: '/purchases' });
 await shot('pur-detail-3-na');
 
 await click('.record__product a'); await sleep(1500);
-console.log('5 點商品名稱 → 商品詳情:', await js('location.pathname') === `/products/${prod.id}`, '|', await js(`document.querySelector('.product__name')?.textContent.trim()`));
+check('5 點商品名稱 → 商品詳情', [await js('location.pathname'), await js(`document.querySelector('.product__name')?.textContent.trim()`)], [`/products/${prod.id}`, '春風 詳情測試紙']);
 
 await send('Page.navigate', { url: `${base}/purchases/${high.id}` }); await sleep(2500);
 await click('a.edit-link'); await sleep(1200);
-console.log('6 編輯這筆記錄 →', await js('location.pathname') === `/purchases/${high.id}/edit`);
+check('6 編輯這筆記錄 → 編輯頁', await js('location.pathname'), `/purchases/${high.id}/edit`);
 
 await send('Page.navigate', { url: `${base}/purchases/doesnotexist123` }); await sleep(2500);
-console.log('7 不存在的記錄:', await js(`document.querySelector('.state')?.textContent.trim().replace(/\\s+/g, ' ')`));
+check('7 不存在的記錄', await js(`document.querySelector('.state')?.textContent.trim().replace(/\\s+/g, ' ')`), '找不到這筆記錄，可能已被刪除。 回到購買記錄');
 sock.close(); chrome.kill();
+done();

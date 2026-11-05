@@ -4,6 +4,7 @@
 import { spawn } from 'node:child_process';
 import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { check, ok, done, mdIn, shortIn, dbDateIn } from './check.mjs';
 const [,, base, outDir, w = '390', h = '844'] = process.argv;
 
 // ---- 1. 測試資料 ----
@@ -77,28 +78,29 @@ console.log(`畫面 ${w}x${h}`);
 
 await send('Page.navigate', { url: `${base}/purchases/${rec.id}` }); await sleep(2500);
 await click('a.edit-link'); await sleep(1500);
-console.log('1 詳情點「編輯這筆記錄」→', await js('location.pathname'), JSON.stringify(await form()));
+check('1 詳情點「編輯這筆記錄」→ 預先帶入原本的值', [await js('location.pathname'), await form()], [`/purchases/${rec.id}/edit`, { 標題: '編輯購買記錄', 商品: '春風 編輯測試紙', 日期: '2026-10-31', 地點: '全聯', 總價: '599', 抽數: '100', 包數: '12', 計算: '1,200 抽 / 0.4992 元/抽' }]);
 await shot('pur-edit-1-prefilled');
 
 await click('a.cancel'); await sleep(1200);
-console.log('2 按取消 → 回詳情:', await js('location.pathname') === `/purchases/${rec.id}`);
+check('2 按取消 → 回詳情', await js('location.pathname'), `/purchases/${rec.id}`);
 
 await send('Page.navigate', { url: `${base}/purchases/${rec.id}/edit` }); await sleep(2500);
 await retype('#p-price', '0'); await click('button[type=submit]'); await sleep(800);
-console.log('3 總價改 0 送出 →', await js(`document.querySelector('#p-price-error')?.textContent.trim()`), '| 有「此欄位為必填」:', await js(`document.body.textContent.includes('此欄位為必填')`), '| 資料庫:', JSON.stringify(await dbRecord()));
+check('3 總價改 0 送出 → 只有 ERR-010、資料庫不變', [await js(`document.querySelector('#p-price-error')?.textContent.trim()`), await js(`document.body.textContent.includes('此欄位為必填')`), await dbRecord()], ['總價必須大於 0', false, { 總價: 599, 數量: 1200, 單位均價: 0.4992, 新增者不變: true, 欄位值: ['100', '12'] }]);
 
 await retype('#p-price', '549');
-console.log('4 BDD 總價改 549 → 計算:', JSON.stringify((await form()).計算));
+check('4 BDD 總價改 549 → 單位均價重算（AC-5.7）', (await form()).計算, '1,200 抽 / 0.4575 元/抽');
 await retype(`#cf-${fPacks.id}`, '10');
-console.log('5 包數改 10 → 計算:', JSON.stringify((await form()).計算));
+check('5 包數改 10 → 數量重算', (await form()).計算, '1,000 抽 / 0.5490 元/抽');
 await shot('pur-edit-2-changed');
 await click('button[type=submit]'); await sleep(1500);
-console.log('6 儲存變更 →', await js('location.pathname') === `/purchases/${rec.id}` ? '回到詳情' : await js('location.pathname'), '| 提示:', await toast());
-console.log('  資料庫:', JSON.stringify(await dbRecord()));
-console.log('  詳情畫面:', JSON.stringify(await js(`({ 總價: document.querySelector('.record__total')?.textContent.trim(), 規格: [...document.querySelectorAll('.field__value')].map(v => v.textContent.trim()), 數量與均價: [...document.querySelectorAll('.summary__value')].map(v => v.textContent.trim()), 比較: document.querySelector('.compare__title')?.textContent.trim() })`)));
+check('6 儲存變更 → 回到詳情、MSG-005', [await js('location.pathname'), await toast()], [`/purchases/${rec.id}`, '記錄更新成功']);
+check('6 資料庫：重算、新增者不變、欄位值同步', await dbRecord(), { 總價: 549, 數量: 1000, 單位均價: 0.549, 新增者不變: true, 欄位值: ['100', '10'] });
+check('6 詳情畫面', await js(`({ 總價: document.querySelector('.record__total')?.textContent.trim(), 規格: [...document.querySelectorAll('.field__value')].map(v => v.textContent.trim()), 數量與均價: [...document.querySelectorAll('.summary__value')].map(v => v.textContent.trim()), 比較: document.querySelector('.compare__title')?.textContent.trim() })`), { 總價: '549 元', 規格: ['100', '10'], 數量與均價: ['1,000 抽', '0.5490 元/抽'], 比較: '和歷史均價相同' });
 await shot('pur-edit-3-saved');
 
 await send('Page.navigate', { url: `${base}/purchases/doesnotexist123/edit` }); await sleep(2500);
-console.log('7 不存在的記錄:', await js(`document.querySelector('.state')?.textContent.trim().replace(/\\s+/g, ' ')`), '| 有表單:', await js(`!!document.querySelector('form')`));
-console.log('8 版面:', JSON.stringify(await js(`({ 沒有橫向捲動: document.documentElement.scrollWidth <= window.innerWidth })`)));
+check('7 不存在的記錄 → 說明、不顯示表單', [await js(`document.querySelector('.state')?.textContent.trim().replace(/\\s+/g, ' ')`), await js(`!!document.querySelector('form')`)], ['找不到這筆記錄，可能已被刪除。 回到購買記錄', false]);
+check('8 版面', await js(`({ 沒有橫向捲動: document.documentElement.scrollWidth <= window.innerWidth })`), { 沒有橫向捲動: true });
 sock.close(); chrome.kill();
+done();

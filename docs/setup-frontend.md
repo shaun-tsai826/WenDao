@@ -1,7 +1,8 @@
 # 前端環境建置教學（setup-frontend.md）
 
-> 版本：v2.0（2026-11-03）
-> 變更摘要：v2.0 App 更名「溫叨Pantry」→「溫叨@Pantry」（使用者決定）：第 4 節的 --product 與說明更新。
+> 版本：v2.1（2026-11-05）
+> 變更摘要：v2.1 第 8 節：e2e 改為自動判定（e2e/check.mjs），新增「怎麼看結果」與「寫新腳本」。
+> v2.0 變更摘要：v2.0 App 更名「溫叨Pantry」→「溫叨@Pantry」（使用者決定）：第 4 節的 --product 與說明更新。
 > v1.9 新增第 9 節「在手機上測試（家裡 Wi-Fi）」與相關疑難排解；第 8 節 e2e 腳本清單更新。
 > v1.8 App 更名為「溫叨Pantry」：第 4 節的 --product 改為新名稱，並註明當初用的是舊名稱。
 > v1.7 新增 e2e 驗證（frontend/e2e/run.sh）。
@@ -196,7 +197,23 @@ cd ~/Projects/WenDao/frontend
 ```
 
 - 會先 `quasar build -m pwa`，再開一個**臨時** PocketBase（port 8099，跑完自動刪除，不碰正式資料），用 migrations 建好種子資料，加測試帳號 `alice@family.home`。
-- 腳本用 Chrome DevTools Protocol 送出**真實的滑鼠與鍵盤事件**，輸出每個步驟的結果；截圖在 `e2e/.shots/`（不進 git）。
+- 腳本用 Chrome DevTools Protocol 送出**真實的滑鼠與鍵盤事件**；截圖在 `e2e/.shots/`（不進 git）。
+- **自動判定**（task 12.1）：每支腳本用 `e2e/check.mjs` 比對每個步驟的預期值，全部跑完後最後一行是：
+  - `== ✓ 17 支腳本全部符合`：通過，結束代碼 0。
+  - `== ✗ 有 N 支腳本不符：腳本名稱…`：不通過，結束代碼 1；往上找 `✗` 那一行，下面會印出「預期」與「實際」。
+
+**寫新的 e2e 腳本**：複製一支相近的腳本改，判定一律用 `check.mjs`：
+
+```js
+import { check, ok, done, mdIn, shortIn, dbDateIn } from './check.mjs';
+check('步驟說明', 實際值, 預期值);           // 物件、陣列逐項比較
+ok('步驟說明', 條件, 不符時想看的細節);       // 只要條件成立
+check('日期以今天推算', 文字, `預計 ${mdIn(15)} 用完`); // 不要把日期寫死
+done();                                      // 最後呼叫：有不符時結束代碼 1
+```
+
+- 測試資料由腳本自己用 API 建在自己的分類下；e2e 共用一個臨時資料庫，**不要假設別的腳本建的資料**（例如種子分類的先後、全部商品的數量），需要時改成「互相核對」（摘要數字＝清單列數）。
+- 寫好後故意把一個預期值改錯跑一次，確認會出現 ✗。
 - 需要：已下載 `backend/pocketbase`、已安裝 Google Chrome、Node 22 以上。
 
 ## 9. 在手機上測試（家裡 Wi-Fi）

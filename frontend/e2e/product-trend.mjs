@@ -4,6 +4,9 @@
 import { spawn } from 'node:child_process';
 import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { check, ok, done, mdIn, shortIn, dbDateIn } from './check.mjs';
+// 本腳本的購買日固定在 2026 年：今年只寫 M/D，其他年份寫 2026/M/D（App 的 formatShortDate）
+const d26 = (m, d) => (new Date().getFullYear() === 2026 ? `${m}/${d}` : `2026/${m}/${d}`);
 const [,, base, outDir, w = '390', h = '844'] = process.argv;
 
 // ---- 1. 測試資料（設計稿 Prod-Trend：0.5242、0.4575、0.4992 → 歷史均價 0.4936） ----
@@ -74,20 +77,22 @@ await click('#login-email'); await typeText('alice@family.home'); await click('#
 console.log(`畫面 ${w}x${h}`);
 
 await send('Page.navigate', { url: `${base}/products/${prod.id}` }); await sleep(3000);
-console.log('1 商品詳情的卡片順序:', JSON.stringify(await js(`[...document.querySelectorAll('section.card h2')].map(h => h.textContent.trim())`)));
-console.log('  趨勢圖:', JSON.stringify(await js(`({ 標題列: document.querySelector('.trend__meta')?.textContent.trim(), 說明: document.querySelector('.trend canvas')?.getAttribute('aria-label'), 角色: document.querySelector('.trend canvas')?.getAttribute('role') })`)));
+check('1 趨勢圖在商品卡與購買記錄之間', await js(`[...document.querySelectorAll('section.card h2')].map(h => h.textContent.trim())`), ['春風 趨勢測試紙', '單位均價趨勢', '購買記錄（新到舊）']);
+check('1 標題列、無障礙說明（數量沒填的不畫）', await js(`({ 標題列: document.querySelector('.trend__meta')?.textContent.trim(), 說明: document.querySelector('.trend canvas')?.getAttribute('aria-label'), 角色: document.querySelector('.trend canvas')?.getAttribute('role') })`), { 標題列: '3 筆 · 元/抽', 說明: `單位均價趨勢：${d26(7, 12)} 0.5242、${d26(9, 5)} 0.4575、${d26(10, 20)} 0.4992 元/抽；歷史均價 0.4936 元/抽`, 角色: 'img' });
 await js(`document.querySelector('.trend').scrollIntoView({ block: 'center' })`); await sleep(500);
 const before = await pixels();
-console.log('2 Chart.js 有畫出來:', JSON.stringify(before), '| 有線:', before?.主色像素 > 200);
+ok('2 Chart.js 有畫出線（canvas 有主色像素）', before?.主色像素 > 200, before);
+check('2 圖的大小', before?.圖大小, [326, 180]);
 await shot('trend-1-chart');
 if (before?.最右點) { await clickAt(before.最右點.x, before.最右點.y); await sleep(600); }
 const after = await pixels();
-console.log('3 點最右邊的資料點 → 出現深色提示框:', after?.深色像素 > (before?.深色像素 ?? 0) + 300, `（深色像素 ${before?.深色像素} → ${after?.深色像素}）`);
+ok('3 用真正的滑鼠點最右邊的資料點 → 出現深色提示框', after?.深色像素 > (before?.深色像素 ?? 0) + 300, { 前: before?.深色像素, 後: after?.深色像素 });
 await shot('trend-2-tooltip');
 
 await send('Page.navigate', { url: `${base}/products/${single.id}` }); await sleep(2500);
-console.log('4 只有 1 筆 → STATUS-005:', JSON.stringify(await js(`({ 狀態: document.querySelector('.trend [role=status]')?.innerText.replace(/\\n+/g, '／'), 有畫圖: !!document.querySelector('.trend canvas') })`)));
+check('4 只有 1 筆 → STATUS-005、不畫圖', await js(`({ 狀態: document.querySelector('.trend [role=status]')?.innerText.replace(/\\n+/g, '／'), 有畫圖: !!document.querySelector('.trend canvas') })`), { 狀態: '尚無足夠資料顯示趨勢圖／要有 2 筆以上算得出單位均價的購買記錄（目前 1 筆）', 有畫圖: false });
 await js(`document.querySelector('.trend').scrollIntoView({ block: 'center' })`); await sleep(400);
 await shot('trend-3-empty');
-console.log('5 版面:', JSON.stringify(await js(`({ 沒有橫向捲動: document.documentElement.scrollWidth <= window.innerWidth })`)));
+check('5 版面', await js(`({ 沒有橫向捲動: document.documentElement.scrollWidth <= window.innerWidth })`), { 沒有橫向捲動: true });
 sock.close(); chrome.kill();
+done();

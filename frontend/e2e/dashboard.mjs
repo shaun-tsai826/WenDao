@@ -5,6 +5,7 @@
 import { spawn } from 'node:child_process';
 import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { check, ok, done, mdIn, shortIn, dbDateIn } from './check.mjs';
 const [,, base, outDir, w = '390', h = '844'] = process.argv;
 
 // ---- 1. 測試資料：每月用 30 → 一天 1 個（以裝置本地的今天計算） ----
@@ -68,28 +69,37 @@ await send('Page.navigate', { url: base + '/login' }); await sleep(2500);
 await click('#login-email'); await typeText('alice@family.home'); await click('#login-password'); await typeText('correct-password1'); await click('button[type=submit]'); await sleep(2500);
 console.log(`畫面 ${w}x${h}（今天 ${day(0)}）`);
 
-console.log('1 登入後在首頁:', await js('location.pathname'), '|', await js(`document.querySelector('h1')?.textContent.trim()`), '|', await js(`document.querySelector('.page__meta')?.textContent.trim()`));
+check('1 登入後在首頁', [await js('location.pathname'), await js(`document.querySelector('h1')?.textContent.trim()`)], ['/', '補貨提醒']);
+// 追蹤數會隨前面腳本建立的商品變動：只核對格式（今天的日期與星期）
+const meta = await js(`document.querySelector('.page__meta')?.textContent.trim()`);
+ok('1 標題下「M/D（星期）· 追蹤中 N 項」', new RegExp(`^${mdIn(0)}（[日一二三四五六]）· 追蹤中 \\d+ 項$`).test(meta), meta);
 const s = await summary(); const rs = await reminders();
-console.log('2 摘要:', JSON.stringify(s), '| 清單列數:', rs.length);
+
 const n = (t) => Number((t.match(/(\d+) 項/) || [])[1]);
-console.log('  摘要加總 = 清單列數:', n(s[0]) + n(s[1]) === rs.length, '| 已耗盡數 = 標籤「已耗盡」列數:', n(s[0]) === rs.filter(r => r.標籤 === '已耗盡').length);
+ok('2 摘要加總 = 清單列數', n(s[0]) + n(s[1]) === rs.length, { 摘要: s, 列數: rs.length });
+ok('2 已耗盡數 = 標籤「已耗盡」列數', n(s[0]) === rs.filter((r) => r.標籤 === '已耗盡').length, s);
 const mine = rs.filter((r) => r.名稱.startsWith('首頁 '));
-console.log('3 本腳本的提醒（依序）:');
-for (const r of mine) console.log('   ', JSON.stringify(r));
-console.log('  預期第二行:', JSON.stringify([`剩 5 包 · ${md(-15)} 已用完`, `剩 1 包 · 預計 ${md(1)}（剩 1 天）`, `剩 7 包 · 預計 ${md(7)}（剩 7 天）`]));
-console.log('  「第八天」不在提醒、「未設定」不在提醒:', !rs.some(r => r.名稱.includes('第八天')), !rs.some(r => r.名稱.includes('未設定')));
+check('3 本腳本的提醒：已耗盡在前、再依日期，第二行與標籤（AC-7.4～7.6）', mine, [
+  { 名稱: '首頁 已耗盡品', 第二行: `剩 5 包 · ${mdIn(-15)} 已用完`, 標籤: '已耗盡', 連結: `/products/${dep.id}` },
+  { 名稱: '首頁 明天用完', 第二行: `剩 1 包 · 預計 ${mdIn(1)}（剩 1 天）`, 標籤: '即將耗盡', 連結: `/products/${soon1.id}` },
+  { 名稱: '首頁 第七天', 第二行: `剩 7 包 · 預計 ${mdIn(7)}（剩 7 天）`, 標籤: '即將耗盡', 連結: `/products/${soon7.id}` },
+]);
+
+
+check('3 第 8 天與未設定的商品不在提醒', [rs.some((r) => r.名稱.includes('第八天')), rs.some((r) => r.名稱.includes('未設定'))], [false, false]);
 const nm = await normal();
-console.log('4 庫存正常（最多 5 項）:', nm.length, JSON.stringify(nm));
+ok('4 庫存正常最多 5 項，含「首頁 第八天」', nm.length >= 1 && nm.length <= 5 && nm.includes(`首頁 第八天剩 8 天 · ${mdIn(8)}`), nm);
 await shot('dash-1');
 
 await click(`a[href="/products/${soon1.id}"]`); await sleep(1500);
-console.log('5 點「首頁 明天用完」→ 商品詳情:', await js('location.pathname') === `/products/${soon1.id}`, '|', await js(`document.querySelector('.product__name')?.textContent.trim()`));
+check('5 點清單列 → 商品詳情', [await js('location.pathname'), await js(`document.querySelector('.product__name')?.textContent.trim()`)], [`/products/${soon1.id}`, '首頁 明天用完']);
 await send('Runtime.evaluate', { expression: 'history.back()' }); await sleep(1500);
 await click('a.add-link'); await sleep(1500);
-console.log('6 記一筆 →', await js('location.pathname'));
+check('6 記一筆 → 新增購買記錄', await js('location.pathname'), '/purchases/new');
 await click('a[href="/"]'); await sleep(1500);
 await click('a.normal__all'); await sleep(1500);
-console.log('7 底部導覽回首頁、按「全部商品」→', await js('location.pathname'));
+check('7 底部導覽回首頁、按「全部商品」→ 商品列表', await js('location.pathname'), '/products');
 await click('a[href="/"]'); await sleep(1500);
-console.log('8 版面:', JSON.stringify(await js(`({ 沒有橫向捲動: document.documentElement.scrollWidth <= window.innerWidth, 首頁導覽為目前頁: document.querySelector('a[href="/"][aria-current=page]') !== null })`)));
+check('8 版面', await js(`({ 沒有橫向捲動: document.documentElement.scrollWidth <= window.innerWidth, 首頁導覽為目前頁: document.querySelector('a[href="/"][aria-current=page]') !== null })`), { 沒有橫向捲動: true, 首頁導覽為目前頁: true });
 sock.close(); chrome.kill();
+done();

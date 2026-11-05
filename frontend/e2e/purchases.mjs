@@ -3,6 +3,9 @@
 import { spawn } from 'node:child_process';
 import { writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { check, ok, done, mdIn, shortIn, dbDateIn } from './check.mjs';
+// 本腳本的購買日固定在 2026 年：今年只寫 M/D，其他年份寫 2026/M/D（App 的 formatShortDate）
+const d26 = (m, d) => (new Date().getFullYear() === 2026 ? `${m}/${d}` : `2026/${m}/${d}`);
 const [,, base, outDir, w = '390', h = '844'] = process.argv;
 
 // ---- 1. 測試資料 ----
@@ -60,33 +63,39 @@ await click('#login-email'); await typeText('alice@family.home'); await click('#
 console.log(`畫面 ${w}x${h}`);
 
 await click('a[href="/purchases"]'); await sleep(1500);
-console.log('1 導覽列進入購買記錄:', await js('location.pathname'), '|', await js(`document.querySelector('.page__meta')?.textContent.trim()`));
+// 「共 N 筆」會隨前面腳本建立的記錄變動：核對它和畫面上的列數一致
+check('1 導覽列進入購買記錄，總數與列數一致', [await js('location.pathname'), await js(`document.querySelector('.page__meta')?.textContent.trim()`)], ['/purchases', `共 ${await js(`document.querySelectorAll('.list__row').length`)} 筆 · 新到舊`]);
 
 await clickText('[role=radio]', 'e2e購買'); await sleep(1000);
-console.log('2 BDD 選分類「e2e購買」→ 新到舊:', JSON.stringify(await state()));
-for (const r of await rows()) console.log('   ', r);
+const s2 = await state();
+ok('2 BDD 選分類「e2e購買」→ 記在網址', /^\/purchases\?category=\w+$/.test(s2.網址), s2.網址);
+const catQuery = s2.網址.split('?')[1];
+check('2 依購入日期新到舊、含新增者（AC-8.1、8.3、8.5）', [s2.開始, s2.結束, await rows()], ['', '', [`光泉 鮮乳｜${d26(11, 1)} · 全聯 · e2e購買｜1,858 ml · 0.0533 元/ml｜99 元｜新增者：Alice`, `大成 雞蛋｜${d26(10, 31)} · 市場 · e2e購買｜數量未填 · 無法計算｜90 元｜新增者：Alice`, `光泉 鮮乳｜${d26(10, 1)} · 家樂福 · e2e購買｜1,858 ml · 0.0511 元/ml｜95 元｜新增者：Alice`, `大成 雞蛋｜${d26(9, 30)} · 全聯 · e2e購買｜10 顆 · 8.5000 元/顆｜85 元｜新增者：Alice`]]);
+
 await shot('pur-1-list');
 
 await typeDate('#purchases-start', '20261001');
 await typeDate('#purchases-end', '20261031');
-console.log('3 BDD 開始 10/1、結束 10/31（鍵盤輸入）:', JSON.stringify(await state()));
-for (const r of await rows()) console.log('   ', r);
+check('3 BDD 開始 10/1、結束 10/31 → 含頭尾兩天（AC-8.6）', [await state(), await rows()], [{ 網址: `/purchases?${catQuery}&start=2026-10-01&end=2026-10-31`, 開始: '2026-10-01', 結束: '2026-10-31', 筆數: 2 }, [`大成 雞蛋｜${d26(10, 31)} · 市場 · e2e購買｜數量未填 · 無法計算｜90 元｜新增者：Alice`, `光泉 鮮乳｜${d26(10, 1)} · 家樂福 · e2e購買｜1,858 ml · 0.0511 元/ml｜95 元｜新增者：Alice`]]);
+
 
 await typeDate('#purchases-end', '20260930');
-console.log('4 BDD 結束改成 9/30（早於開始）:', await js(`document.querySelector('#purchases-end-error')?.textContent.trim()`), '| 紅框:', await js(`document.querySelector('#purchases-end').getAttribute('aria-invalid')`), '| 說明:', await js(`document.querySelector('.list__note')?.textContent.trim()`), '|', JSON.stringify(await state()));
+check('4 BDD 結束早於開始 → ERR-012 在結束日期下方、清單維持上一次（AC-8.7）', [await js(`document.querySelector('#purchases-end-error')?.textContent.trim()`), await js(`document.querySelector('#purchases-end').getAttribute('aria-invalid')`), await js(`document.querySelector('.list__note')?.textContent.trim()`), await state()], ['結束日期不可早於開始日期', 'true', '日期修正前，先顯示上一次的結果', { 網址: `/purchases?${catQuery}&start=2026-10-01`, 開始: '2026-10-01', 結束: '2026-09-30', 筆數: 3 }]);
 await shot('pur-2-range-error');
 
 await typeDate('#purchases-end', '20261101');
-console.log('5 結束改成 11/1 → 錯誤消失:', await js(`!document.querySelector('#purchases-end-error')`), '|', JSON.stringify(await state()));
+const s5 = { 網址: `/purchases?${catQuery}&start=2026-10-01&end=2026-11-01`, 開始: '2026-10-01', 結束: '2026-11-01', 筆數: 3 };
+check('5 結束改成 11/1 → 錯誤消失', [await js(`!document.querySelector('#purchases-end-error')`), await state()], [true, s5]);
 
 await click('.list__row'); await sleep(1200);
-console.log('6 點第一列 → 詳情:', await js('location.pathname'));
+ok('6 點第一列 → 詳情', /^\/purchases\/\w+$/.test(await js('location.pathname')), await js('location.pathname'));
 await send('Runtime.evaluate', { expression: 'history.back()' }); await sleep(1500);
-console.log('7 上一頁 → 篩選保留:', JSON.stringify(await state()));
+check('7 上一頁 → 篩選保留', await state(), s5);
 await send('Page.reload'); await sleep(2500);
-console.log('8 重新整理 → 篩選保留:', JSON.stringify(await state()), '| 選中的分類:', await js(`document.querySelector('[role=radio][aria-checked=true]')?.textContent.trim()`));
+check('8 重新整理 → 篩選保留', [await state(), await js(`document.querySelector('[role=radio][aria-checked=true]')?.textContent.trim()`)], [s5, 'e2e購買']);
 
-console.log('9 版面:', JSON.stringify(await js(`({ 沒有橫向捲動: document.documentElement.scrollWidth <= window.innerWidth, 日期欄位字級: getComputedStyle(document.querySelector('#purchases-start')).fontSize, 每列高度: Math.round(document.querySelector('.list__row').getBoundingClientRect().height) })`)));
+check('9 版面', await js(`({ 沒有橫向捲動: document.documentElement.scrollWidth <= window.innerWidth, 日期欄位字級: getComputedStyle(document.querySelector('#purchases-start')).fontSize, 每列高度: Math.round(document.querySelector('.list__row').getBoundingClientRect().height) })`), { 沒有橫向捲動: true, 日期欄位字級: '16px', 每列高度: 72 });
 await click('a.add-link'); await sleep(1000);
-console.log('10 新增記錄按鈕:', await js('location.pathname'));
+check('10 新增記錄按鈕', await js('location.pathname'), '/purchases/new');
 sock.close(); chrome.kill();
+done();
