@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v8.4（2026-11-05）
-> 變更摘要：v8.4 task 12.1 完成：e2e 17 支腳本改為自動判定（176 項檢查）；使用者決定 12.7 改成三種寬度的 e2e 檢查；工作慣例更新。
+> 版本：v8.5（2026-11-05）
+> 變更摘要：v8.5 task 12.2～12.6（整合測試對照）完成；新增「task 12.2～12.6 整合測試對照」一節。
+> v8.4 task 12.1 完成：e2e 17 支腳本改為自動判定（176 項檢查）；使用者決定 12.7 改成三種寬度的 e2e 檢查；工作慣例更新。
 > v8.3 task 11 Checkpoint 通過。
 > v8.2 task 10.3（趨勢圖測試對照）完成，task 10 全部完成；新增「task 10.3 測試對照」一節。
 > v8.1 task 10.2（趨勢圖放進商品詳情）完成；新增 e2e product-trend；design.md v4.5。
@@ -79,7 +80,7 @@
 
 ## 目前階段
 
-**實作中。** task 1（環境建置）全部完成；**task 1～11、12.1 完成**，下一步是 task 12.2（認證流程整合測試對照）。commit 前執行 `npm test`（目前 739 項）。
+**實作中。** task 1（環境建置）全部完成；**task 1～11、12.1～12.6 完成**，下一步是 task 12.7（三種寬度的響應式 e2e）。commit 前執行 `npm test`（目前 740 項）。
 
 > **2026-11-01 起短期內不使用 Kiro**：規格需要修改時，由 Claude Code 先問使用者、同意後直接改（含版本號與變更摘要）。
 > **task 2.6 之前**：先用已安裝的設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿（儀表板、新增購買記錄），使用者選定後整理成 UI 設計規範寫進規格。
@@ -177,6 +178,7 @@
 | 2026-11-05 | **task 11 Checkpoint**：`npx vitest --run` 42 個檔案、739 項全過（含 6 個檔案、21 處 fast-check 屬性測試）；`lint:check`、`typecheck` 通過；完整 e2e 19 支腳本跑完，逐條檢查輸出中的 false / null 皆為預期值（例如「總價 0 時沒有 ERR-009」），契約測試全部符合、首頁摘要與清單列數核對一致。沒有需要詢問使用者的問題 | — |
 | 2026-11-05 | **使用者決定（task 12）**：(1) 12.1 順便把 e2e 改成自動判定；(2) 12.7「驗證 Quasar RWD class」與實作不符（App 是手機優先單欄、沒有用 RWD class），改成手機 390、平板 768、桌機 1280 三種寬度的 e2e 檢查（沒有橫向捲動、按鈕 44px、字 12px 以上、截圖），tasks.md 12.7 文字照實際做法改寫 | — |
 | 2026-11-05 | **task 12.1**：新增 `e2e/check.mjs`（`check` / `ok` / `done`；以今天推算日期的 `mdIn` / `shortIn` / `dbDateIn`）；17 支腳本把 `console.log` 換成判定，**共 176 項**，預期值取自先前逐行確認過的輸出、日期一律以今天推算；`run.sh` 全部跑完後列出失敗的腳本、有失敗時結束代碼 1。每批都故意改錯一個預期值，確認會出現 ✗ 並讓 run.sh 失敗。**改成自動判定後抓到**：categories 腳本假設了兩筆種子分類的先後，但它們在同一毫秒建立、排序落到隨機的 id 上（正式資料庫建立後順序固定，不是程式 bug），改成不比先後；另外「共 N 筆」「常去的地點」「追蹤中 N 項」會受前面腳本影響，改成互相核對或只檢查格式。setup-frontend.md v2.1 | — |
+| 2026-11-05 | **task 12.2～12.6**：整合測試對照（見「task 12.2～12.6 整合測試對照」）：各項都已由頁面＋store＋fakePocketBase 的測試與自動判定的 e2e 涵蓋；補上 1 項：直接檢查購買記錄列表送給 PocketBase 的 filter / sort 字串（12.5）。全專案 740 項。只改測試檔，e2e 沿用 12.1 的全部符合結果。五個子 task 都是對照、只有 12.5 改了檔案，所以合成一個 commit | — |
 | 2026-11-03 | **App 更名（使用者決定）**：「家庭ERP」→「溫叨Pantry」；不能用中文的地方用「WenDaoPantry」（全小寫時 wendaopantry）。新增 `src/constants/app.ts`（APP_NAME、APP_NAME_ASCII），頂欄與登入頁改用常數；`package.json` productName、PWA manifest name / short_name 改名，並以 `constants/__tests__/app.test.ts` 檢查設定檔與常數一致。規格：requirements.md 76 處「家庭ERP系統」→「溫叨Pantry系統」、design.md、tasks.md；launchd 設定改為 `com.wendaopantry.pocketbase`（尚未安裝）；README、frontend/README、setup-frontend、setup-pocketbase 同步。依使用者同意**不改**：規格資料夾 `.kiro/specs/home-erp/`、`package.json` name `wendao-frontend`、說明文字「家庭用品管理系統」、過去進度紀錄裡的舊名稱。新增 5 項測試，全專案 544 項；e2e 全部通過，正式 build 的分頁標題與 manifest 已是新名稱。Logo（選 A 經典門牌）與設計稿更新另外進行 | requirements v1.4、design v3.8、tasks v1.7 |
 | 2026-11-03 | **Logo A 定稿**：數字用 Barlow Condensed SemiBold（SIL OFL 1.1，從 Google Fonts 官方 GitHub 下載）的外框；`brand/extract-digits.py`（fontTools，暫時 venv 安裝）取出路徑 → `brand/digits.json`；`brand/build-icons.mjs` 產生 SVG 原始檔、`src/components/brandPaths.ts`、PWA / iOS / maskable（縮 0.78 倍在安全範圍）/ monochrome / 分頁 PNG 與 favicon.ico（無頭 Chrome 繪製），並自動跑 prettier。新增 `BrandLogo.vue`（plate / header、裝飾用 aria-hidden 或 label 時 role=img），頂欄與登入頁換掉「家」字標記。新增 5 項測試，全專案 548 項；e2e 全部通過。16px 分頁圖示仍難辨認數字（尺寸限制） | design.md v3.9、`frontend/brand/README.md` v1.0 |
 | 2026-11-03 | **設計稿更名與換 Logo**：設計稿標題改為「溫叨Pantry 設計稿」；採用的 16 張畫板（B-Home、登入 2 張、Cat-List、商品 4 張、購買記錄 8 張）頂欄與登入頁換上門牌 Logo（上傳 brand/svg/logo-header.svg、logo.svg 為素材）與新名稱。A、C 風格提案（Main、C-Home 等）保留舊樣子作為紀錄 | 設計稿 |
@@ -193,6 +195,27 @@
 | 有速率沒消耗單位被拒（AC-7.11） | 空白單位 | ERR-016、標示並聚焦 | 步驟 5 |
 | 儲存自動填入當天（AC-7.9） | BDD 11/1、數字沒變也更新、00:30 / 23:59 | BDD 11/2、久未更新直接儲存 | 步驟 6（查資料庫） |
 | 超過 30 天顯示 STATUS-008（AC-7.14） | — | `productView.test.ts`：32 天提醒、30 天不提醒、31 天提醒（畫面於 7.8） | 7.8 |
+
+## task 12.2～12.6 整合測試對照
+
+「整合」= 頁面＋store＋fakePocketBase（記憶體假資料庫，模擬 UNIQUE / Restrict / cascade 與錯誤）一起測；e2e = 正式 build＋真正的 PocketBase＋無頭 Chrome（自動判定，task 12.1）。
+
+| tasks.md 項目 | 整合測試（Vitest） | e2e |
+|---|---|---|
+| 12.2 未登入存取受保護路由 → /login（AC-1.3） | `router.test.ts`：未登入、token 過期、登出後換頁；`authGuard.test.ts`：任意 id 的詳情 / 編輯頁 | `login` 1；`logout` 3～5 |
+| 12.2 重新整理後從 localStorage 恢復登入（AC-1.7） | `boot/pocketbase.test.ts`：token 有效保持登入並換新、過期清空、被拒登出、連不上保持登入；`restoreAuth.test.ts` | `login` 5 |
+| 12.3 刪除有商品的分類被拒（fakePocketBase 回傳 400 → ERR-004，AC-2.5） | `category.test.ts`：deleteCategory → ERR-004；`CategoryEdit.test.ts`：頁面顯示 ERR-004 | `categories` 4（按鈕停用並寫出原因） |
+| 12.3 建立商品流程（AC-3.1） | `ProductNew.test.ts`：BDD 建立 → MSG-003 → 詳情、ERR-005～007 | `product-new` 1～11 |
+| 12.4 新增者 = 登入者（AC-5.6） | `PurchaseNew.test.ts` BDD 建立：`user: 'u-pi'`；`purchase.test.ts` createRecord | `purchase-detail` 1（新增者與新增時間） |
+| 12.4 前端算好 quantity / unit_price 寫入（AC-6.1） | `PurchaseNew.test.ts`、`purchase.test.ts`（見 8.8 對照） | `purchase-new` 12（查資料庫） |
+| 12.4 動態自訂欄位顯示與寫入（AC-4.5） | `PurchaseNew.test.ts`：依分類顯示欄位、換分類清掉、寫入 EAV 值；`CustomFieldInput.test.ts` | `purchase-new` 4～6、12 |
+| 12.4 建立後 QDialog 詢問更新剩餘數量（AC-7.13） | `PurchaseNew.test.ts`：真正的 QDialog 彈出並帶入 3（8.8 補） | `purchase-new` 10、11、15、16 |
+| 12.5 依日期降序（AC-8.1） | `purchase.test.ts`：新到舊、同一天後建立的在前；`Purchases.test.ts` | `purchases` 2 |
+| 12.5 分類與日期區間篩選的 filter 參數（含結束日當天，AC-8.5、8.6） | `purchase.test.ts`：★ 直接檢查送出的 `filter` / `sort` 字串；篩選結果 BDD | `purchases` 2～5；`purchase-contract`（同樣的字串在真正的 PocketBase 上的效果） |
+| 12.5 列表含新增者（AC-8.3） | `Purchases.test.ts`：每列新增者頭像與配色 | `purchases` 2（每列「新增者：Alice」） |
+| 12.6 首頁補貨提醒（AC-7.6） | `Dashboard.test.ts`（見 9.2 對照） | `dashboard` 1～8 |
+
+★ 為 12.5 補上的 1 項：原本只檢查篩選**結果**；把結束時間改成當天 00:00 時，既有測試仍會通過（資料庫的日期都存成 00:00），只有這項抓得到。
 
 ## task 10.3 測試對照
 
@@ -329,7 +352,7 @@ git pull
 ### 目前位置（2026-11-03）
 
 - **已完成**：task 1～7（環境、認證、分類、商品）、task 8（購買記錄：store、CustomFieldInput、列表、新增、詳情、編輯、刪除、測試對照）。
-- **下一步：task 12.2～12.6**（認證、分類與商品、購買記錄建立、查詢篩選、儀表板的整合測試）：多數已由各頁的 fakePocketBase 測試與 e2e 涵蓋，逐項對照、補缺口（照 8.8 的對照表格式）；接著 **12.7 三種寬度**（使用者決定，見重要決定紀錄）。
+- **下一步：task 12.7 響應式（使用者決定改成三種寬度）**：run.sh 可帶寬度參數，主要頁面在 390 / 768 / 1280 檢查沒有橫向捲動、可點的東西至少 44px、字至少 12px，並存截圖；tasks.md 12.7 文字照實際做法改寫（升版號）。桌機若太寬，先跟使用者討論要不要限制內容寬度。
 - **待使用者回報**：回家後用 iPhone 測試（步驟見 `docs/setup-frontend.md` 第 9 節）：購買記錄的日期選擇器與 ERR-012 換行、新增購買記錄（商品選單、數字鍵盤、更新剩餘數量對話框）、商品頁操作、門牌 Logo。結果回報後再決定要不要調整。
 - **待回寫規格**：目前沒有（K-17～K-20 已於 2026-11-03 回寫 design.md v4.2）。
 - App 名稱「溫叨@Pantry」（`src/constants/app.ts`），Logo A 門牌 5888（`frontend/brand/`）。
@@ -341,7 +364,7 @@ git pull
 2. **新畫面先做設計稿**：先呼叫設計 skills（ui-ux-pro-max、taste-skill），依 design.md「UI 設計規範」做稿放到設計稿，使用者確認後才實作。
 3. **規格有落差**：先停下來列「問題＋建議（含推薦選項）」問使用者（選擇題），同意後才改 design.md / tasks.md，並升版號、寫變更摘要。暫停使用 Kiro。
 4. **驗證三層**：
-   - `cd frontend && npm test`（Vitest，目前 739 項）、`npm run lint:check`、`npm run typecheck`
+   - `cd frontend && npm test`（Vitest，目前 740 項）、`npm run lint:check`、`npm run typecheck`
    - 故意改壞關鍵程式確認測試抓得到（**先備份檔案**，不要用 `git checkout` 還原未 commit 的修改）
    - `./e2e/run.sh`（正式 build + 臨時 PocketBase + 無頭 Chrome，**真實滑鼠鍵盤事件**；手機寬 390）。**自動判定**：最後一行要是「✓ N 支腳本全部符合」。新頁面要在 `frontend/e2e/` 加腳本，判定用 `e2e/check.mjs`（寫法見 setup-frontend.md 第 8 節）
 5. **修 bug**：先寫會失敗的回歸測試，再修正。

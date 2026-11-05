@@ -293,6 +293,28 @@ describe('task 8.1', () => {
       await store.fetchRecords({ startDate: '2026-10-31', endDate: '2026-10-31' });
       expect(ids(store.records)).toEqual(['r-1031']);
     });
+
+    // task 12.5 對照補上：直接檢查送給 PocketBase 的查詢參數（含結束日當天的最後一刻）；
+    // 這個字串在真正的 PocketBase 上的效果由 e2e/purchase-contract.mjs 驗證
+    it('送出的 filter 與 sort 參數（AC-8.1、8.5、8.6）', async () => {
+      const fake = FULL();
+      const store = usePurchaseStore();
+      const sent = () => fake.calls.filter((c) => c.method === 'getFullList').at(-1)!.args[0];
+
+      await store.fetchRecords({
+        categoryId: 'c-tissue',
+        startDate: '2026-10-01',
+        endDate: '2026-10-31',
+      });
+      expect(sent()).toEqual({
+        filter:
+          'product.category = "c-tissue" && purchase_date >= "2026-10-01 00:00:00.000Z" && purchase_date <= "2026-10-31 23:59:59.999Z"',
+        sort: '-purchase_date,-created',
+      });
+
+      await store.fetchRecords();
+      expect(sent()).toEqual({ sort: '-purchase_date,-created' });
+    });
   });
 
   describe('createRecord（AC-5.1、5.2、5.6、6.1、4.3）', () => {
