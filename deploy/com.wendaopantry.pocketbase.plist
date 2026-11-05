@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  溫叨@Pantry：讓 PocketBase 在 Mac mini 登入後自動啟動、當掉自動重開（task 13.1，design.md「部署架構」）
+  - 只聽本機 127.0.0.1:8090；外面（手機）透過 tailscale serve 以 HTTPS 連進來，不直接開放給區域網路
+  - 前端畫面由 PocketBase 從 backend/pb_public/ 提供（deploy/deploy-frontend.sh 產生）
+  - 安裝方式見 deploy/README.md（需要使用者親手執行 launchctl）
+  - 路徑寫死為這台 Mac mini（使用者 cooqle）；換電腦或換使用者時要改
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.wendaopantry.pocketbase</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/cooqle/Projects/WenDao/backend/pocketbase</string>
+    <string>serve</string>
+    <string>--http=127.0.0.1:8090</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/cooqle/Projects/WenDao/backend</string>
+
+  <!-- 載入時就啟動；結束了（例如當掉）自動重開 -->
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+
+  <!-- log 資料夾要先存在（deploy-frontend.sh 會建立 backend/logs/） -->
+  <key>StandardOutPath</key>
+  <string>/Users/cooqle/Projects/WenDao/backend/logs/pocketbase.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/cooqle/Projects/WenDao/backend/logs/pocketbase-error.log</string>
+</dict>
+</plist>

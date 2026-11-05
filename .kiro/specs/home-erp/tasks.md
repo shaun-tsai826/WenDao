@@ -1,7 +1,8 @@
 # Implementation Plan: home-erp 家庭用品管理 ERP
 
-> 版本：v1.8（2026-11-05）
-> 變更摘要：v1.8 12.7 依實際做法改寫（使用者決定）：App 是手機優先的單欄版面、沒有用 Quasar RWD class，改成手機 390、平板 768、桌機 1280 三種寬度的 e2e 檢查；12.1 補上 e2e 自動判定。
+> 版本：v1.9（2026-11-05）
+> 變更摘要：v1.9 13.1 依實作改寫（使用者同意）：前端用 `quasar build -m pwa`、同步 `dist/pwa/`；`tailscale serve --bg --https=443 http://127.0.0.1:8090`；說明寫在 deploy/README.md。
+> v1.8 變更摘要：v1.8 12.7 依實際做法改寫（使用者決定）：App 是手機優先的單欄版面、沒有用 Quasar RWD class，改成手機 390、平板 768、桌機 1280 三種寬度的 e2e 檢查；12.1 補上 e2e 自動判定。
 > v1.7 變更摘要：v1.7 launchd 設定檔改名 com.wendaopantry.pocketbase.plist（App 更名為溫叨Pantry，使用者決定）。
 > v1.6 變更摘要：v1.6 7.5 需要依商品讀取購買記錄，usePurchaseStore 的讀取（fetchByProduct、fetchUsers）提前在 7.5 實作，8.1 只剩其餘 actions（使用者同意）。
 > v1.5 變更摘要：v1.5 回寫 K-15（使用者同意）：整合測試以 fakePocketBase 取代 MSW，12.1 改為整理 fakePocketBase 與 e2e 腳本。
@@ -398,15 +399,15 @@
     - （v1.8 改寫，使用者決定）以 e2e 在手機 390、平板 768、桌機 1280 三種寬度打開主要頁面：沒有橫向捲動、可點範圍至少 44px、字不小於 12px、平板與桌機的內容限制在 640px 置中（`e2e/responsive.mjs`）
     - _對應：REQ-9, AC-9.2_
 
-- [ ] 13. 部署設定檔案建立
-  - [ ] 13.1 建立 launchd plist 設定檔、前端部署腳本與 tailscale serve 設定步驟
+- [x] 13. 部署設定檔案建立
+  - [x] 13.1 建立 launchd plist 設定檔、前端部署腳本與 tailscale serve 設定步驟
     - 建立 `deploy/com.wendaopantry.pocketbase.plist`（PocketBase 常駐執行、開機自動啟動、RunAtLoad、KeepAlive）
     - PocketBase binary 路徑：`/Users/cooqle/Projects/WenDao/backend/pocketbase`，WorkingDirectory：`/Users/cooqle/Projects/WenDao/backend`
-    - 建立前端 build 部署腳本：`npm run build` 後將 `dist/` 複製到 `backend/pb_public/`
-    - 撰寫 `tailscale serve` 設定步驟至 `deploy/README.md`，包含：啟用 MagicDNS、啟用 HTTPS Certificates、執行 `tailscale serve https / http://localhost:8090`
+    - 建立前端 build 部署腳本 `deploy/deploy-frontend.sh`：`quasar build -m pwa` 後將 `dist/pwa/` 同步到 `backend/pb_public/`（v1.9）
+    - 撰寫 `tailscale serve` 設定步驟至 `deploy/README.md`，包含：啟用 MagicDNS、啟用 HTTPS Certificates、執行 `tailscale serve --bg --https=443 http://127.0.0.1:8090`（v1.9，Tailscale 1.52 起的寫法）
     - _對應：REQ-9_
 
-  - [ ] 13.2 啟用 Quasar PWA 模式與建置驗證
+  - [x] 13.2 啟用 Quasar PWA 模式與建置驗證
     - 確認 `src-pwa/manifest.json` 的 PWA manifest（名稱、圖示、display: standalone）與 `quasar.config.ts` 的 Workbox service worker 設定
     - 執行 `quasar build -m pwa` 驗證產出含 manifest 與 service worker
     - _對應：REQ-9, AC-9.1, AC-9.2_

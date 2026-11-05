@@ -1,7 +1,8 @@
 # Design Document
 
-> 版本：v4.6（2026-11-05）
-> 變更摘要：v4.6 響應式（task 12.7，使用者決定）：平板、桌機的頂欄 / 內容 / 導覽列限制在 640px 置中（--content-max）；照設計稿做得較小的按鈕與標題連結，外觀不變、用透明外圈（.touch-target）把可點範圍加大到 44×44。
+> 版本：v4.7（2026-11-05）
+> 變更摘要：v4.7 部署依實作回寫（task 13，使用者同意）：前端改用 `quasar build -m pwa`、同步 `dist/pwa/`（deploy/deploy-frontend.sh）；`launchctl bootstrap` 取代 `load`；`tailscale serve --bg --https=443 http://127.0.0.1:8090`（Tailscale 1.52 起的寫法）；Tailscale 從官方 App 安裝；註明 LaunchAgent 是登入後才啟動；步驟細節以 deploy/README.md 為準。
+> v4.6 變更摘要：v4.6 響應式（task 12.7，使用者決定）：平板、桌機的頂欄 / 內容 / 導覽列限制在 640px 置中（--content-max）；照設計稿做得較小的按鈕與標題連結，外觀不變、用透明外圈（.touch-target）把可點範圍加大到 44×44。
 > v4.5 變更摘要：v4.5 價格趨勢圖實作細節（task 10.2 e2e 截圖發現）：橫軸左右各留範圍的 6%（至少 1 天）避免頭尾的點被切掉、刻度放在購買日上（最多 4 個，含頭尾）、歷史均價標示描 3px 白邊並畫在價格線之上。
 > v4.4 變更摘要：v4.4 價格趨勢圖設計稿確認（設計稿 Prod-Trend、Prod-Trend-Empty；使用者同意）：放在商品詳情的商品卡與購買記錄之間；歷史均價參考線；點選資料點顯示那次的價格；橫軸依實際日期遠近；**少於 2 筆可計算單位均價的記錄**即顯示 STATUS-005（原本只在 0 筆時）。
 > v4.3 變更摘要：v4.3 首頁設計稿確認（設計稿 Dash、Dash-Clear、Dash-First；使用者選 A 照規格）：補上首頁的排序、第二行文字、「庫存正常」最多 5 項、沒有需要補貨與還沒有商品的畫面、未設定消耗速率提示。
@@ -170,7 +171,7 @@ graph TB
 
 #### PocketBase 在 Mac mini 上以 launchd 常駐執行
 
-PocketBase 以 macOS 原生的 `launchd` 服務常駐執行，開機自動啟動：
+PocketBase 以 macOS 原生的 `launchd` 服務常駐執行，**使用者登入後**自動啟動、當掉自動重開（放在 `~/Library/LaunchAgents/` 的服務是登入後才啟動；要停電重開後自動恢復，需開啟自動登入，見 deploy/README.md）：
 
 ```xml
 <!-- deploy/com.wendaopantry.pocketbase.plist -->
@@ -206,37 +207,35 @@ PocketBase 以 macOS 原生的 `launchd` 服務常駐執行，開機自動啟動
 2. 執行 `./pocketbase serve` 初始化，透過 superuser UI 建立超級管理員帳號
 3. 透過 migration 檔（`pb_migrations/`）建立 Collection（資料表）與設定欄位，執行 `./pocketbase migrate up` 套用
 4. 建立使用者帳號（Auth Collection 種子資料，密碼從環境變數 `SEED_USER1_PASSWORD`、`SEED_USER2_PASSWORD` 讀取，或由使用者在 superuser UI 手動建立）
-5. 前端 `npm run build` 後，將 `dist/` 產出複製到 `backend/pb_public/`
-6. 安裝 launchd plist（從 `deploy/` 複製至 `~/Library/LaunchAgents/`），執行 `launchctl load` 啟動服務
-7. 設定 `tailscale serve https / http://localhost:8090`，啟用 Tailscale HTTPS
+5. 執行 `deploy/deploy-frontend.sh`：`quasar build -m pwa`、檢查 manifest 與 service worker，將 `frontend/dist/pwa/` 同步到 `backend/pb_public/`（v4.7；`npm run build` 是一般網頁模式，不會產生 PWA）
+6. 安裝 launchd plist（從 `deploy/` 複製至 `~/Library/LaunchAgents/`），執行 `launchctl bootstrap gui/$(id -u) <plist>` 啟動服務（v4.7；`launchctl load` 已是舊用法）
+7. 設定 `tailscale serve --bg --https=443 http://127.0.0.1:8090`，啟用 Tailscale HTTPS（v4.7；Tailscale 1.52 起的寫法）
+
+> 實際操作步驟、更新、停止、備份與疑難排解見 `deploy/README.md`（使用者手動執行，不在 coding task 範圍）。
 
 #### 前端靜態檔案部署
 
 前端建置後的靜態檔案直接放入 PocketBase 的 `pb_public/` 目錄，由 PocketBase 自動服務。不需額外的 Web 伺服器（如 Caddy 或 Nginx）。
 
 ```bash
-# 前端建置
-cd frontend
-npm run build
-
-# 部署到 PocketBase 靜態目錄
-cp -r dist/* ../backend/pb_public/
+# 前端建置（PWA 模式）、檢查產出、同步到 PocketBase 靜態目錄（v4.7）
+./deploy/deploy-frontend.sh
 ```
 
 PocketBase 的 `pb_public/` 機制：
 - 若目錄存在，PocketBase 自動將其中的靜態檔案（HTML、JS、CSS、圖片）服務於根路徑
 - API 路徑 `/api/*` 仍由 PocketBase 處理，不與靜態檔案衝突
-- 需確保 SPA 的路由 fallback（所有非 `/api` 路徑回傳 `index.html`）
+- 需確保 SPA 的路由 fallback（所有非 `/api` 路徑回傳 `index.html`）：PocketBase 0.40 的 `serve` 預設就會（task 13 驗證：`/purchases`、`/products/abc/edit` 皆回應首頁）
 
 #### Tailscale 設定
 
-1. 在 Mac mini 安裝 Tailscale（`brew install tailscale` 或從官網下載 App）
+1. 在 Mac mini 安裝 Tailscale App（只從官方來源：tailscale.com/download 或 Mac App Store；v4.7 不用 brew）
 2. 在兩支手機安裝 Tailscale App（iOS App Store / Google Play）
 3. 所有設備以同一帳號登入 Tailscale
 4. 在 Tailscale Admin Console（`https://login.tailscale.com/admin`）啟用 **MagicDNS**
 5. 在 Tailscale Admin Console 啟用 **HTTPS Certificates**（為 tailnet 中的設備簽發 TLS 憑證）
 6. Mac mini 會獲得一個 Tailscale IP 和 MagicDNS 名稱（如 `mac-mini.tail1234.ts.net`）
-7. 在 Mac mini 執行 `tailscale serve https / http://localhost:8090`，將 Tailscale HTTPS 443 反向代理至 PocketBase 本機端口
+7. 在 Mac mini 執行 `tailscale serve --bg --https=443 http://127.0.0.1:8090`，將 Tailscale HTTPS 443 反向代理至 PocketBase 本機端口（`--bg` 背景執行、重開機後恢復；v4.7）
 8. 手機以 `https://mac-mini.tail1234.ts.net` 存取系統（Tailscale 自動簽發並管理 HTTPS 憑證）
 9. 家中電腦也安裝 Tailscale，以同一 HTTPS 網址存取，避免內外網兩套網址造成 PWA 與登入狀態分裂
 

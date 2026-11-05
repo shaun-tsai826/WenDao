@@ -1,7 +1,8 @@
 # 專案進度紀錄（progress.md）
 
-> 版本：v8.6（2026-11-05）
-> 變更摘要：v8.6 task 12.7（三種寬度的響應式 e2e）完成，task 12 全部完成；平板 / 桌機內容限制 640px、小按鈕加大可點範圍；design.md v4.6、tasks.md v1.8。
+> 版本：v8.7（2026-11-05）
+> 變更摘要：v8.7 task 13（部署設定檔案）完成，**tasks.md 全部完成**；deploy/ 三個檔案；design.md v4.7、tasks.md v1.9。
+> v8.6 task 12.7（三種寬度的響應式 e2e）完成，task 12 全部完成；平板 / 桌機內容限制 640px、小按鈕加大可點範圍；design.md v4.6、tasks.md v1.8。
 > v8.5 task 12.2～12.6（整合測試對照）完成；新增「task 12.2～12.6 整合測試對照」一節。
 > v8.4 task 12.1 完成：e2e 17 支腳本改為自動判定（176 項檢查）；使用者決定 12.7 改成三種寬度的 e2e 檢查；工作慣例更新。
 > v8.3 task 11 Checkpoint 通過。
@@ -81,7 +82,7 @@
 
 ## 目前階段
 
-**實作中。** task 1（環境建置）全部完成；**task 1～12 完成**，下一步是 task 13（部署設定檔案建立）。commit 前執行 `npm test`（目前 740 項）。
+**實作中。** task 1（環境建置）全部完成；**tasks.md 的 task 1～13 全部完成**。接下來是使用者照 `deploy/README.md` 親手部署，以及回報 iPhone 實測結果。commit 前執行 `npm test`（目前 740 項）。
 
 > **2026-11-01 起短期內不使用 Kiro**：規格需要修改時，由 Claude Code 先問使用者、同意後直接改（含版本號與變更摘要）。
 > **task 2.6 之前**：先用已安裝的設計 skills（ui-ux-pro-max、taste-skill）做 2～3 種風格的手機畫面稿（儀表板、新增購買記錄），使用者選定後整理成 UI 設計規範寫進規格。
@@ -96,8 +97,8 @@
 | 文件 | 版本 |
 |---|---|
 | requirements.md | v1.5 |
-| design.md | v4.6 |
-| tasks.md | v1.8（勾選狀態持續更新） |
+| design.md | v4.7 |
+| tasks.md | v1.9（勾選狀態持續更新） |
 | BDD.md | v1.1 |
 | review-notes.md | v1.2 |
 
@@ -182,6 +183,8 @@
 | 2026-11-05 | **task 12.2～12.6**：整合測試對照（見「task 12.2～12.6 整合測試對照」）：各項都已由頁面＋store＋fakePocketBase 的測試與自動判定的 e2e 涵蓋；補上 1 項：直接檢查購買記錄列表送給 PocketBase 的 filter / sort 字串（12.5）。全專案 740 項。只改測試檔，e2e 沿用 12.1 的全部符合結果。五個子 task 都是對照、只有 12.5 改了檔案，所以合成一個 commit | — |
 | 2026-11-05 | **使用者決定（12.7 量測後）**：(1) 平板、桌機內容限制在 640px 置中；(2) 小於 44px 的按鈕外觀不變、加大可點範圍 | design.md v4.6 |
 | 2026-11-05 | **task 12.7**：新增 `e2e/responsive.mjs`：登入頁＋11 個主要頁面 × 390 / 768 / 1280，檢查沒有橫向捲動、可點範圍至少 44px（含 `.touch-target` 的 `::after`）、字不小於 12px、頂欄 / 內容 / 導覽列寬度為 min(畫面寬, 640)，每頁存截圖。先量測：三種寬度都沒有橫向捲動、沒有小於 12px 的字；但桌機內容撐滿 1280、篩選 / 常用單位 / 常去地點按鈕 32～36px、購買記錄詳情的商品名稱連結 20px。依使用者決定先把判定改嚴格（失敗 29 項），再改程式：`app.scss` 新增 `--content-max` 與 `.touch-target`；MainLayout 頂欄與頁面加上最大寬度；5 處小按鈕 / 連結加 `.touch-target`。響應式 34 項全部符合；完整 e2e 18 支腳本全部符合。tasks.md 12.7 照實際做法改寫（v1.8）。**task 12（整合測試）全部完成** | design.md v4.6、tasks.md v1.8 |
+| 2026-11-05 | **使用者決定（task 13）**：只建立檔案並在 repo 內驗證，`launchctl` 與 `tailscale serve` 由使用者手動執行；4 項規格落差回寫（tailscale serve 新寫法、PWA 建置與 dist/pwa、launchctl bootstrap、Tailscale 從官方 App 安裝） | design.md v4.7、tasks.md v1.9 |
+| 2026-11-05 | **task 13.1、13.2**：`deploy/com.wendaopantry.pocketbase.plist`（`plutil -lint` 通過）、`deploy/deploy-frontend.sh`（建置 PWA → 檢查 index.html / manifest.json / sw.js 與 manifest 的 name、display=standalone、圖示 → rsync 到 `backend/pb_public/`、建立 `backend/logs/`）、`deploy/README.md` v1.0（架構圖、部署、launchd、Tailscale、手機、更新、停止、備份、疑難排解）。實際跑部署腳本成功（81 個檔案）；以 plist 同樣的方式在臨時資料夾與 port 8097 啟動 PocketBase（不碰正式 pb_data），`/`、`/purchases`、`/products/abc/edit` 皆回應首頁、manifest、sw.js、`/api/health` 皆 200。Tailscale 指令依官方文件（1.52 起改版）。**發現**：LaunchAgent 是使用者登入後才啟動，停電重開後要自動恢復需開啟自動登入（FileVault 開啟時不行），已寫進 README 與 design.md。**tasks.md 全部完成** | design.md v4.7、tasks.md v1.9 |
 | 2026-11-03 | **App 更名（使用者決定）**：「家庭ERP」→「溫叨Pantry」；不能用中文的地方用「WenDaoPantry」（全小寫時 wendaopantry）。新增 `src/constants/app.ts`（APP_NAME、APP_NAME_ASCII），頂欄與登入頁改用常數；`package.json` productName、PWA manifest name / short_name 改名，並以 `constants/__tests__/app.test.ts` 檢查設定檔與常數一致。規格：requirements.md 76 處「家庭ERP系統」→「溫叨Pantry系統」、design.md、tasks.md；launchd 設定改為 `com.wendaopantry.pocketbase`（尚未安裝）；README、frontend/README、setup-frontend、setup-pocketbase 同步。依使用者同意**不改**：規格資料夾 `.kiro/specs/home-erp/`、`package.json` name `wendao-frontend`、說明文字「家庭用品管理系統」、過去進度紀錄裡的舊名稱。新增 5 項測試，全專案 544 項；e2e 全部通過，正式 build 的分頁標題與 manifest 已是新名稱。Logo（選 A 經典門牌）與設計稿更新另外進行 | requirements v1.4、design v3.8、tasks v1.7 |
 | 2026-11-03 | **Logo A 定稿**：數字用 Barlow Condensed SemiBold（SIL OFL 1.1，從 Google Fonts 官方 GitHub 下載）的外框；`brand/extract-digits.py`（fontTools，暫時 venv 安裝）取出路徑 → `brand/digits.json`；`brand/build-icons.mjs` 產生 SVG 原始檔、`src/components/brandPaths.ts`、PWA / iOS / maskable（縮 0.78 倍在安全範圍）/ monochrome / 分頁 PNG 與 favicon.ico（無頭 Chrome 繪製），並自動跑 prettier。新增 `BrandLogo.vue`（plate / header、裝飾用 aria-hidden 或 label 時 role=img），頂欄與登入頁換掉「家」字標記。新增 5 項測試，全專案 548 項；e2e 全部通過。16px 分頁圖示仍難辨認數字（尺寸限制） | design.md v3.9、`frontend/brand/README.md` v1.0 |
 | 2026-11-03 | **設計稿更名與換 Logo**：設計稿標題改為「溫叨Pantry 設計稿」；採用的 16 張畫板（B-Home、登入 2 張、Cat-List、商品 4 張、購買記錄 8 張）頂欄與登入頁換上門牌 Logo（上傳 brand/svg/logo-header.svg、logo.svg 為素材）與新名稱。A、C 風格提案（Main、C-Home 等）保留舊樣子作為紀錄 | 設計稿 |
@@ -355,7 +358,7 @@ git pull
 ### 目前位置（2026-11-03）
 
 - **已完成**：task 1～7（環境、認證、分類、商品）、task 8（購買記錄：store、CustomFieldInput、列表、新增、詳情、編輯、刪除、測試對照）。
-- **下一步：task 13 部署設定檔案建立**（先讀 tasks.md 第 13 節與 design.md「部署架構」：launchd、tailscale serve 等）；部署會動到 Mac mini 的系統設定，做之前先跟使用者確認步驟。
+- **下一步：使用者親手部署**（照 `deploy/README.md` 第 2～5 節：部署前端、安裝 launchd 服務、設定 Tailscale HTTPS、手機加入主畫面），以及 iPhone 實測（`docs/setup-frontend.md` 第 9 節的項目＋點趨勢圖、篩選按鈕的可點範圍）。使用者回報結果後再修正。另外決定是否開啟 Mac mini 自動登入（見 README 第 3 節）。
 - **待使用者回報**：回家後用 iPhone 測試（步驟見 `docs/setup-frontend.md` 第 9 節）：購買記錄的日期選擇器與 ERR-012 換行、新增購買記錄（商品選單、數字鍵盤、更新剩餘數量對話框）、商品頁操作、門牌 Logo。結果回報後再決定要不要調整。
 - **待回寫規格**：目前沒有（K-17～K-20 已於 2026-11-03 回寫 design.md v4.2）。
 - App 名稱「溫叨@Pantry」（`src/constants/app.ts`），Logo A 門牌 5888（`frontend/brand/`）。
