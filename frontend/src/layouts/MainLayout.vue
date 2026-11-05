@@ -21,7 +21,7 @@
       </div>
     </q-header>
 
-    <q-page-container>
+    <q-page-container class="page-container">
       <router-view />
     </q-page-container>
 
@@ -87,7 +87,10 @@ function isActive(to: string): boolean {
   color: var(--text);
 }
 
+// 平板、桌機：頂欄、內容、導覽列都限制在 --content-max（640px）置中（task 12.7，使用者決定）
 .app-header__inner {
+  max-width: var(--content-max);
+  margin: 0 auto;
   height: var(--header-height);
   padding: 0 var(--page-margin);
   display: flex;
@@ -174,7 +177,12 @@ function isActive(to: string): boolean {
   height: var(--nav-height);
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  max-width: 640px;
+  max-width: var(--content-max);
+  margin: 0 auto;
+}
+
+.page-container :deep(.q-page) {
+  max-width: var(--content-max);
   margin: 0 auto;
 }
 

@@ -47,7 +47,7 @@ curl -s -o /dev/null -X POST $B/collections/purchase_record_field_values/records
   -d "{\"purchase_record\":\"$R\",\"custom_field\":\"$F\",\"field_value\":\"100\"}"
 
 SCRIPTS=("$@")
-[[ ${#SCRIPTS[@]} -eq 0 ]] && SCRIPTS=(purchase-contract login categories custom-field-sheet products product-new product-detail product-edit stale purchases purchase-new purchase-detail purchase-edit purchase-delete dashboard product-trend logout)
+[[ ${#SCRIPTS[@]} -eq 0 ]] && SCRIPTS=(purchase-contract login categories custom-field-sheet products product-new product-detail product-edit stale purchases purchase-new purchase-detail purchase-edit purchase-delete dashboard product-trend responsive logout)
 # 每支腳本用 e2e/check.mjs 判定，有不符時以失敗結束；全部跑完再列出失敗的腳本（task 12.1）
 FAILED=()
 for name in "${SCRIPTS[@]}"; do

@@ -1,7 +1,8 @@
 # Implementation Plan: home-erp 家庭用品管理 ERP
 
-> 版本：v1.7（2026-11-03）
-> 變更摘要：v1.7 launchd 設定檔改名 com.wendaopantry.pocketbase.plist（App 更名為溫叨Pantry，使用者決定）。
+> 版本：v1.8（2026-11-05）
+> 變更摘要：v1.8 12.7 依實際做法改寫（使用者決定）：App 是手機優先的單欄版面、沒有用 Quasar RWD class，改成手機 390、平板 768、桌機 1280 三種寬度的 e2e 檢查；12.1 補上 e2e 自動判定。
+> v1.7 變更摘要：v1.7 launchd 設定檔改名 com.wendaopantry.pocketbase.plist（App 更名為溫叨Pantry，使用者決定）。
 > v1.6 變更摘要：v1.6 7.5 需要依商品讀取購買記錄，usePurchaseStore 的讀取（fetchByProduct、fetchUsers）提前在 7.5 實作，8.1 只剩其餘 actions（使用者同意）。
 > v1.5 變更摘要：v1.5 回寫 K-15（使用者同意）：整合測試以 fakePocketBase 取代 MSW，12.1 改為整理 fakePocketBase 與 e2e 腳本。
 > v1.4 分類管理設計稿確認（使用者同意）：6.4 刪除分類改在編輯分類頁並先確認（CONFIRM-003）；6.5 刪除欄位先確認（CONFIRM-004）、已使用欄位提前鎖定型別與計算方式。
@@ -365,9 +366,10 @@
 - [x] 11. Checkpoint — 確認所有功能頁面測試通過
   - 執行 `vitest --run` 確認各功能頁面單元測試與屬性測試通過，有問題時詢問使用者。
 
-- [ ] 12. 整合測試
+- [x] 12. 整合測試
   - [x] 12.1 整理整合測試工具（fakePocketBase）與 e2e 腳本
     - 以 `src/test-utils/fakePocketBase.ts` 模擬各 Collection 的 CRUD 與資料庫規則；e2e 以無頭 Chrome + 真實 PocketBase 執行
+    - （v1.8，使用者同意）e2e 自動判定：`e2e/check.mjs`，有不符時 `run.sh` 以失敗結束
     - _對應：REQ-1 ~ REQ-8_
 
   - [x] 12.2 撰寫認證流程整合測試
@@ -392,8 +394,8 @@
     - fakePocketBase 回傳即將耗盡/已耗盡商品，渲染首頁驗證提醒清單正確
     - _對應：REQ-7, AC-7.6_
 
-  - [ ] 12.7 撰寫響應式設計測試
-    - 以手機 viewport 尺寸渲染頁面，驗證 Quasar RWD class 正確套用
+  - [x] 12.7 撰寫響應式設計測試
+    - （v1.8 改寫，使用者決定）以 e2e 在手機 390、平板 768、桌機 1280 三種寬度打開主要頁面：沒有橫向捲動、可點範圍至少 44px、字不小於 12px、平板與桌機的內容限制在 640px 置中（`e2e/responsive.mjs`）
     - _對應：REQ-9, AC-9.2_
 
 - [ ] 13. 部署設定檔案建立

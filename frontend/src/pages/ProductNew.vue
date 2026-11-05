@@ -98,7 +98,7 @@
             v-for="u in COMMON_UNITS"
             :key="u"
             type="button"
-            class="unit-chip"
+            class="unit-chip touch-target"
             :aria-pressed="form.unit.trim() === u ? 'true' : 'false'"
             @click="pickUnit(u)"
           >

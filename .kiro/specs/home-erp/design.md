@@ -1,7 +1,8 @@
 # Design Document
 
-> 版本：v4.5（2026-11-04）
-> 變更摘要：v4.5 價格趨勢圖實作細節（task 10.2 e2e 截圖發現）：橫軸左右各留範圍的 6%（至少 1 天）避免頭尾的點被切掉、刻度放在購買日上（最多 4 個，含頭尾）、歷史均價標示描 3px 白邊並畫在價格線之上。
+> 版本：v4.6（2026-11-05）
+> 變更摘要：v4.6 響應式（task 12.7，使用者決定）：平板、桌機的頂欄 / 內容 / 導覽列限制在 640px 置中（--content-max）；照設計稿做得較小的按鈕與標題連結，外觀不變、用透明外圈（.touch-target）把可點範圍加大到 44×44。
+> v4.5 變更摘要：v4.5 價格趨勢圖實作細節（task 10.2 e2e 截圖發現）：橫軸左右各留範圍的 6%（至少 1 天）避免頭尾的點被切掉、刻度放在購買日上（最多 4 個，含頭尾）、歷史均價標示描 3px 白邊並畫在價格線之上。
 > v4.4 變更摘要：v4.4 價格趨勢圖設計稿確認（設計稿 Prod-Trend、Prod-Trend-Empty；使用者同意）：放在商品詳情的商品卡與購買記錄之間；歷史均價參考線；點選資料點顯示那次的價格；橫軸依實際日期遠近；**少於 2 筆可計算單位均價的記錄**即顯示 STATUS-005（原本只在 0 筆時）。
 > v4.3 變更摘要：v4.3 首頁設計稿確認（設計稿 Dash、Dash-Clear、Dash-First；使用者選 A 照規格）：補上首頁的排序、第二行文字、「庫存正常」最多 5 項、沒有需要補貨與還沒有商品的畫面、未設定消耗速率提示。
 > v4.2 變更摘要：v4.2 回寫 K-17～K-20（使用者同意）：task 8.4～8.7 新增的 store 方法（updateRemaining、listFields、fetchRecentStores、fetchRecord、fetchFieldValues）、元件（PurchaseForm、RemainingDialog、DeleteRecordDialog）、lib（purchaseView 的 priceComparisonOf / purchaseSummary、purchaseForm 的 PurchaseFormInitial、feedback）、色彩變數 --price-lower-* 與 --danger，以及詳情、編輯、刪除的行為細節。
@@ -957,7 +958,8 @@ graph LR
 | 頁面左右邊距 | 16px |
 | 卡片內距 / 卡片間距 | 16px / 12px |
 | 圓角 | 卡片 20px、卡片內的圖塊 14px、輸入框與分類圖塊 10px、小圖塊 8px、按鈕與標籤 999px（膠囊） |
-| 觸控目標 | 最小 44×44px |
+| 觸控目標 | 最小 44×44px；看起來比較小的按鈕（篩選 36px、常用單位與常去的地點 32px）與標題裡的文字連結，外觀不變、加上 `.touch-target`（透明的 `::after` 外圈）讓可點範圍達到 44×44（v4.6） |
+| 內容寬度 | 手機撐滿；平板、桌機的頂欄、內容、導覽列限制在 `--content-max` 640px 置中，兩側為頁面底色（v4.6，使用者決定） |
 | 輸入框高度 | 48px |
 | 按鈕高度 | 頂欄按鈕 44px、表單底部按鈕 50px |
 | 頂欄高度 / 底部導覽列高度 | 56px / 68px |

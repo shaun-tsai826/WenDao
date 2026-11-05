@@ -115,7 +115,7 @@
           v-for="name in purchaseStore.recentStores"
           :key="name"
           type="button"
-          class="store-chip"
+          class="store-chip touch-target"
           :aria-pressed="form.store.trim() === name ? 'true' : 'false'"
           @click="pickStore(name)"
         >

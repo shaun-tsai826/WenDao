@@ -39,7 +39,7 @@
           </span>
           <div class="record__title">
             <h2 id="record-product" class="record__product">
-              <router-link v-if="product" :to="`/products/${product.id}`">
+              <router-link v-if="product" :to="`/products/${product.id}`" class="touch-target">
                 {{ product.brand }} {{ product.name }}
               </router-link>
               <template v-else>（商品不存在）</template>

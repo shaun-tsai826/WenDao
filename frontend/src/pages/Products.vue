@@ -32,7 +32,7 @@
         :key="option.id"
         type="button"
         role="radio"
-        class="filter__chip"
+        class="filter__chip touch-target"
         :aria-checked="selected === option.id ? 'true' : 'false'"
         @click="select(option.id)"
       >

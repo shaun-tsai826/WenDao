@@ -44,6 +44,8 @@
   --radius-control: 10px;
   --header-height: 56px;
   --nav-height: 68px;
+  // 平板、桌機的內容最大寬度（task 12.7，使用者決定：640px 置中，手機不受影響）
+  --content-max: 640px;
 
   // 字體：Huninn 只有 400，層級靠字級與顏色
   --font: 'Huninn', 'PingFang TC', 'Noto Sans TC', sans-serif;
@@ -104,4 +106,21 @@ h6 {
   border-radius: var(--radius-card);
   font-family: var(--font);
   font-size: 16px;
+}
+
+// 可點範圍至少 44px、外觀不變（task 12.7，使用者決定）：
+// 用透明的 ::after 外圈把手指可以點到的範圍加大到 44×44，按鈕看起來的大小不變。
+// 用在照設計稿做得比較小的按鈕（篩選、常用單位、常去的地點）與標題裡的文字連結。
+.touch-target {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
 }
